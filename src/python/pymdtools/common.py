@@ -723,21 +723,6 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    # print(os.path.split(__get_this_filename())[0])
-    # print(set_correct_path("./"))
-    #  __launch_test()
-    # test_search_for_file()
-    # links = search_link_in_md_file("./test-md/testLinks.md")
-    # for link in links:
-    # 	print(link)
-    #  create_test_set_correct_path()
-    #  create_test_check_folder()
-    #  create_test_get_valid_filename()
-    #  create_test_get_flat_filename()
-    print(path_to_url(r"git\xenon2\ examples\example09\input-md"
-                      r"\Santé\Aide à la personne \ Blabla\QP 026.md",
-                      remove_accent=True))
-
     logging.info('Finished')
     # ------------------------------------
 
