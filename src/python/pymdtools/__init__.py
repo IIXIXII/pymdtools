@@ -43,7 +43,7 @@ __author__ = "Florent Tournois"
 __copyright__ = "Copyright 2018, Guichet Entreprises"
 
 __credits__ = ["Arnaud Boidard"]
-__license__ = "Guichet Entreprises"
+__license__ = "MIT"
 __maintainer__ = "Florent Tournois"
 __email__ = "florent.tournois@gmail.fr"
 __status__ = "Production"
