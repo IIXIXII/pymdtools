@@ -28,5 +28,5 @@ CALL %FUN% :CLEAR_SCREEN
 CALL %FUN% :PRINT_LINE "   Find unused function " 
 REM ###############################################################################
 cd ../python
-vulture  --ignore-names "test_*,unused_*" inkscape
+vulture  --ignore-names "test_*,unused_*,create_*" --exclude "mistunege.py,test_*.py,mdrender.py" pymdtools
 pause

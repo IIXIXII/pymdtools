@@ -168,7 +168,7 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
     # list_inst = re.findall(r"{{.+}}", page_html)
 
     for inst in re.findall(r"{{.+}}", page_html):
-        logging.debug('instruction ' + inst)
+        logging.debug('instruction %s', inst)
         if inst == '{{title}}':
             page_html = page_html .replace(inst, title)
         if inst == '{{~> content}}':

@@ -594,7 +594,7 @@ la fin du texte"""
                  'url': 'www.gle.fr'}
     new_link1 = {'name': 'GOOGLE!',
                  'url': 'www.google.fr'}
-    result = update_links_from_old_links(
+    result = update_links_from_old_link(
         """du texte et un lien : [le gip guichet?]"""
         """(www.gip-entreprises.fr "le """
         """GIP") la fin du texte[au autre lien](www.gle.fr)""",
