@@ -79,22 +79,6 @@ def test_md_file_beautifier(filename, filename_result):
         filename, filename_result, normalize.md_file_beautifier)
 
 ###############################################################################
-# test the MdCorrect
-###############################################################################
-@pytest.mark.parametrize("filename, filename_result", find_md_correct_test())
-def test_md_correct(filename, filename_result):
-    test_general.check_transform_text_function(
-        filename, filename_result, normalize.correct_markdown_text)
-
-###############################################################################
-# test the MdCorrect
-###############################################################################
-@pytest.mark.parametrize("filename, filename_result", find_md_correct_test())
-def test_md_file_correct(filename, filename_result):
-    test_general.check_trans_file_inside_fun(
-        filename, filename_result, normalize.correct_markdown_file)
-
-###############################################################################
 # Create result md_beautifier
 ###############################################################################
 def create_result_md_beautifier(force_creation=False):
@@ -167,10 +151,6 @@ def __main():
         find_md_beautifier_test, test_md_beautifier)
     test_general.find_and_launch_test(
         find_md_beautifier_test, test_md_file_beautifier)
-    test_general.find_and_launch_test(
-        find_md_correct_test, test_md_correct)
-    test_general.find_and_launch_test(
-        find_md_correct_test, test_md_file_correct)
 
     logging.info('Finished')
     # ------------------------------------

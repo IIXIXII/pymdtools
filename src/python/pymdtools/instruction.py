@@ -619,7 +619,8 @@ def test_set_title_in_md_text():
     new_second_line = "=============================="
     line_re = new_second_line + '(\n|\r\n)' + "(=+)(\n|\r\n)"
     result = re.sub(line_re, new_second_line + '\n', result)
-    print(repr(result))
+    result = set_title_in_md_text(result, "yitruytr")
+    # print(repr(result))
 
 ###############################################################################
 # Find vars in a markdown file
@@ -981,13 +982,12 @@ def __main():
 
     test_strip_xml_comment()
     test_get_vars_from_md_text()
-    # test_get_file_content_to_include()
-    # test_include_files_to_md_text()
+    test_include_files_to_md_text()
     test_set_var_to_md_text()
-    # test_del_var_to_md_text()
+    test_del_var_to_md_text()
     test_set_include_file_()
-    # test_del_include_file_()
-    # test_set_title_in_md_text()
+    test_del_include_file_()
+    test_set_title_in_md_text()
     test_strip_xml_comment()
     test_get_title_from_md_text()
 

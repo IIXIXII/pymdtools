@@ -361,15 +361,7 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    # test_find_wk_html_to_pdf()
-    #  shutil.copyfile("./test-md/test-0.md", "./test-md/test.md")
-
-    #  convert_md_to_html("./test-md/test.md")
-    #  convert_md_to_pdf("./test-md/test.md")
-    # send_to_printer_win32(
-    #     r"C:\dev\projet-ge.fr\win-tools\md-tools\examples"
-    #     r"\2018-03-26\DQP002 - Administrateur judiciaire.pdf",
-    #     printer="Ricoh")
+    test_find_wk_html_to_pdf()
 
     logging.info('Finished')
     # ------------------------------------

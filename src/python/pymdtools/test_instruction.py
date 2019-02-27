@@ -188,9 +188,9 @@ def __main():
 
     test_general.find_and_launch_test(
         find_md_include_test, test_md_file_include)
-    # test_general.find_and_launch_test(find_md_var_test, test__md_file_var)
-    # test_general.find_and_launch_test(
-    #     find_include_file_test, test_include_files_to_md_file)
+    test_general.find_and_launch_test(find_md_var_test, test__md_file_var)
+    test_general.find_and_launch_test(
+        find_include_file_test, test_include_files_to_md_file)
 
     __launch_test()
 
