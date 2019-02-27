@@ -640,12 +640,6 @@ def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
 
     return result[0]
 
-def test_search_for_file():
-    start_point = os.path.split(__get_this_filename())[0]
-    assert(search_for_file("common.py", ["./", start_point],
-                           ["./", "python"]) is not None)
-
-
 ###############################################################################
 # convert a path to url
 #

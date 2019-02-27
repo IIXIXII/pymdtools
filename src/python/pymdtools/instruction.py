@@ -1,12 +1,27 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ###############################################################################
-# @copyright Copyright (C) Guichet Entreprises - All Rights Reserved
-# 	All Rights Reserved.
-# 	Unauthorized copying of this file, via any medium is strictly prohibited
-# 	Dissemination of this information or reproduction of this material
-# 	is strictly forbidden unless prior written permission is obtained
-# 	from Guichet Entreprises.
+#
+# Copyright (c) 2018 Florent TOURNOIS
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
 ###############################################################################
 
 ###############################################################################
@@ -487,17 +502,17 @@ def set_var_to_md_text(text, var_name, value):
         result += var_text
         if len(current_text) > 0 and current_text[0] != '\n':
             result += '\n\n'
-        result += current_text
 
+    result += current_text
     return result
 
 def test_set_var_to_md_text():
-    assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->',
+    assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
                               "test", "good") ==
-           '<!-- var(essai) = "tes\\t" --><!-- var(test) = "good" -->\n')
-    assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->',
+           '<!-- var(essai) = "tes\\t" -->\n<!-- var(test)="good" -->\n\ntext')
+    assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
                               "essai", "good") ==
-           '<!-- var(essai) = "good" -->\n')
+           '<!-- var(essai)="good" -->text')
 
 ###############################################################################
 # del a var in the markdown text
@@ -542,7 +557,7 @@ def test_del_var_to_md_text():
 ###############################################################################
 def get_title_from_md_text(text):
     local_text = strip_xml_comment(text)
-    title_re = r"(\s)*(?P<title>[^\n\r]+)(\n|\r\n)[=]*(\s)*"
+    title_re = r"(\s)*(?P<title>[^\n\r]+)(\n|\r\n)[=]+(\s)*"
     match = re.search(title_re, local_text)
     if not match:
         return None
@@ -849,8 +864,8 @@ def test_set_include_file_():
         '<!-- include-file(test) -->',
         "test") == '<!-- include-file(test) -->')
     assert(set_include_file_to_md_text(
-        '<!-- include-file(essai) -->',
-        "test") == '<!-- include-file(essai) --><!-- include-file(test) -->\n')
+        '<!-- include-file(essai) -->text',
+        "test") == '<!-- include-file(essai) -->\n<!-- include-file(test) -->\n\ntext')
 
 ###############################################################################
 # del a var in the markdown text
@@ -964,15 +979,17 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    # test_strip_xml_comment()
-    #  test_get_vars_from_md_text()
-    #  test_get_file_content_to_include()
-    #  test_include_files_to_md_text()
-    # test_set_var_to_md_text()
+    test_strip_xml_comment()
+    test_get_vars_from_md_text()
+    # test_get_file_content_to_include()
+    # test_include_files_to_md_text()
+    test_set_var_to_md_text()
     # test_del_var_to_md_text()
-    # test_set_include_file_()
+    test_set_include_file_()
     # test_del_include_file_()
-    test_set_title_in_md_text()
+    # test_set_title_in_md_text()
+    test_strip_xml_comment()
+    test_get_title_from_md_text()
 
     logging.info('Finished')
     # ------------------------------------

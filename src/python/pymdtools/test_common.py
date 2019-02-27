@@ -323,6 +323,15 @@ def test_get_today():
 
 
 ###############################################################################
+#
+###############################################################################
+def test_search_for_file():
+    start_point = os.path.split(__get_this_filename())[0]
+    assert(common.search_for_file("common.py", ["./", start_point],
+                                  ["./", "python"]) is not None)
+
+
+###############################################################################
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system

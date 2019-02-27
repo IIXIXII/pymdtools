@@ -32,7 +32,7 @@ REM ~ pytest -v common.py
 REM ~ pytest  test_normalize.py
 REM ~ pytest -v test_instruction.py
 REM ~ pytest -v test_mdcommon.py
-REM ~ pytest -v test_mdtopdf.py
+REM ~ pytest -v test_mdtopdf.py 
 REM ~ pytest -v test_normalize.py
 pytest -v
 pause
