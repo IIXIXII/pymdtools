@@ -158,11 +158,14 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
     content = get_md_to_html_converter(converter)(content)
 
     # find the layout
-    layout_path = common.check_folder(os.path.join(os.path.dirname(
-        os.path.realpath(__get_this_filename())), "layouts", layout))
-
-    # find the main html page
-    page_html = common.get_file_content(os.path.join(layout_path, "page.html"))
+    first_path = os.path.join(os.path.dirname(
+        os.path.realpath(__get_this_filename())))
+    page_html = common.search_for_file("page.html",
+                                       [first_path, os.path.join(
+                                           first_path, "lib", "pymdtools")],
+                                       [os.path.join("layouts", layout)], 1)
+    layout_path = common.check_folder(
+        os.path.join(os.path.dirname(page_html)))
 
     # parse instruction
     # list_inst = re.findall(r"{{.+}}", page_html)
