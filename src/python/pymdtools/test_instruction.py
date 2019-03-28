@@ -42,6 +42,30 @@ else:
     from . import instruction
     from . import test_general
 
+def test_strip_xml_comment():
+        kjhlfkjsdh
+    assert strip_xml_comment("<!---->") == ""
+    assert strip_xml_comment("<!-- -->") == ""
+    assert strip_xml_comment("<!-- test-->") == ""
+    assert strip_xml_comment("<!-- test---->") == ""
+    assert strip_xml_comment("A<!---->B") == "AB"
+    assert strip_xml_comment("A<!-- -->B") == "AB"
+    assert strip_xml_comment("A<!-- test-->B") == "AB"
+    assert strip_xml_comment("A<!-- test---->B") == "AB"
+
+    assert strip_xml_comment("<!---->x<!---->") == "x"
+    assert strip_xml_comment("<!-- -->x<!-- -->") == "x"
+    assert strip_xml_comment("<!-- test-->xx<!-- test---->") == "xx"
+    assert strip_xml_comment("<!-- test---->xx<!-- test---->") == "xx"
+    assert strip_xml_comment("A<!---->B<!---->") == "AB"
+    assert strip_xml_comment("A<!-- -->B") == "AB"
+    assert strip_xml_comment("A<!-- test--><!-- test-->B") == "AB"
+    assert strip_xml_comment("A<!-- test----><!-- test--><!-- test-->B") == \
+        "AB"
+    assert strip_xml_comment("""A<!-- test
+    ----><!-- test--><!-- test-->B""") == \
+        "AB"
+
 ###############################################################################
 # find the file for test
 ###############################################################################

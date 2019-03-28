@@ -980,10 +980,13 @@ class Markdown(object):
     def parse(self, text):
         out = self.output(preprocessing(text))
         # --------------------------
-        # -- ajout Guichet Entreprises
+        # -- Add from Florent Tournois
+        # -- Begin
         # --------------------------
         if hasattr(self.renderer, 'close') and callable(getattr(self.renderer, 'close')):
             out += self.renderer.close()
+        # --------------------------
+        # -- End
         # --------------------------
 
         keys = self.block.def_footnotes

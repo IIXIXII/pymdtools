@@ -29,7 +29,6 @@
 # Markdown Tools develops for Guichet Entreprises
 #
 ###############################################################################
-
 import logging
 import sys
 import os
@@ -75,30 +74,6 @@ def strip_xml_comment(text):
     result = re.sub(__comment_re__, "", text)
 
     return result
-
-def test_strip_xml_comment():
-    assert strip_xml_comment("<!---->") == ""
-    assert strip_xml_comment("<!-- -->") == ""
-    assert strip_xml_comment("<!-- test-->") == ""
-    assert strip_xml_comment("<!-- test---->") == ""
-    assert strip_xml_comment("A<!---->B") == "AB"
-    assert strip_xml_comment("A<!-- -->B") == "AB"
-    assert strip_xml_comment("A<!-- test-->B") == "AB"
-    assert strip_xml_comment("A<!-- test---->B") == "AB"
-
-    assert strip_xml_comment("<!---->x<!---->") == "x"
-    assert strip_xml_comment("<!-- -->x<!-- -->") == "x"
-    assert strip_xml_comment("<!-- test-->xx<!-- test---->") == "xx"
-    assert strip_xml_comment("<!-- test---->xx<!-- test---->") == "xx"
-    assert strip_xml_comment("A<!---->B<!---->") == "AB"
-    assert strip_xml_comment("A<!-- -->B") == "AB"
-    assert strip_xml_comment("A<!-- test--><!-- test-->B") == "AB"
-    assert strip_xml_comment("A<!-- test----><!-- test--><!-- test-->B") == \
-        "AB"
-    assert strip_xml_comment("""A<!-- test
-    ----><!-- test--><!-- test-->B""") == \
-        "AB"
-
 
 ###############################################################################
 # Find refs in a markdown text
@@ -299,10 +274,9 @@ def include_refs_to_md_text(text, refs_include,
     match_end = re.search(end_include_re, last_part)
 
     if not match_end:
-        logging.error(
-            'Find a begin-include(%s) and not finding the end-include', key)
-        raise Exception(
-            'Find a begin-include(%s) and not finding the end-include', key)
+        msg = 'Find a begin-include(%s) and not finding the end-include' % key
+        logging.error(msg)
+        raise Exception(msg)
 
     result = result + last_part[match_end.start(0):match_end.end(0)]
     result = result + \
@@ -508,8 +482,9 @@ def set_var_to_md_text(text, var_name, value):
 
 def test_set_var_to_md_text():
     assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
-                              "test", "good") ==
-           '<!-- var(essai) = "tes\\t" -->\n<!-- var(test)="good" -->\n\ntext')
+                              "test",
+                              "good") == '<!-- var(essai) = "tes\\t" -->\n'
+           '<!-- var(test)="good" -->\n\ntext')
     assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
                               "essai", "good") ==
            '<!-- var(essai)="good" -->text')
@@ -866,7 +841,8 @@ def test_set_include_file_():
         "test") == '<!-- include-file(test) -->')
     assert(set_include_file_to_md_text(
         '<!-- include-file(essai) -->text',
-        "test") == '<!-- include-file(essai) -->\n<!-- include-file(test) -->\n\ntext')
+        "test") == '<!-- include-file(essai) -->\n'
+                   '<!-- include-file(test) -->\n\ntext')
 
 ###############################################################################
 # del a var in the markdown text
@@ -980,7 +956,6 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    test_strip_xml_comment()
     test_get_vars_from_md_text()
     test_include_files_to_md_text()
     test_set_var_to_md_text()
@@ -988,7 +963,6 @@ def __main():
     test_set_include_file_()
     test_del_include_file_()
     test_set_title_in_md_text()
-    test_strip_xml_comment()
     test_get_title_from_md_text()
 
     logging.info('Finished')

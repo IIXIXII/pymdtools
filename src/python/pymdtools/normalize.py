@@ -33,7 +33,6 @@ import logging
 import sys
 import os
 import os.path
-import re
 
 if (__package__ in [None, '']) and ('.' not in __name__):
     import common

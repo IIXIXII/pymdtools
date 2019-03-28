@@ -40,7 +40,7 @@ from .instruction import search_include_refs_to_md_file
 
 __version__ = "1.0.0"
 __author__ = "Florent Tournois"
-__copyright__ = "Copyright 2018, Guichet Entreprises"
+__copyright__ = "Copyright 2018, Florent Tournois"
 
 __credits__ = ["Arnaud Boidard"]
 __license__ = "MIT"
