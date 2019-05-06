@@ -625,19 +625,24 @@ def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
     logging.info('Search for the file %s', file_wanted)
 
     result = []
+    tested_files = []
 
     for begin_path in start_points:
         for num_up in range(0, nb_up_path):
             for relative_path in relative_paths:
                 file_to_test = set_correct_path(os.path.join(
                     begin_path, "../" * num_up, relative_path, file_wanted))
+                tested_files.append(file_to_test)
                 if os.path.isfile(file_to_test):
                     logging.info('Found the file %s', (file_to_test))
                     result.append(file_to_test)
 
     if len(result) == 0:
+        logging.error('Not able to find the file %s. list of tested files %s',
+                      file_wanted, tested_files)
         raise Exception('Not able to find the file %s' % file_wanted)
 
+    # take the first result
     return result[0]
 
 ###############################################################################
