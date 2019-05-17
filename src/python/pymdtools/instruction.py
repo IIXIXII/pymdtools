@@ -61,7 +61,7 @@ __begin_var_re__ = \
 __end_var_re__ = \
     r"<!--\s+end-var\s+-->"
 __include_file_re__ = \
-    r"<!--\s+include-file\((?P<name>[\.a-zA-Z0-9_-]+)\).*-->"
+    r"<!--\s+include-file\((?P<name>[\.a-zA-Z0-9_-]+)\)(?P<content>[\s\S]*?)-->"
 
 ###############################################################################
 # strip XML comment.
@@ -817,7 +817,8 @@ def set_include_file_to_md_text(text, filename):
 
     while match_var is not None:
         key = match_var.group('name')
-        logging.debug('Find the include file  %s', key)
+        logging.debug('Find the include file "%s" compare to "%s"',
+                      key, filename)
         if key == filename:
             include_is_set = True
 
