@@ -535,7 +535,10 @@ def get_title_from_md_text(text):
     title_re = r"(\s)*(?P<title>[^\n\r]+)(\n|\r\n)[=]+(\s)*"
     match = re.search(title_re, local_text)
     if not match:
-        return None
+        title2_re = r"(\s)*#(\s)*(?P<title>[^\n\r]+)(\n|\r\n)"
+        match = re.search(title2_re, local_text)
+        if not match:
+            return None
 
     return match.group('title')
 
