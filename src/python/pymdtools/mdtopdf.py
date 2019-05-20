@@ -150,6 +150,8 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
     # Read the file
     content = common.get_file_content(filename)
     title = instruction.get_title_from_md_text(content)
+    if title is None:
+        title = ""
 
     if len(content) == 0:
         logging.error('The filename %s seem empty', filename)
@@ -158,14 +160,19 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
     content = get_md_to_html_converter(converter)(content)
 
     # find the layout
-    first_path = os.path.join(os.path.dirname(
-        os.path.realpath(__get_this_filename())))
-    page_html = common.search_for_file("page.html",
-                                       [first_path, os.path.join(
-                                           first_path, "lib", "pymdtools")],
-                                       [os.path.join("layouts", layout)], 1)
-    layout_path = common.check_folder(
-        os.path.join(os.path.dirname(page_html)))
+    first_path = \
+        os.path.join(os.path.dirname(os.path.realpath(__get_this_filename())))
+
+    page_html_filename = \
+        common.search_for_file("page.html",
+                               [first_path, os.path.join(
+                                   first_path, "lib", "pymdtools")],
+                               [os.path.join("layouts", layout)], 1)
+
+    layout_path = common.check_folder(os.path.dirname(page_html_filename))
+
+    # Get the content
+    page_html = common.get_file_content(page_html_filename)
 
     # parse instruction
     # list_inst = re.findall(r"{{.+}}", page_html)
@@ -173,9 +180,9 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
     for inst in re.findall(r"{{.+}}", page_html):
         logging.debug('instruction %s', inst)
         if inst == '{{title}}':
-            page_html = page_html .replace(inst, title)
+            page_html = page_html.replace(inst, title)
         if inst == '{{~> content}}':
-            page_html = page_html .replace(inst, content)
+            page_html = page_html.replace(inst, content)
         if inst[0:7] == '{{asset':
             file_objet = inst[9:-3]
             if file_objet[0] == '/':
