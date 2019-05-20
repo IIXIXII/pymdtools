@@ -38,7 +38,7 @@ from .normalize import md_file_beautifier as markdown_file_beautifier
 from .mdtopdf import convert_md_to_pdf
 from .instruction import search_include_refs_to_md_file
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Florent Tournois"
 __copyright__ = "Copyright 2018, Florent Tournois"
 
