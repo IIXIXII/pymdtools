@@ -43,26 +43,28 @@ else:
     from . import test_general
 
 def test_strip_xml_comment():
-        kjhlfkjsdh
-    assert strip_xml_comment("<!---->") == ""
-    assert strip_xml_comment("<!-- -->") == ""
-    assert strip_xml_comment("<!-- test-->") == ""
-    assert strip_xml_comment("<!-- test---->") == ""
-    assert strip_xml_comment("A<!---->B") == "AB"
-    assert strip_xml_comment("A<!-- -->B") == "AB"
-    assert strip_xml_comment("A<!-- test-->B") == "AB"
-    assert strip_xml_comment("A<!-- test---->B") == "AB"
+    assert instruction.strip_xml_comment("<!---->") == ""
+    assert instruction.strip_xml_comment("<!-- -->") == ""
+    assert instruction.strip_xml_comment("<!-- test-->") == ""
+    assert instruction.strip_xml_comment("<!-- test---->") == ""
+    assert instruction.strip_xml_comment("A<!---->B") == "AB"
+    assert instruction.strip_xml_comment("A<!-- -->B") == "AB"
+    assert instruction.strip_xml_comment("A<!-- test-->B") == "AB"
+    assert instruction.strip_xml_comment("A<!-- test---->B") == "AB"
 
-    assert strip_xml_comment("<!---->x<!---->") == "x"
-    assert strip_xml_comment("<!-- -->x<!-- -->") == "x"
-    assert strip_xml_comment("<!-- test-->xx<!-- test---->") == "xx"
-    assert strip_xml_comment("<!-- test---->xx<!-- test---->") == "xx"
-    assert strip_xml_comment("A<!---->B<!---->") == "AB"
-    assert strip_xml_comment("A<!-- -->B") == "AB"
-    assert strip_xml_comment("A<!-- test--><!-- test-->B") == "AB"
-    assert strip_xml_comment("A<!-- test----><!-- test--><!-- test-->B") == \
+    assert instruction.strip_xml_comment("<!---->x<!---->") == "x"
+    assert instruction.strip_xml_comment("<!-- -->x<!-- -->") == "x"
+    assert instruction.strip_xml_comment("<!-- test-->xx<!-- test---->") == \
+        "xx"
+    assert instruction.strip_xml_comment("<!-- test---->xx<!-- test---->") == \
+        "xx"
+    assert instruction.strip_xml_comment("A<!---->B<!---->") == "AB"
+    assert instruction.strip_xml_comment("A<!-- -->B") == "AB"
+    assert instruction.strip_xml_comment("A<!-- test--><!-- test-->B") == "AB"
+    assert instruction.strip_xml_comment("A<!-- test---->" \
+                                         "<!-- test--><!-- test-->B") == \
         "AB"
-    assert strip_xml_comment("""A<!-- test
+    assert instruction.strip_xml_comment("""A<!-- test
     ----><!-- test--><!-- test-->B""") == \
         "AB"
 
@@ -206,17 +208,19 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
+    test_strip_xml_comment()
+
     #  create_result_md_include(force_creation = True)
     #  create_result_md_var(force_creation = True)
     #  create_result_include_file(force_creation = True)
 
-    test_general.find_and_launch_test(
-        find_md_include_test, test_md_file_include)
-    test_general.find_and_launch_test(find_md_var_test, test__md_file_var)
-    test_general.find_and_launch_test(
-        find_include_file_test, test_include_files_to_md_file)
+#     test_general.find_and_launch_test(
+#         find_md_include_test, test_md_file_include)
+#     test_general.find_and_launch_test(find_md_var_test, test__md_file_var)
+#     test_general.find_and_launch_test(
+#         find_include_file_test, test_include_files_to_md_file)
 
-    __launch_test()
+#     __launch_test()
 
     logging.info('Finished')
     # ------------------------------------
