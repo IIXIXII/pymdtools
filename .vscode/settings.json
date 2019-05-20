@@ -1,8 +1,8 @@
 {
-    "python.unitTest.pyTestArgs": [
+    "python.testing.pyTestArgs": [
         "${workspaceRoot}/src/python/"
     ],
-    "python.unitTest.pyTestEnabled": true,
+    "python.testing.pyTestEnabled": true,
     "python.linting.pep8Enabled": true,
     "python.linting.pep8Args": [
         "--config=${workspaceRoot}/src/python/config/pep8.conf"
