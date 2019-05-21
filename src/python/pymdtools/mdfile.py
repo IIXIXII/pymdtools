@@ -33,6 +33,7 @@ import logging
 import sys
 import os
 import os.path
+import markdown
 
 if (__package__ in [None, '']) and ('.' not in __name__):
     import filetools
@@ -167,6 +168,16 @@ class MarkdownContent(filetools.FileContent):
                                                         value)
 
     ###########################################################################
+    # get the toc from the content
+    # @return the table of content
+    ###########################################################################
+    @property
+    def toc(self):
+        md_reader = markdown.Markdown(extensions=['toc'])
+        md_reader.convert(self.content)
+        return md_reader.toc_tokens
+
+    ###########################################################################
     # Access to members by identifier
     ###########################################################################
     def set_include_file(self, filename):
@@ -181,14 +192,6 @@ class MarkdownContent(filetools.FileContent):
         self.content = instruction.del_include_file_to_md_text(self.content,
                                                                filename)
         self.__update_dict()
-
-    ###########################################################################
-    # Correct the content
-    # @return the content
-    ###########################################################################
-    def correct(self):
-        self.content = normalize.correct_markdown_text(self.content)
-        return self.content
 
     ###########################################################################
     # Beautify teh content
