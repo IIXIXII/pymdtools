@@ -45,9 +45,12 @@ else:
 # @param filename the filename
 # @return the content
 ###############################################################################
-def get_template_file(filename):
-    local_template_folder = common.check_folder(os.path.join(os.path.split(
-        __get_this_filename())[0], "template"))
+def get_template_file(filename, start_folder=None):
+    if start_folder is None:
+        start_folder = os.path.split(__get_this_filename())[0]
+
+    local_template_folder = common.check_folder( \
+        os.path.join(start_folder, "template"))
 
     result = common.get_file_content(os.path.join(local_template_folder,
                                                   filename))
