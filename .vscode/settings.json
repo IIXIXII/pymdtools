@@ -1,8 +1,17 @@
 {
-    "python.testing.pyTestArgs": [
-        "${workspaceRoot}/src/python/"
-    ],
+    "python.testing.unittestEnabled": false,
     "python.testing.pyTestEnabled": true,
+    "python.testing.pyTestArgs": [
+        "-c",
+        "${workspaceRoot}\\src\\python\\pytest.ini",
+        "--junitxml=${workspaceRoot}/src/python/test_result.xml",
+        "-v", // increase verbosity
+        // "-l", // show locals in tracebacks
+        // "-x", // exit instantly on first error or failed test
+        // "--ff", // run all tests but run the last failures first
+        // "--color=yes", // color terminal output (yes/no/auto)
+        "${workspaceRoot}/src/python/pymdtools"
+    ],
     "python.linting.pep8Enabled": true,
     "python.linting.pep8Args": [
         "--config=${workspaceRoot}/src/python/config/pep8.conf"
@@ -22,5 +31,5 @@
         "**/.DS_Store": true,
         "**/doc/html": true
     },
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
 }

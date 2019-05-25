@@ -31,4 +31,5 @@ pip -V
 python -m pip install --upgrade pip wheel setuptools
 pip install vulture
 pip install twine
+pip install pytest
 pause
