@@ -46,19 +46,24 @@ class MdRenderer(mistune.Renderer):
         return '#' * (level) + ' ' + text + '\n\n'
 
     def paragraph(self, text):
-        return text + '\n\n'
+        return text.rstrip() + '\n\n'
 
     def list(self, text, ordered=True):
-        r = '\n'
+        r = ''
         while text:
             text, type, t = MdRenderer.get_block(text)
             if type == 'l':
+                t = t.strip()
                 t = t.replace('\n  + ', '\n    * ')
                 t = t.replace('\n- ', '\n  + ')
                 r += (ordered and ('# ' + t) or ('- ' + t))
                 if r[-1] != '\n':
                     r += '\n'
-        return r
+            else:
+                r += '\n'
+        if len(r) > 1 and r[1] == '\n':
+            r = r[1:]
+        return r + '\n'
 
     def list_item(self, text):
         return 'l' + str(len(text)) + ':' + text

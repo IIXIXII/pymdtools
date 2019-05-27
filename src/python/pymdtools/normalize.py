@@ -57,7 +57,7 @@ def md_beautifier(text):
     the_renderer = mdrender.MdRenderer()
     markdown = mistune.Markdown(renderer=the_renderer)
 
-    result = markdown(text)
+    result = markdown(text).strip()
 
     return result
 
