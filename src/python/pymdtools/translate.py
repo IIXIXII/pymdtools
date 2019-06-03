@@ -59,11 +59,17 @@ def test_n_():
 # @return the locale directory
 ###############################################################################
 @common.static(__folder__=None)
-def get_localedir():
+def get_localedir(domain_name=None, folder=None):
     if get_localedir.__folder__ is None:
         search_folder = [__get_this_folder()]
+        if folder is not None:
+            search_folder.append(folder)
         search_path = ["locale/fr/LC_MESSAGES", "fr/LC_MESSAGES"]
-        the_file = common.search_for_file('xenon.mo',
+        if domain_name is None:
+            logging.error('Need a domain name to find the translation')
+            raise RuntimeError('Need a domain name to find the translation')
+
+        the_file = common.search_for_file(domain_name + '.mo',
                                           start_points=search_folder,
                                           relative_paths=search_path,
                                           nb_up_path=3)
@@ -90,24 +96,27 @@ def test_get_localedir():
 # @return the translation object
 ###############################################################################
 @common.static(__trans__=None)
-def get_translation(lang):
+def get_translation(lang, domain_name, folder=None):
     if get_translation.__trans__ is None:
         get_translation.__trans__ = {}
 
-    if lang in get_translation.__trans__:
-        return get_translation.__trans__[lang]
+    if domain_name not in get_translation.__trans__:
+        get_translation.__trans__[domain_name] = {}
 
-    trans = gettext.translation('xenon',
+    if lang in get_translation.__trans__[domain_name]:
+        return get_translation.__trans__[domain_name][lang]
+
+    trans = gettext.translation(domain_name,
                                 languages=[lang],
-                                localedir=get_localedir())
-    get_translation.__trans__[lang] = trans
+                                localedir=get_localedir(domain_name, folder))
+    get_translation.__trans__[domain_name][lang] = trans
 
     return trans
 
 ###############################################################################
 def test_get_translation():
     for lang in eu_lang_list():
-        assert get_translation(lang) is not None
+        assert get_translation(lang, 'test') is not None
 
 
 ###############################################################################
@@ -117,12 +126,12 @@ def test_get_translation():
 # @param lang the language
 # @return the message translated
 ###############################################################################
-def translate(obj, lang):
+def translate(obj, lang, domain_name):
     if isinstance(obj, dict):
-        return translate_dict(obj, lang)
+        return translate_dict(obj, lang, domain_name)
     if isinstance(obj, list):
-        return translate_list(obj, lang)
-    return translate_str(obj, lang)
+        return translate_list(obj, lang, domain_name)
+    return translate_str(obj, lang, domain_name)
 
 
 ###############################################################################
@@ -132,8 +141,8 @@ def translate(obj, lang):
 # @param lang the language
 # @return the message translated
 ###############################################################################
-def translate_str(message, lang):
-    lang_translation = get_translation(lang)
+def translate_str(message, lang, domain_name):
+    lang_translation = get_translation(lang, domain_name)
     lang_translation.install()
     return lang_translation.gettext(message)
 
@@ -145,10 +154,10 @@ def translate_str(message, lang):
 # @param lang the language
 # @return the message translated
 ###############################################################################
-def translate_dict(obj, lang):
+def translate_dict(obj, lang, domain_name):
     result = {}
     for key in obj:
-        result[key] = translate(obj[key], lang)
+        result[key] = translate(obj[key], lang, domain_name)
     return result
 
 
@@ -159,10 +168,10 @@ def translate_dict(obj, lang):
 # @param lang the language
 # @return the message translated
 ###############################################################################
-def translate_list(obj, lang):
+def translate_list(obj, lang, domain_name):
     result = []
     for key in obj:
-        result.append(translate(key, lang))
+        result.append(translate(key, lang, domain_name))
     return result
 
 ###############################################################################
@@ -289,19 +298,7 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    print(get_localedir())
-    print(translate("Une seule adresse pour créer son entreprise",
-                    lang="en"))
-
     print(translate_txt("Guichet Entreprises", src="fr", dest="bg"))
-
-    # __launch_test()
-
-    # ~ the_folder = os.path.join(get_local_folder(), "test/")
-
-    # ~ md_text = common.get_file_content(os.path.join(the_folder, 'test1.md'))
-    # ~ md_text = translate_md(md_text)
-    #~ print(md_text)
 
     logging.info('Finished')
     # ------------------------------------

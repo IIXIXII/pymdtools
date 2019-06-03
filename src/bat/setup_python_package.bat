@@ -29,7 +29,9 @@ CALL %FUN% :PRINT_LINE "   Setup python package"
 python -V
 pip -V
 python -m pip install --upgrade pip wheel setuptools
+pip install git+https://github.com/BoseCorp/py-googletrans.git --upgrade
 pip install vulture
 pip install twine
 pip install pytest
+pip install git+https://github.com/BoseCorp/py-googletrans.git --upgrade
 pause
