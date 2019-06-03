@@ -35,11 +35,8 @@ Leur qualité doit avoir fait l’objet d’essais et de vérifications en rappo
 
 Ce registre, obligatoire dans chaque établissement, doit préciser l’identité de l’entreprise et les différentes informations relatives à la sécurité de l’établissement et notamment :
 
-
 - les diverses consignes établies en cas d’incendie y compris les consignes d’évacuation prenant en compte les différents types de handicap ;
-
 - les dates des divers contrôles et vérifications ainsi que les observations auxquelles ceux-ci ont donné lieu ;
-
 - les dates des travaux d’aménagement et de transformation, leur nature, les noms du ou des entrepreneurs et, s’il y a lieu, de l’architecte ou du technicien chargés de surveiller les travaux.
 
 Il doit être tenu à la disposition de l’administration et servira aux experts en cas de sinistre pour vérifier le niveau de sécurité de l’établissement.
@@ -50,4 +47,3 @@ Pour plus d’informations sur les obligations en termes de sécurité dans les 
 
 Navigation de l’article
 -----------------------
-

@@ -18,7 +18,6 @@ Le service Guichet Entreprises met en œuvre un téléservice guichet-entreprise
 
 Le Téléservice Guichet Entreprises s’inscrit dans le cadre juridique :
 
-
 - du règlement général sur la protection des données (<https://www.cnil.fr/fr/reglement-europeen-protection-donnees>) ;
 - de la directive 2006/123/CE du Parlement européen et du Conseil du 12 décembre 2006 relative aux services dans le marché intérieur ;
 - du règlement n° 910/2014 du Parlement européen et du Conseil du 23 juillet 2014 (e-IDAS) sur l’identification électronique et les services de confiance pour les transactions électroniques au sein du marché intérieur ;
@@ -29,6 +28,7 @@ Le Téléservice Guichet Entreprises s’inscrit dans le cadre juridique :
 - de l’article R. 123-21 du Code de commerce ;
 - de l’article R. 123-24 du Code de commerce ;
 - de l’arrêté du 22 avril 2015 portant création d’un service à compétence nationale dénommé « guichet entreprises ».
+
 Quelle organisation mettons-nous en œuvre pour protéger vos données ? 
 ----------------------------------------------------------------------
 
@@ -63,9 +63,9 @@ Quand collectons-nous des données personnelles ?
 
 Le service Guichet Entreprises collecte des données personnelles lorsque vous :
 
-
 - Créez votre espace personnel ;
 - Complétez une formalité *via* le Téléservice Guichet Entreprises.
+
 Quelles sont les données personnelles que nous traitons ?
 ---------------------------------------------------------
 
@@ -116,14 +116,13 @@ La liste suivante résume les données à caractère personnel que nous traitons
 
 Pour la gestion de l’accès à l’espace personnel du service, l’usager partage les informations suivantes :
 
-
 - l’identifiant de connexion choisi par l’usager ;
 - le mot de passe choisi par l’usager ;
 - l’adresse électronique de l’usager ;
 - le numéro de téléphone portable ;
 - l’adresse IP de connexion.
-Pour l’utilisation de l’espace de stockage personnel, l’usager partage les informations suivantes :
 
+Pour l’utilisation de l’espace de stockage personnel, l’usager partage les informations suivantes :
 
 # Pour une personne physique :
 
@@ -227,6 +226,7 @@ Pour l’utilisation de l’espace de stockage personnel, l’usager partage les
 > - date de naissance de l’ayant droit ;
 > - nationalité de l’ayant droit ;
 > - lien de parenté.
+
 Quelles sont les pièces justificatives personnelles que nous traitons ?
 -----------------------------------------------------------------------
 
@@ -254,8 +254,8 @@ Les cookies sécurisés sont un type de cookie transmis exclusivement *via* des 
 
 Les cookies techniques contiennent les données personnelles suivantes :
 
-
 > - nom, prénom, courriel, téléphone.
+
 Les cookies d’analyse contiennent l’adresse IP de connexion.
 
 Quels sont vos droits pour la protection de vos données personnelles ?
@@ -289,15 +289,15 @@ Lorsque la transmission de données est nécessaire et autorisée, le service Gu
 
 Conformément à la Règlementation sur la protection des données, en cas de violation, le service Guichet Entreprises s’engage à communiquer cette violation à l’autorité de contrôle compétente, et lorsque cela est exigé, aux personnes concernées.
 
-**Espace Personnel** 
+**Espace Personnel**
 
 Toutes les Données transmises sur votre Espace Personnel sont chiffrées et leur accès est sécurisé par l’utilisation d’un mot de passe personnel. Vous êtes tenu de garder ce mot de passe confidentiel et de ne pas le communiquer.
 
-**Durée de conservation** 
+**Durée de conservation**
 
 Les données personnelles traitées par les SGE sont conservées pour une durée de douze mois conformément aux dispositions de l’article R. 123-27 du Code de commerce.
 
-**Concernant les données de cartes bancaires** 
+**Concernant les données de cartes bancaires**
 
 Le service Guichet Entreprises ne stocke ni ne conserve les données bancaires des usagers soumis à paiement lors de leur formalité. Notre prestataire gère pour le compte du service Guichet Entreprises les données de transactions conformément aux règles de sécurité les plus strictes applicables dans le secteur du paiement en ligne *via* l’utilisation de procédés de chiffrement.
 
@@ -310,15 +310,14 @@ En vertu de l’article R.123-3 du Code de commerce, les données recueillies so
 
 « 1° Sous réserve des dispositions des 2° et 3°, les chambres de commerce et d’industrie territoriales créent et gèrent les centres de formalités des entreprises compétents pour :
 
-
 > # Les commerçants ;
 > # Les sociétés commerciales.
+
 2° Les chambres de métiers et de l’artisanat de région créent et gèrent les centres compétents pour les personnes physiques et les sociétés assujetties à l’immatriculation au répertoire des métiers et pour les personnes physiques bénéficiant de la dispense d’immatriculation prévue au V de l’article 19 de la loi n° 96-603 du 5 juillet 1996 relative au développement et à la promotion du commerce et de l’artisanat, à l’exclusion des personnes mentionnées au 3° du présent article.
 
 3° La chambre nationale de la batellerie artisanale crée et gère le centre compétent pour les personnes physiques et les sociétés assujetties à l’immatriculation au registre des entreprises de la batellerie artisanale.
 
 4° Les greffes des tribunaux de commerce ou des tribunaux de grande instance statuant commercialement créent et gèrent les centres compétents pour :
-
 
 > # les sociétés civiles et autres que commerciales ;
 > # les sociétés d’exercice libéral ;
@@ -326,12 +325,10 @@ En vertu de l’article R.123-3 du Code de commerce, les données recueillies so
 > # les établissements publics industriels et commerciaux ;
 > # les agents commerciaux ;
 > # les groupements d’intérêt économique et les groupements européens d’intérêt économique.
-5° Les unions de recouvrement des cotisations de sécurité sociale et d’allocations familiales (URSSAF) ou les caisses générales de sécurité sociale créent et gèrent les centres compétents pour :
 
+5° Les unions de recouvrement des cotisations de sécurité sociale et d’allocations familiales (URSSAF) ou les caisses générales de sécurité sociale créent et gèrent les centres compétents pour :
 
 > # les personnes exerçant, à titre de profession habituelle, une activité indépendante réglementée ou non autre que commerciale, artisanale ou agricole ;
 > # les employeurs dont les entreprises ne sont pas immatriculées au registre du commerce et des sociétés, au répertoire des métiers ou au registre des entreprises de la batellerie artisanale, et qui ne relèvent pas des centres mentionnés au 6°.
+
 6° Les chambres d’agriculture créent et gèrent les centres compétents pour les personnes physiques et morales exerçant à titre principal des activités agricoles […]. »
-
- 
-

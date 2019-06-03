@@ -8,6 +8,7 @@ __pycache__
 *.chm
 /doc/html
 test*.xml
+*.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

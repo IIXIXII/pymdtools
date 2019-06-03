@@ -5,12 +5,12 @@ Réalisez vos formalités liées à l’immatriculation (toute forme juridique),
 
 **Les formalités que vous pouvez réaliser en ligne :**
 
-
 - [Immatriculer une entreprise](https://www.guichet-entreprises.fr/fr/article/demarches-en-ligne#Immatriculer)
 - [Modifier l’activité ou les informations d’une entreprise](https://www.guichet-entreprises.fr/fr/article/demarches-en-ligne#Modifier)
 - [Régulariser une micro-entreprise](https://www.guichet-entreprises.fr/fr/article/demarches-en-ligne#Regulariser)
 - [Cesser l’activité d’une entreprise](https://www.guichet-entreprises.fr/fr/article/demarches-en-ligne#Cesser)
- 
+
+
 
 > Vous souhaitez exercer en tant que micro-entrepreneur ?
 > -------------------------------------------------------
@@ -31,15 +31,15 @@ Modifier une activité
 
 Vous pouvez à tout moment effectuer une formalité liée à la modification de votre entreprise sur guichet-entreprises.fr en vue de mettre à jour les informations relatives à votre entreprise auprès de tous les organismes compétents (impôts, Urssaf, Insee, registres publics, etc.). Attention, ces modifications doivent être déclarées dans le mois suivant la date où elles sont intervenues.
 
-Le site guichet-entreprises.fr permet actuellement d’effectuer uniquement la formalité de modification d’entreprise pour les personnes physiques ayant opté pour [le statut du micro-entrepreneur](https://www.guichet-entreprises.fr/fr/creation-dentreprise/micro-entrepreneur/regime-micro-entreprise/).  
+Le site guichet-entreprises.fr permet actuellement d’effectuer uniquement la formalité de modification d’entreprise pour les personnes physiques ayant opté pour [le statut du micro-entrepreneur](https://www.guichet-entreprises.fr/fr/creation-dentreprise/micro-entrepreneur/regime-micro-entreprise/).
 
 *Si cela n’est pas votre cas, vous devez vous rapprocher directement de votre centre de formalités des entreprises (CFE).*
 
 Cette formalité concerne toute modification des champs suivants :
 
-
 - votre **situation personnelle** (identité de l’entrepreneur, identité du conjoint/de la conjointe travaillant dans l’entreprise, adresse du domicile personnel, informations relatives à une déclaration d’insaisissabilité, à une déclaration d’affectation du patrimoine (EIRL) ou à un contrat d’appui) ;
 - votre/vos **établissement**(s) (modification, cessation temporaire ou définitive de votre activité, modification de l’adresse d’un établissement, ouverture/fermeture d’un établissement, modification du nom commercial ou de l’enseigne d’un établissement, informations relatives à l’identité ou au domicile d’une personne ayant le pouvoir d’engager l’établissement).
+
 > [Démarrer la formalité de modification d’information relative à votre micro-entreprise](https://account.guichet-entreprises.fr/)
 
 Régulariser une micro-entreprise
@@ -74,4 +74,3 @@ Le site guichet-entreprises.fr permet actuellement d’effectuer uniquement les 
 
 Navigation de l’article
 -----------------------
-

@@ -14,11 +14,8 @@ Il confectionne ses produits en laboratoire : il s’agit d’une pièce équip
 
 Le CFE compétent dépend de la nature de l’activité exercée, de la forme juridique de l’entreprise et du nombre de salariés employés :
 
-
 - pour les artisans et pour les sociétés commerciales exerçant une activité artisanale, à condition qu’ils n’emploient pas plus de dix salariés, le CFE compétent est la chambre de métiers et de l’artisanat (CMA) ;
-
 - pour les artisans et pour les sociétés commerciales qui emploient plus de dix salariés, il s’agit de la chambre du commerce et de l’industrie (CCI) ;
-
 - dans les départements du Haut-Rhin et du Bas-Rhin, la chambre de métiers d’Alsace est compétente.
 
 **À noter :** dans les départements du Bas-Rhin, du Haut-Rhin et de la Moselle, l’activité reste artisanale, quel que soit le nombre de salariés employés, dès lors que l’entreprise n’utilise pas de procédé industriel. Le CFE compétent est donc la CMA ou la chambre de métiers d’Alsace. Pour plus d’informations, il est conseillé de se reporter au [site officiel de la chambre de métiers d'Alsace](http://www.cm-alsace.fr/decouvrir-la-cma/lartisanat-en-alsace).
@@ -44,16 +41,12 @@ Seule une personne qualifiée professionnellement ou placée sous le contrôle e
 
 Les personnes qui exercent l’activité de pâtissier ou qui en contrôlent l'exercice doivent :
 
-
 - être titulaires d'un certificat d'aptitude professionnelle (CAP), d'un brevet d'études professionnelles (BEP) ou d'un diplôme ou d'un titre de niveau égal ou supérieur homologué ou enregistré lors de sa délivrance au [répertoire national des certifications professionnelles](http://www.rncp.cncp.gouv.fr/) (RNCP) ;
-
 - ou justifier d’une expérience professionnelle de trois années effectives sur le territoire de l’Union européenne (UE*) ou d’un autre État partie à l’accord sur l'Espace économique européen (EEE*) acquise en qualité de dirigeant d'entreprise, de travailleur indépendant ou de salarié dans l'exercice du métier.
 
 Les diplômes permettant l’exercice de l’activité de pâtissier sont notamment :
 
-
 - le CAP spécialité « pâtissier » ;
-
 - le baccalauréat professionnel « boulanger - pâtissier ».
 
 Pour plus d’informations sur chacun de ces diplômes, il est conseillé de se reporter aux dispositions de [l'arrêté du 23 avril 2008 modifiant l'arrêté du 20 mars 2007 portant création du certificat d'aptitude professionnelle pâtissier ](https://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000018771496)et [l'arrêté du 2 juillet 2009 portant création de la spécialité « boulanger-pâtissier » du baccalauréat professionnel et fixant ses conditions de délivrance.](https://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000020858999&dateTexte=20160914)
@@ -76,24 +69,17 @@ Pour aller plus loin : article 17-1 de la loi n° 96-603 du 5 juillet 1996 rela
 
 Pour exercer en France à titre permanent l’activité de pâtissier, le professionnel ressortissant de l’UE ou de l’EEE doit remplir l’une des conditions suivantes :
 
-
 - disposer des mêmes qualifications professionnelles que celles exigées pour un Français (cf. supra : « 2°. a. Qualifications professionnelles ») ;
-
 - être titulaire d’une attestation de compétences ou d’un titre de formation requis pour l’exercice de l’activité de pâtissier dans un État de l’UE ou de l’EEE lorsque cet État réglemente l’accès ou l’exercice de cette activité sur son territoire ;
-
 - disposer d’une attestation de compétences ou d’un titre de formation qui certifie sa préparation à l’exercice de l’activité de pâtissier lorsque cette attestation ou ce titre a été obtenu dans un État de l’UE ou de l’EEE qui ne réglemente ni l’accès ni l’exercice de cette activité ;
-
 - être titulaire d’un diplôme, titre ou certificat acquis dans un État tiers et admis en équivalence par un État de l’UE ou de l’EEE à la condition supplémentaire que l’intéressé ait exercé pendant trois années l’activité de pâtissier dans l’État membre qui a admis l’équivalence.
 
 **À noter** : le ressortissant d’un État de l’UE ou de l’EEE qui remplit l’une des conditions précitées peut solliciter une attestation de reconnaissance de qualification professionnelle (cf. infra : « 3°. b. Le cas échéant, demander une attestation de qualification professionnelle ».)
 
 Si l’intéressé ne remplit aucune des conditions précitées, la CMA saisie peut lui demander d’accomplir une mesure de compensation dans les cas suivants :
 
-
 - si la durée de la formation attestée est inférieure d’au moins un an à celle exigée pour obtenir l’une des qualifications professionnelles requises en France pour exercer l’activité de pâtissier ;
-
 - si la formation reçue porte sur des matières substantiellement différentes de celles couvertes par l’un des titres ou diplômes requis pour exercer en France l’activité de pâtissier ;
-
 - si le contrôle effectif et permanent de l’activité de pâtissier nécessite, pour l’exercice de certaines de ses attributions, une formation spécifique qui n’est pas prévue dans l’État membre d’origine et porte sur des matières substantiellement différentes de celles couvertes par l'attestation de compétences ou le titre de formation dont le demandeur fait état.
 
 La mesure de compensation consiste, au choix du demandeur, en un stage d'adaptation ou en une épreuve d'aptitude (cf. infra « 3° c. Le cas échéant, solliciter une attestation de qualification professionnelle »).
@@ -104,9 +90,7 @@ Pour aller plus loin : articles 16 et 17 de la loi n° 96-603 du 5 juillet 1996 
 
 Pour exercer l’activité en France, le pâtissier ne doit pas être sous l’emprise :
 
-
 - d’une interdiction d’exercer cette activité (cette interdiction s’applique sur une durée de cinq ans au plus) ;
-
 - d’une interdiction de diriger, gérer, administrer ou contrôler, directement ou indirectement, toute entreprise commerciale ou artisanale, toute exploitation agricole ou toute personne morale.
 
 Pour aller plus loin : article 19 de la loi n° 96-603 du 5 juillet 1996 précitée ; article 131-6 du code pénal ; article L. 653-8 du code de commerce.
@@ -119,9 +103,7 @@ Pour aller plus loin : article 19 de la loi n° 96-603 du 5 juillet 1996 précit
 
 Peuvent se prévaloir de la qualité d’artisan les personnes justifiant :
 
-
 - d’un CAP, d’un BEP ou d’un titre homologué ou enregistré lors de sa délivrance au RNCP d’un niveau au moins équivalent (cf. supra : « 2°. a. Qualifications professionnelles ») ;
-
 - ou d’une expérience professionnelle dans ce métier de trois ans au moins.
 
 Pour aller plus loin : article 1 du décret n° 98-247 du 2 avril 1998 relatif à la qualification artisanale et au répertoire des métiers.
@@ -130,18 +112,13 @@ Pour aller plus loin : article 1 du décret n° 98-247 du 2 avril 1998 relatif �
 
 Ce titre est attribué aux personnes physiques, y compris les dirigeants sociaux des personnes morales :
 
-
 - immatriculées au répertoire des métiers ;
-
 - titulaires du brevet de maîtrise dans le métier exercé ;
-
 - justifiant d’au moins deux ans de pratique professionnelle.
 
 **À noter** : les personnes qui ne sont pas titulaires du brevet de maîtrise peuvent solliciter l’obtention du titre de maître artisan à la commission régionale des qualifications dans deux hypothèses :
 
-
 - lorsqu’elles sont immatriculées au répertoire des métiers, qu’elles sont titulaires d’un diplôme de niveau de formation au moins équivalent au brevet de maîtrise, qu’elles justifient de connaissances en gestion et en psychopédagogie équivalentes à celles des unités de valeur correspondantes du brevet de maîtrise et qu’elles ont deux ans de pratique professionnelle ;
-
 - lorsqu’elles sont immatriculées au répertoire des métiers depuis au moins dix ans et qu’elles disposent d’un savoir-faire reconnu au titre de la promotion de l’artisanat ou de la participation à des actions de formation.
 
 Pour aller plus loin : article 3 du décret n° 98-247 du 2 avril 1998 relatif à la qualification artisanale et au répertoire des métiers.
@@ -164,30 +141,21 @@ Le pâtissier doit se conformer aux règles de sécurité et d’accessibilité 
 
 Le pâtissier doit appliquer les règles issues du règlement CE n° 852/2004 du 29 avril 2004 qui concernent :
 
-
 - les locaux utilisés pour les denrées alimentaires ;
-
 - les équipements ;
-
 - les déchets alimentaires ;
-
 - l’alimentation en eau ;
-
 - l’hygiène personnelle ;
-
 - les denrées alimentaires, leur conditionnement et leur emballage.
 
-Il doit aussi respecter les principes de l’HACCP (*Hazard Analysis Critical Control Point*) issus du règlement précité. 
+Il doit aussi respecter les principes de l’HACCP (*Hazard Analysis Critical Control Point*) issus du règlement précité.
 
 Le pâtissier doit également appliquer les normes édictées par l’arrêté du 21 décembre 2009 qui précisent les températures de conservation des produits d’origine animale périssables :
 
 Celles-ci concernent notamment :
 
-
 - les conditions de température de conservation ;
-
 - les modalités de congélation ;
-
 - les modalités de préparation des viandes hachées et de réception des gibiers.
 
 Il doit, enfin, respecter les températures de conservation des denrées alimentaires périssables d’origine végétale.
@@ -200,7 +168,7 @@ Le pâtissier doit informer le consommateur, par voie de marquage, d'étiquetage
 
 Pour aller plus loin : article L. 112-1 du code de la consommation.
 
-À noter : le pâtissier détermine librement le prix de vente de ses pâtisseries mais la vente à perte est interdite. 
+À noter : le pâtissier détermine librement le prix de vente de ses pâtisseries mais la vente à perte est interdite.
 
 Pour aller plus loin : articles L. 410-2, L. 442-1 et suivants du code de la consommation.
 
@@ -217,7 +185,7 @@ Pour aller plus loin : articles R. 412-12 à R. 412-16 et annexe IV du code de 
 
 ### a. Formalités de déclaration de l’entreprise
 
-Le pâtissier doit être immatriculé au répertoire des métiers et de l’artisanat (RMA). 
+Le pâtissier doit être immatriculé au répertoire des métiers et de l’artisanat (RMA).
 
 Pour plus d’informations, il est conseillé de se reporter à la fiche activité « Formalités de déclaration d’entreprise artisanale ».
 
@@ -229,9 +197,7 @@ Avant son immatriculation au répertoire des métiers ou, pour les départements
 
 Le SPI est composé :
 
-
 - d’une 1ère partie consacrée à l’initiation à la comptabilité générale et à la comptabilité analytique ainsi qu’à une information sur l’environnement économique, juridique et social de l’entreprise artisanale et sur la responsabilité sociale et environnementale de celle-ci ;
-
 - d’une 2ème partie qui comprend une période d’accompagnement postérieure à l’immatriculation.
 
 Le stage a pour objet, par des cours et des travaux pratiques, de permettre aux futurs artisans de connaître les conditions de leur installation, les problèmes de financement, les techniques de prévision et de contrôle de leur exploitation, de mesurer les savoirs indispensables à la pérennité de leur entreprise et de les informer sur les possibilités de formation continue adaptées à leur situation.
@@ -242,9 +208,7 @@ La chambre de métiers, l’établissement ou le centre saisi d’une demande de
 
 Le futur chef d'entreprise peut être dispensé de suivre le SPI :
 
-
 - s'il possède un titre ou diplôme homologué au niveau 3 et comportant un enseignement en matière d'économie et de gestion d'entreprises ou le brevet de maîtrise délivré par une CMA ;
-
 - s'il a exercé, pendant au moins trois ans, une activité professionnelle requérant un niveau de connaissance au moins équivalent à celui fourni par le stage.
 
 #### Dispense de stage pour les ressortissants européens
@@ -255,11 +219,8 @@ La CMA peut lui demander de se soumettre à une épreuve d'aptitude ou à un sta
 
 Toutefois, la CMA ne peut pas demander au professionnel de se soumettre à une telle mesure de compensation :
 
-
 - lorsqu'il a exercé, pendant au moins trois ans, une activité professionnelle requérant un niveau de connaissance au moins équivalent à celui du SPI ;
-
 - ou lorsqu'il a exercé, pendant au moins deux années consécutives, son activité professionnelle à titre indépendant ou en qualité de dirigeant d'entreprise, après avoir reçu, pour cette activité, une formation sanctionnée par un diplôme, titre ou certificat reconnu par l'État, membre ou partie, qui l'a délivré, ou jugée pleinement valable par un organisme professionnel compétent ;
-
 - ou lorsque, après vérification, la chambre constate que les connaissances acquises par le demandeur au cours de son expérience professionnelle dans un État membre ou partie, ou dans un État tiers, sont de nature à couvrir, totalement ou partiellement, la différence substantielle en termes de contenu.
 
 Pour aller plus loin : article 2 de la loi n° 82-1091 du 23 décembre 1982 relative à la formation professionnelle des artisans ; articles 6 et 6-1 du décret n° 83-517 du 24 juin 1983 fixant les conditions d'application de la loi n° 82-1091 du 23 décembre 1982 relative à la formation professionnelle des artisans.
@@ -270,11 +231,8 @@ La demande de dispense doit être adressée au président de la CMA de région.
 
 Le demandeur doit accompagner son courrier :
 
-
 - de la copie du diplôme homologué au niveau III ;
-
 - de la copie du brevet de maîtrise ;
-
 - des justificatifs d’exercice d’une activité professionnelle requérant un niveau de connaissance équivalent.
 
 À défaut de réponse dans le délai d'un mois suivant la réception de la demande, la dispense est considérée comme accordée.
@@ -299,20 +257,15 @@ En l’absence de notification de la décision de la chambre dans un délai de q
 
 La chambre peut, par décision motivée :
 
-
 - délivrer une attestation de reconnaissance de qualification lorsqu’elle reconnaît la qualification ;
-
 - informer par écrit qu’une mesure de compensation est exigée.
 
 #### Pièces justificatives
 
 La demande d’attestation de qualification professionnelle doit être accompagnée :
 
-
 - du diplôme, du titre de formation professionnelle, de l’attestation de compétences ou de l’attestation d’activité (cf. supra « 2°. b. Qualifications professionnelles – Ressortissants européens ») ;
-
 - d’une preuve de la nationalité du demandeur ;
-
 - pour les documents non établis en français, d’une traduction certifiée conforme à l’original par un traducteur assermenté ou habilité.
 
 La CMA peut demander la communication d’informations complémentaires concernant le niveau, la durée et le contenu de sa formation propres à lui permettre de déterminer l’existence éventuelle de différences substantielles avec la formation française exigée.
@@ -339,7 +292,7 @@ Pour aller plus loin : articles 3 à 3-2 du décret n° 98-246 du 2 avril 1998 
 
 ### d. Le cas échéant, effectuer une déclaration en cas de préparation ou de vente de denrées animales ou d’origine animale
 
-Tout exploitant d’un établissement produisant, manipulant ou entreposant des denrées d’origine animale ou des denrées comportant des ingrédients d’origine animale (viandes, produits laitiers, produits de la pêche, œufs, miel), destinées à la consommation humaine, doit satisfaire à l’obligation de déclarer chacun des établissements dont il a la responsabilité, ainsi que les activités qui s'y déroulent. 
+Tout exploitant d’un établissement produisant, manipulant ou entreposant des denrées d’origine animale ou des denrées comportant des ingrédients d’origine animale (viandes, produits laitiers, produits de la pêche, œufs, miel), destinées à la consommation humaine, doit satisfaire à l’obligation de déclarer chacun des établissements dont il a la responsabilité, ainsi que les activités qui s'y déroulent.
 
 La déclaration doit être faite avant l'ouverture de l'établissement et renouvelée en cas de changement d'exploitant, d'adresse ou de nature de l'activité.
 
@@ -381,25 +334,18 @@ Pour aller plus loin : articles L. 233-2 et R. 233-1 du code rural et de la pêc
 
 Les établissements concernés par la dérogation sont les commerces :
 
-
 - cédant des quantités limitées de denrées à d’autres commerces de détail ;
-
 - dont les distances de livraison vers d’autres commerces de détail n’excèdent pas 80 kilomètres.
 
 Les catégories de produits couvertes par la dérogation concernent notamment :
 
-
 - les produits laitiers ;
-
 - les laits traités thermiques ;
-
 - les produits à base d’œuf « coquille » ou de lait cru ayant subi un traitement assainissant.
 
 Le pâtissier peut obtenir cette dérogation si la distance avec les établissements livrés ne dépasse pas 80 km (ou plus sur décision préfectorale) et :
 
-
 - pour les laits traités thermiquement, s’il cède au maximum 800 litres par semaine lorsqu’il vend 30% ou moins de sa production totale ou 250 litres par semaine lorsqu’il vend plus de 30% de sa production totale ;
-
 - pour les produits laitiers et pour les produits à base d'œuf coquille ou de lait cru ayant subi un traitement assainissant, s’il cède au maximum 250 kg par semaine lorsqu’il vend 30% ou moins de sa production totale ou 100 kg s’il vend plus de 30% de sa production totale ;
 
 #### Autorité compétente
@@ -413,4 +359,3 @@ La demande de dérogation à l’obligation d’agrément est effectuée au moye
 #### Coût : gratuit
 
 Pour aller plus loin : article L. 233-2 du code rural et de la pêche maritime ; articles 12, 13, annexes 3 et 4 de l'arrêté du 8 juin 2006 relatif à l'agrément sanitaire des établissements mettant sur le marché des produits d'origine animale ou des denrées contenant des produits d'origine animale ; [instruction technique DGAL/SDSSA/2014-823 du 10 octobre 2014.](https://info.agriculture.gouv.fr/gedei/site/bo-agri/instruction-2014-823)
-

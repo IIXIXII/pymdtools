@@ -34,7 +34,7 @@ else:
 ###############################################################################
 # function of the module
 ###############################################################################
-__all__ = ["N_", "translate"]
+__all__ = ["N_", "translate", "translate_txt", "translate_md"]
 
 
 ###############################################################################
@@ -85,11 +85,6 @@ def get_localedir(domain_name=None, folder=None):
 
 
 ###############################################################################
-def test_get_localedir():
-    assert get_localedir() is not None
-
-
-###############################################################################
 # gettext translation object for a language
 #
 # @param lang the language
@@ -112,12 +107,6 @@ def get_translation(lang, domain_name, folder=None):
     get_translation.__trans__[domain_name][lang] = trans
 
     return trans
-
-###############################################################################
-def test_get_translation():
-    for lang in eu_lang_list():
-        assert get_translation(lang, 'test') is not None
-
 
 ###############################################################################
 # translation function

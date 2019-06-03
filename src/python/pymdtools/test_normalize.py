@@ -147,10 +147,10 @@ def __main():
     # create_result_md_beautifier(force_creation=True)
     # create_result_md_correct(force_creation=True)
 
-    test_general.find_and_launch_test(
-        find_md_beautifier_test, test_md_beautifier)
-    test_general.find_and_launch_test(
-        find_md_beautifier_test, test_md_file_beautifier)
+    # test_general.find_and_launch_test(
+    #     find_md_beautifier_test, test_md_beautifier)
+    # test_general.find_and_launch_test(
+    #     find_md_beautifier_test, test_md_file_beautifier)
 
     logging.info('Finished')
     # ------------------------------------

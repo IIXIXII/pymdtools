@@ -37,9 +37,7 @@ Pour aller plus loin : loi n° 96-603 du 5 juillet 1996 relative au développeme
 
 Le CFE compétent dépend de la nature de la structure dans laquelle l’activité est exercée :
 
-
 - pour une activité artisanale, le CFE compétent est la chambre des métiers et de l’artisanat (CMA) ;
-
 - pour une activité commerciale, le CFE compétent est la chambre de commerce et de l’industrie (CCI).
 
 Si le professionnel a une activité d’achat-revente, son activité est à la fois artisanale et commerciale.
@@ -52,11 +50,8 @@ Le code APE (activité principale exercée) indique l'activité principale exerc
 
 Le code APE n'a aucune valeur juridique, il n’est qu’indicatif pour la profession exercée. Il peut donc s’agir des codes suivants :
 
-
 - 10.11Z : Transformation et conservation de la viande de boucherie ;
-
 - 47.22Z : Commerce de détail de viandes et de produits à base de viande en magasin spécialisé ;
-
 - 47.81Z : Commerce de détail de viandes et produits à base de viandes sur éventaires et marchés.
 
 Pour plus de précisions, il est conseillé de se reporter au [site officiel de l’INSEE](http://www.insee.fr) et à la fiche « Code APE ».
@@ -70,11 +65,8 @@ Seule une personne qualifiée professionnellement ou placée sous le contrôle e
 
 Les personnes qui exercent l’activité de boucher ou qui en contrôlent l'exercice doivent être titulaires, au choix :
 
-
 - d'un certificat d'aptitude professionnelle (CAP) ;
-
 - d'un brevet d'études professionnelles (BEP) ;
-
 - d'un diplôme ou d'un titre de niveau égal ou supérieur homologué ou enregistré lors de sa délivrance au [répertoire national des certifications professionnelles](http://www.rncp.cncp.gouv.fr/).
 
 Le [site](http://www.cncp.gouv.fr/) de la commission nationale de la certification professionnelle (CNCP) propose une liste de l’ensemble de ces qualifications professionnelles. On peut notamment citer le CAP « boucher », le bac pro « boucher charcutier traiteur » ou le brevet professionnel « boucher ».
@@ -97,24 +89,17 @@ Pour aller plus loin : article 17-1 de la loi n°96-603 du 5 juillet 1996 préci
 
 Pour exercer en France, à titre permanent, l’activité de boucher, le professionnel ressortissant de l’UE ou de l’EEE doit remplir l’une des conditions suivantes :
 
-
 - disposer des mêmes qualifications professionnelles que celles exigées pour un Français (cf. supra : « 2°. a. Qualifications professionnelles ») ;
-
 - être titulaire d’une attestation de compétence ou d’un titre de formation requis pour l’exercice de l’activité de boucher dans un État de l’UE ou de l’EEE lorsque cet État réglemente l’accès ou l’exercice de cette activité sur son territoire ;
-
 - disposer d’une attestation de compétence ou d’un titre de formation qui certifie sa préparation à l’exercice de l’activité de boucher lorsque cette attestation ou ce titre a été obtenu dans un État de l’UE ou de l’EEE qui ne réglemente ni l’accès ni l’exercice de cette activité ;
-
 - être titulaire d’un diplôme, titre ou certificat acquis dans un État tiers et admis en équivalence par un État de l’UE ou de l’EEE à la condition supplémentaire que l’intéressé ait exercé pendant trois années l’activité de boucher dans l’État qui a admis l’équivalence.
 
 **À noter** : le ressortissant d’un État de l’UE ou de l’EEE qui remplit l’une des conditions précitées peut solliciter une attestation de reconnaissance de qualification professionnelle (cf. infra : « 3°. b. Le cas échéant, demander une attestation de qualification professionnelle ».)
 
 Si l’intéressé ne remplit aucune des conditions précitées, la CMA saisie peut lui demander d’accomplir une mesure de compensation dans les cas suivants :
 
-
 - si la durée de la formation attestée est inférieure d’au moins un an à celle exigée pour obtenir l’une des qualifications professionnelles requises en France pour exercer l’activité de boucher ;
-
 - si la formation reçue porte sur des matières substantiellement différentes de celles couvertes par l’un des titres ou diplômes requis pour exercer en France l’activité de boucher ;
-
 - si le contrôle effectif et permanent de l’activité de boucher nécessite, pour l’exercice de certaines de ses attributions, une formation spécifique qui n’est pas prévue dans l’État membre d’origine et porte sur des matières substantiellement différentes de celles couvertes par l'attestation de compétences ou le titre de formation dont le demandeur fait état.
 
 Pour aller plus loin : articles 17 et 17-1 de la loi n°96-603 du 5 juillet 1996 précitée, articles 3 à 3-2 du décret n°98-246 du 2 avril 1998 précité.
@@ -137,9 +122,7 @@ Pour aller plus loin : articles 3 et 3-2 du décret n°98-246 du 2 avril 1998 pr
 
 Nul ne peut exercer la profession s’il fait l’objet :
 
-
 - d’une interdiction de diriger, gérer, administrer ou contrôler directement ou indirectement une entreprise commerciale ou artisanale ;
-
 - d’une peine d’interdiction d’exercer une activité professionnelle ou sociale pour l’un des crimes ou délits prévue au 11° de l’article 131-6 du code pénal.
 
 Pour aller plus loin : article 19 III de la loi n°96-603 du 5 juillet 1996 précitée.
@@ -160,20 +143,15 @@ Pour aller plus loin : article 1 du décret n°98-247 du 2 avril 1998.
 
 Pour obtenir le titre de maître artisan, l’intéressé (personne physique ou dirigeant d’une société artisanale) doit :
 
-
 - être immatriculé au répertoire des métiers ;
-
 - être titulaire du brevet de maîtrise ;
-
 - justifier d’au moins deux ans de pratique professionnelle.
 
 La demande doit être adressée au président de la CMA compétente.
 
 **À savoir** : les personnes qui ne sont pas titulaires du brevet de maîtrise peuvent solliciter l’obtention du titre de maître artisan dans deux situations distinctes :
 
-
 - si elles sont immatriculées au répertoire des métiers, qu’elles sont titulaires d’un diplôme de formation équivalente au brevet de maîtrise, qu’elles disposent de connaissances en gestion et psychopédagogie équivalentes aux unités de valeur du brevet de maîtrise et qu’elles justifient de plus de deux ans de pratique professionnelle ;
-
 - si elles sont immatriculées au répertoire des métiers depuis au moins dix ans et qu’elles disposent d’un savoir-faire reconnu au titre de la promotion de l’artisanat ou de la participation à des actions de formation.
 
 Dans ces deux cas, le titre de maître artisan peut être accordé par la commission régionale des qualifications.
@@ -212,9 +190,7 @@ Pour aller plus loin : réglementation européenne « Paquet Hygiène », Règle
 
 Si les locaux sont ouverts au public, le professionnel doit se conformer aux règles relatives aux établissements recevant du public (ERP) :
 
-
 - en matière d’incendie ;
-
 - en matière d’accessibilité.
 
 Pour plus d’informations, il est conseillé de se reporter à la fiche « Établissement recevant du public (ERP) ».
@@ -228,13 +204,9 @@ Le stage de préparation à l'installation (SPI) est un prérequis obligatoire p
 
 **Modalités du stage** :
 
-
 - l’inscription se fait sur présentation d’une pièce d’identité auprès de la CMA territorialement compétente ;
-
 - il a une durée minimale de 30 heures ;
-
 - il se présente sous la forme de cours et de travaux pratiques ;
-
 - il a pour objectif de faire acquérir les connaissances essentielles dans les domaines juridique, fiscal, social, comptable nécessaires à la création d’une entreprise artisanale.
 
 **Report exceptionnel du début du stage** : en cas de force majeure, l’intéressé est autorisé à effectuer le SPI dans un délai d’un an à compter de l’immatriculation de son entreprise au répertoire des métiers. Il ne s’agit pas d’une dispense mais simplement d’un report du stage qui demeure obligatoire.
@@ -245,18 +217,14 @@ Le stage de préparation à l'installation (SPI) est un prérequis obligatoire p
 
 **Cas de dispense de stage** : l’intéressé peut être dispensé d’effectuer le stage dans deux situations :
 
-
 - s’il a déjà bénéficié d’une formation sanctionnée par un titre ou un diplôme homologué au niveau III (bac+2), comportant un enseignement en économie et gestion d’entreprise, ou le brevet de maîtrise délivré par une CMA ;
-
 - s’il a exercé, pendant au moins trois ans, une activité professionnelle requérant un niveau de connaissance équivalent à celui fourni par le stage.
 
 **Dispense de stage pour les ressortissants de l’UE ou de l’EEE** : par principe, un professionnel qualifié ressortissant de l’UE ou de l’EEE est dispensé du SPI s’il justifie auprès de la CMA d’une qualification en gestion d’entreprise lui conférant un niveau de connaissance équivalent à celui fourni par le stage.
 
 La qualification en gestion d’entreprise est reconnue comme équivalente à celle fournie par le stage pour les personnes qui :
 
-
 - ont exercé, pendant au moins trois ans, une activité professionnelle requérant un niveau de connaissance équivalent à celui fourni par le stage ;
-
 - ou qui disposent de connaissances acquises dans un État de l’UE ou de l’EEE ou un État tiers au cours d’une expérience professionnelle de nature à couvrir, totalement ou partiellement la différence substantielle en termes de contenu.
 
 Pour les personnes ne répondant pas à ces conditions, la chambre consulaire peut exiger qu’elles se soumettent à une mesure de compensation si l’examen de ses qualifications professionnelles fait apparaître des différences substantielles avec celles requises en France pour la direction d’une entreprise artisanale.
@@ -275,15 +243,10 @@ L’intéressé souhaitant faire reconnaître un diplôme autre que celui exigé
 
 **Pièces justificatives** : le dossier doit contenir :
 
-
 - la demande d’attestation de qualification professionnelle ;
-
 - le justificatif de la qualification professionnelle : une attestation de compétences ou le diplôme ou titre de formation professionnelle ;
-
 - la preuve de la nationalité du demandeur ;
-
 - si l’expérience professionnelle a été acquise sur le territoire d’un État de l’UE ou de l’EEE, une attestation portant sur la nature et de la durée de l’activité délivrée par l’autorité compétente dans l’État membre d’origine ;
-
 - si l’expérience professionnelle a été acquise en France, les justificatifs de l’exercice de l’activité pendant trois années.
 
 La CMA peut demander la communication d’informations complémentaires concernant sa formation ou son expérience professionnelle pour déterminer l’existence éventuelle de différences substantielles avec la qualification professionnelle exigée en France. De plus, si la CMA doit se rapprocher du centre international d’études pédagogiques (CIEP) pour obtenir des informations complémentaires sur le niveau de formation d’un diplôme ou d’un certificat ou d'un titre étranger, le demandeur devra s’acquitter de frais supplémentaires.
@@ -292,9 +255,7 @@ La CMA peut demander la communication d’informations complémentaires concerna
 
 **Délai de réponse** : dans un délai de trois mois suivant la délivrance du récépissé, la CMA : - reconnaît la qualification professionnelle et délivre l’attestation de qualification professionnelle ;
 
-
 - décide de soumettre le demandeur à une mesure de compensation et lui notifie cette décision ;
-
 - refuse de délivrer l’attestation de qualification professionnelle.
 
 En l’absence de décision dans le délai de quatre mois, la demande d’attestation de qualification professionnelle est réputée acquise.
@@ -362,4 +323,3 @@ Tout exploitant d’un commerce de détail, qui fournit des denrées d’origine
 **Coût** : gratuit
 
 Pour aller plus loin : article L. 233-2 du code rural et de la pêche maritime, articles 12 et 13 de l'arrêté du 8 juin 2006 précité et instruction technique DGAL/SDSSA/2014-823 du 10 octobre 2014.
-
