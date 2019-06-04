@@ -40,6 +40,23 @@ import re
 
 
 ###############################################################################
+# copy all file from src to dst
+###############################################################################
+def copytree(src, dst, symlinks=False, ignore=None):
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    for item in os.listdir(src):
+        source = os.path.join(src, item)
+        destin = os.path.join(dst, item)
+        if os.path.isdir(source):
+            copytree(source, destin, symlinks, ignore)
+        else:
+            if not os.path.exists(destin) or \
+                    os.stat(source).st_mtime - os.stat(destin).st_mtime > 1:
+                logging.info("Copy file %s -> %s", source, destin)
+                shutil.copy2(source, destin)
+
+###############################################################################
 # A Constant class object simple to contain a const value
 ###############################################################################
 class Constant:
