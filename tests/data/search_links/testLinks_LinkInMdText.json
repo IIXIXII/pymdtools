@@ -1,0 +1,132 @@
+﻿[
+  {
+    "name": "label",
+    "title": null,
+    "url": "#metadonneelabel"
+  },
+  {
+    "name": "Professeu\r\nr de danse",
+    "title": null,
+    "url": "ds053.\r\nmd"
+  },
+  {
+    "name": "an example",
+    "title": "Title",
+    "url": "http://example.com/"
+  },
+  {
+    "name": "Professeur de danse",
+    "title": null,
+    "url": "www.guichet.fr"
+  },
+  {
+    "name": "sport d'opposition",
+    "title": "infobulle sport (d'op)position",
+    "url": "qp 119.md"
+  },
+  {
+    "name": "This link",
+    "title": null,
+    "url": "http://example.net/"
+  },
+  {
+    "name": "sport",
+    "title": "salut",
+    "url": "Sport.fr"
+  },
+  {
+    "name": "la page 42",
+    "title": null,
+    "url": "page42.md"
+  },
+  {
+    "name": "retour \u00e0 l'intro",
+    "title": null,
+    "url": "#intro"
+  },
+  {
+    "name": "texte alt",
+    "title": "avec une info bulle \r\nsur plusieurs ligne",
+    "url": "www.logo.ge.png"
+  },
+  {
+    "name": "\"label\"",
+    "title": null,
+    "url": "#metadonneelabel"
+  },
+  {
+    "name": "sport d'opposition",
+    "title": null,
+    "url": "qp 119.md"
+  },
+  {
+    "name": "Professeur de danse",
+    "title": null,
+    "url": "DS053_prof_de_danse.md"
+  },
+  {
+    "name": "sport d'opposition",
+    "title": "infobulle sport d'opposition",
+    "url": "qp 119.md"
+  },
+  {
+    "name": "sport",
+    "title": null,
+    "url": "reference:Sport"
+  },
+  {
+    "name": "texte alt",
+    "title": "avec une info bulle",
+    "url": "img:logo/ge.png"
+  },
+  {
+    "name": "![Logo guichet-entreprises.fr",
+    "title": "avec une info bulle",
+    "url": "img:logo/ge.png"
+  },
+  {
+    "name": "la page 42",
+    "title": null,
+    "url": "page42.md"
+  },
+  {
+    "name": "retour \u00e0 l'intro",
+    "title": null,
+    "url": "#intro"
+  },
+  {
+    "name": "Autres fonctionnalit\u00e9es",
+    "title": null,
+    "url": "#autres"
+  },
+  {
+    "name": "sport",
+    "title": null,
+    "url": "reference:Sante"
+  },
+  {
+    "name": "texte alt",
+    "title": "avec une info bulle",
+    "url": "img:logo/ge.png"
+  },
+  {
+    "name": "blabla",
+    "title": "un title\r\nsur \r\nplusieurs lignes",
+    "url": "http://example.com/id1"
+  },
+  {
+    "name": "bla bla",
+    "title": null,
+    "url": "http://exampleID4.com/"
+  },
+  {
+    "name": "an example",
+    "title": "Title Here",
+    "url": "http://mylink.com/"
+  },
+  {
+    "name": "bla bla",
+    "title": null,
+    "url": "http://exampleid3.com/"
+  }
+]
