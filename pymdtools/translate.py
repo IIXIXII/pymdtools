@@ -47,12 +47,6 @@ def N_(message):
     return message
 
 ###############################################################################
-def test_n_():
-    pass
-    # assert   ("kjhgkjhg") == "kjhgkjhg"
-
-
-###############################################################################
 # get the locale dir
 # Search for the french translation to find the folder
 #
@@ -268,15 +262,6 @@ def __set_logging_system():
     console.setFormatter(formatter)
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
-
-
-###############################################################################
-# Launch the test
-###############################################################################
-def __launch_test():
-    import pytest
-    pytest.main([__get_this_filename()])
-
 
 ###############################################################################
 # Main script call only if this script is runned directly

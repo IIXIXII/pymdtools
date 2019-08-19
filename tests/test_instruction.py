@@ -38,6 +38,15 @@ import pytest
 import pymdtools.instruction as instruction
 import test_general
 
+def test_set_var_to_md_text():
+    assert(instruction.set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
+                              "test",
+                              "good") == '<!-- var(essai) = "tes\\t" -->\n'
+           '<!-- var(test)="good" -->\n\ntext')
+    assert(instruction.set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
+                              "essai", "good") ==
+           '<!-- var(essai)="good" -->text')
+
 def test_strip_xml_comment():
     assert instruction.strip_xml_comment("<!---->") == ""
     assert instruction.strip_xml_comment("<!-- -->") == ""
@@ -149,6 +158,92 @@ def create_result_include_file(force_creation=False):
         folder_search=test_general.get_test_folder() + "/include_file/",
         force_creation=force_creation,
         filename_ext=".md")
+
+def test_get_vars_from_md_text():
+    assert(instruction.get_vars_from_md_text('<!-- var(essai) = "tes\\t" -->')
+           ['essai'] == "tes\\t")
+    assert(instruction.get_vars_from_md_text('<!-- var(essai) = "tes\"t" -->')
+           ['essai'] == "tes\"t")
+    assert(instruction.get_vars_from_md_text(
+        '<!-- var(essai)="test" -->'
+        '<!-- var(essai2)="test" -->')['essai'] == "test")
+
+def test_del_var_to_md_text():
+    assert(instruction.del_var_to_md_text('<!-- var(essai) = "tes\\t" -->',
+                              "test") ==
+           '<!-- var(essai) = "tes\\t" -->')
+    assert(instruction.del_var_to_md_text('x<!-- var(essai) = "tes\\t" -->x',
+                              "essai") == 'xx')
+
+def test_get_title_from_md_text():
+    assert instruction.get_title_from_md_text("""
+DQP002 - ADMINISTRATEUR JUDICIAIRE
+==================================
+
+1°. Définition de l'activité
+-----------------
+
+L'administrateur judiciaire est un professionnel
+""") == "DQP002 - ADMINISTRATEUR JUDICIAIRE"
+
+    assert instruction.get_title_from_md_text("""
+<!--
+qsdlkjhl
+=======
+-->
+
+qsdfqsdf
+qsdf
+DQP002 - ADMINISTRATEUR JUDICIAIRE
+==================================
+
+1°. Définition de l'activité
+-----------------
+
+L'administrateur judiciaire est un professionnel
+""") == "DQP002 - ADMINISTRATEUR JUDICIAIRE"
+
+def test_set_title_in_md_text():
+    result = """
+    DQP015 - Anatomie et cytologie
+==============================
+===========================
+
+1------------------"""
+    new_second_line = "=============================="
+    line_re = new_second_line + '(\n|\r\n)' + "(=+)(\n|\r\n)"
+    result = re.sub(line_re, new_second_line + '\n', result)
+    result = instruction.set_title_in_md_text(result, "yitruytr")
+    # print(repr(result))
+
+def test_get_file_content_include():
+    assert instruction.get_file_content_to_include(
+                                "license.txt")[0:4] == "Copy"
+    assert instruction.get_file_content_to_include(
+                                "license.en.txt")[0:4] == "Copy"
+
+def test_include_files_to_md_text():
+    result1 = instruction.include_files_to_md_text(
+                                '<!-- include-file(license.txt) -->')
+    result2 = instruction.include_files_to_md_text(result1)
+    assert result1 == result2
+
+def test_set_include_file_():
+    assert(instruction.set_include_file_to_md_text(
+        '<!-- include-file(test) -->',
+        "test") == '<!-- include-file(test) -->')
+    assert(instruction.set_include_file_to_md_text(
+        '<!-- include-file(essai) -->text',
+        "test") == '<!-- include-file(essai) -->\n'
+                   '<!-- include-file(test) -->\n\ntext')
+
+def test_del_include_file_():
+    assert(instruction.del_include_file_to_md_text(
+        '<!-- include-file(test) -->',
+        "test") == '')
+    assert(instruction.del_include_file_to_md_text(
+        '<!-- include-file(essai) -->',
+        "test") == '<!-- include-file(essai) -->')
 
 
 ###############################################################################

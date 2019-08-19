@@ -211,62 +211,6 @@ def search_link_in_md_text(text, previous_links=None):
 
     return result
 
-#  def create_test_search_link_in_md_text():
-    #  test_list=[]
-    #  test_list.append("""[label]    (#metadonneelabel) cqsc qsc qs""")
-    #  test_list.append("""[Professeur de danse](www.guichet.fr)""")
-    #  test_list.append("""[Professeur de danse]"""
-    #                   """(www.guichet.fr "avec un title")""")
-    #  test_list.append("""[ref1][id1] reference-style link.
-#  [id1]: http://example.com/id1
-#  "un title
-#  sur
-#  plusieurs lignes" """)
-
-    #  key_list = ["name", "url", "title"]
-
-    #  for t in test_list:
-    #  result = search_link_in_md_text(t)
-    #  print('\t# ------')
-    #  print('\tresult = search_link_in_md_text("""%s""")'%(t))
-    #  print('\tassert(len(result)==%d)'%(len(result)))
-    #  for i in range(0,len(result)):
-    #  for k in key_list:
-    #  print('\tassert(result[%d]["%s"]==%s)'%(i,
-    #        k,'"""%s"""'%result[i][k] if result[i][k]  else "None"))
-
-
-def test_search_link_in_md_text_1():
-    # ------
-    result = search_link_in_md_text(
-        """[label]    (#metadonneelabel) cqsc qsc qs""")
-    assert len(result) == 1
-    assert result[0]["name"] == """label"""
-    assert result[0]["url"] == """#metadonneelabel"""
-    assert result[0]["title"] is None
-    # ------
-    result = search_link_in_md_text(
-        """[Professeur de danse](www.guichet.fr)""")
-    assert len(result) == 1
-    assert result[0]["name"] == """Professeur de danse"""
-    assert result[0]["url"] == """www.guichet.fr"""
-    assert result[0]["title"] is None
-    # ------
-    result = search_link_in_md_text(
-        """[Professeur de danse](www.guichet.fr "avec un title")""")
-    assert len(result) == 1
-    assert result[0]["name"] == """Professeur de danse"""
-    assert result[0]["url"] == """www.guichet.fr"""
-    assert result[0]["title"] == """avec un title"""
-    # ------
-    result = search_link_in_md_text("""[ref1][id1] reference-style link.
-[id1]: http://example.com/id1  "un title sur
- plusieurs lignes" """)
-    assert len(result) == 1
-    assert result[0]["name"] == """ref1"""
-    assert result[0]["url"] == """http://example.com/id1"""
-    assert result[0]["title"] == """un title sur
- plusieurs lignes"""
 
 ###############################################################################
 # create a json
@@ -501,110 +445,6 @@ def sub_string_name_by_ref_md(unused_dummy, link):
 
 
 ###############################################################################
-# Test the link method
-###############################################################################
-def test_replace_link_in_md_text():
-    # ------
-    new_link = {'name': 'scnge', 'url': 'www.guichet-entreprises.fr',
-                'title': 'le site du guichet'}
-
-    result = update_links_in_md_text(
-        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec un """
-        """title à remplacer également") la fin du texte""",
-        new_link)
-    assert result == """du texte et un lien : [scnge](""" \
-        """www.guichet-entreprises.fr "le site """ \
-        """du guichet") la fin du texte""" \
-
-    list_new_link = [new_link]
-
-    result = update_links_in_md_text(
-        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec un """
-        """title à remplacer également") la fin du texte""",
-        list_new_link)
-    assert result == """du texte et un lien : [scnge](""" \
-        """www.guichet-entreprises.fr "le site """ \
-        """du guichet") la fin du texte""" \
-
-    new_link = {'name': 'scnge', 'url': 'www.guichet-entreprises.fr'}
-    result = update_links_in_md_text(
-        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec un """
-        """title à remplacer également") la fin du texte""", new_link)
-    assert result == """du texte et un lien : [scnge]""" \
-        """(www.guichet-entreprises.fr) la fin du texte"""
-
-    new_link = {'name_to_replace': 'scnge',
-                'name': 'Guichet',
-                'url': 'www.guichet-entreprises.fr',
-                'title': 'le site du guichet'}
-    result = update_links_in_md_text(
-        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec """
-        """un title à remplacer également") la fin du texte""",
-        new_link)
-    assert result == """du texte et un lien : [Guichet]""" \
-        """(www.guichet-entreprises.fr "le site du guichet") la fin du texte"""
-
-    new_link1 = {'name_to_replace': 'scnge',
-                 'name': 'Guichet',
-                 'url': 'www.guichet-entreprises.fr',
-                 'title': 'le site du guichet'}
-    new_link2 = {'name': 'google', 'url': 'www.google.fr'}
-    list_link = [new_link1, new_link2]
-    result = update_links_in_md_text(
-        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec """
-        """un title à remplacer également") le milleu du texte """
-        """toujours du texte : [google](mon_2eme_lien_à_remplacer) """
-        """la fin du texte""", list_link)
-    assert result == """du texte et un lien : [Guichet]""" \
-        """(www.guichet-entreprises.fr "le site du guichet") le milleu """ \
-        """du texte toujours du texte : [google](www.google.fr) """ \
-        """la fin du texte"""
-
-    new_link = {'name': 'ref1',
-                'url': 'www.guichet-entreprises.fr',
-                'title': "un title"}
-    result = update_links_in_md_text(
-        """du texte et un lien : [ref1][id1] reference-style link. """
-        """[id1]: http://example.com/id1
-la fin du texte""", new_link)
-
-    assert result == """du texte et un lien : [ref1][id1] """ \
-        """reference-style link. [id1]: www.guichet-entreprises.fr "un title"
-la fin du texte"""
-
-    new_link = {'name_to_replace': 'scnge',
-                'name': 'le guichet',
-                'url': 'www.guichet-entreprises.fr', 'title': "un title"}
-    result = update_links_in_md_text(
-        """du texte et un lien : [scnge][id1] reference-style link.
-[id1]: mon_lien_à_remplacer
-la fin du texte""", new_link)
-    assert result == """du texte et un lien : [le guichet][id1] """ \
-        """reference-style link.
-[id1]: www.guichet-entreprises.fr "un title"
-la fin du texte"""
-
-    old_link2 = {'name': 'le gip guichet?',
-                 'url': 'www.gip-entreprises.fr',
-                 'title': "le GIP"}
-    new_link2 = {'name': 'le guichet nouveau et arrivé',
-                 'url': 'www.guichet-entreprises.fr',
-                 'title': "le site du guichet"}
-    old_link1 = {'name': 'au autre lien',
-                 'url': 'www.gle.fr'}
-    new_link1 = {'name': 'GOOGLE!',
-                 'url': 'www.google.fr'}
-    result = update_links_from_old_link(
-        """du texte et un lien : [le gip guichet?]"""
-        """(www.gip-entreprises.fr "le """
-        """GIP") la fin du texte[au autre lien](www.gle.fr)""",
-        [(old_link1, new_link1), (old_link2, new_link2)])
-    assert result == """du texte et un lien : """ \
-        """[le guichet nouveau et arrivé](""" \
-        """www.guichet-entreprises.fr "le site """ \
-        """du guichet") la fin du texte[GOOGLE!](www.google.fr)""" \
-
-###############################################################################
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
@@ -642,13 +482,6 @@ def __set_logging_system():
     logging.getLogger('').addHandler(console)
 
 ###############################################################################
-# Launch the test
-###############################################################################
-def __launch_test():
-    import pytest
-    pytest.main(__get_this_filename())
-
-###############################################################################
 # Main script call only if this script is runned directly
 ###############################################################################
 def __main():
@@ -656,18 +489,6 @@ def __main():
     logging.info('Started %s', __get_this_filename())
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    __launch_test()
-    # create_test_search_link_in_md_text()
-    # test_search_link_in_md_text_1()
-    test_replace_link_in_md_text()
-    # links = search_link_in_md_file("./test-md/SearchLinks/testLinks.md")
-    # for link in links:
-    #   print(link)
-    #   create_test_set_correct_path()
-    #   create_test_check_folder()
-    #   create_test_get_valid_filename()
-    #   create_test_get_flat_filename()
 
     logging.info('Finished')
     # ------------------------------------

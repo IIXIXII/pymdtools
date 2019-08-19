@@ -167,13 +167,6 @@ def __set_logging_system():
     logging.getLogger('').addHandler(console)
 
 ###############################################################################
-# Launch the test
-###############################################################################
-def __launch_test():
-    import pytest
-    pytest.main(__get_this_filename())
-
-###############################################################################
 # Main script call only if this script is runned directly
 ###############################################################################
 def __main():
@@ -181,8 +174,6 @@ def __main():
     logging.info('Started %s', __get_this_filename())
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    #  __launch_test()
 
     logging.info('Finished')
     # ------------------------------------

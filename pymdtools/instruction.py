@@ -431,15 +431,6 @@ def get_vars_from_md_text(text, previous_vars=None):
 
     return result
 
-def test_get_vars_from_md_text():
-    assert(get_vars_from_md_text('<!-- var(essai) = "tes\\t" -->')
-           ['essai'] == "tes\\t")
-    assert(get_vars_from_md_text('<!-- var(essai) = "tes\"t" -->')
-           ['essai'] == "tes\"t")
-    assert(get_vars_from_md_text(
-        '<!-- var(essai)="test" -->'
-        '<!-- var(essai2)="test" -->')['essai'] == "test")
-
 ###############################################################################
 # set a var in the markdown text
 #
@@ -488,14 +479,6 @@ def set_var_to_md_text(text, var_name, value):
     result += current_text
     return result
 
-def test_set_var_to_md_text():
-    assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
-                              "test",
-                              "good") == '<!-- var(essai) = "tes\\t" -->\n'
-           '<!-- var(test)="good" -->\n\ntext')
-    assert(set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
-                              "essai", "good") ==
-           '<!-- var(essai)="good" -->text')
 
 ###############################################################################
 # del a var in the markdown text
@@ -526,13 +509,6 @@ def del_var_to_md_text(text, var_name):
     result += current_text
     return result
 
-def test_del_var_to_md_text():
-    assert(del_var_to_md_text('<!-- var(essai) = "tes\\t" -->',
-                              "test") ==
-           '<!-- var(essai) = "tes\\t" -->')
-    assert(del_var_to_md_text('x<!-- var(essai) = "tes\\t" -->x',
-                              "essai") == 'xx')
-
 ###############################################################################
 # Get title in md text
 # @param text the markdown text
@@ -550,34 +526,6 @@ def get_title_from_md_text(text):
 
     return match.group('title')
 
-def test_get_title_from_md_text():
-    assert get_title_from_md_text("""
-DQP002 - ADMINISTRATEUR JUDICIAIRE
-==================================
-
-1°. Définition de l'activité
------------------
-
-L'administrateur judiciaire est un professionnel
-""") == "DQP002 - ADMINISTRATEUR JUDICIAIRE"
-
-    assert get_title_from_md_text("""
-<!--
-qsdlkjhl
-=======
--->
-
-qsdfqsdf
-qsdf
-DQP002 - ADMINISTRATEUR JUDICIAIRE
-==================================
-
-1°. Définition de l'activité
------------------
-
-L'administrateur judiciaire est un professionnel
-""") == "DQP002 - ADMINISTRATEUR JUDICIAIRE"
-
 ###############################################################################
 # Set title in md text
 # @param text the markdown text
@@ -594,19 +542,6 @@ def set_title_in_md_text(text, new_title):
     result = re.sub(line_re, new_second_line + '\n', result)
 
     return result
-
-def test_set_title_in_md_text():
-    result = """
-    DQP015 - Anatomie et cytologie
-==============================
-===========================
-
-1------------------"""
-    new_second_line = "=============================="
-    line_re = new_second_line + '(\n|\r\n)' + "(=+)(\n|\r\n)"
-    result = re.sub(line_re, new_second_line + '\n', result)
-    result = set_title_in_md_text(result, "yitruytr")
-    # print(repr(result))
 
 ###############################################################################
 # Find vars in a markdown file
@@ -726,10 +661,6 @@ def get_file_content_to_include(filename, search_folder=None):
 
     return common.get_file_content(os.path.join(local_search_folder, filename))
 
-def test_get_file_content_include():
-    assert get_file_content_to_include("license.txt")[0:4] == "Copy"
-    assert get_file_content_to_include("license.en.txt")[0:4] == "Copy"
-
 ###############################################################################
 # Include file to the markdown text
 # \warning All the reference must be defined
@@ -773,11 +704,6 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
                                        error_if_no_file=error_if_no_file)
 
     return result
-
-def test_include_files_to_md_text():
-    result1 = include_files_to_md_text('<!-- include-file(license.txt) -->')
-    result2 = include_files_to_md_text(result1)
-    assert result1 == result2
 
 ###############################################################################
 # Include file to the markdown file
@@ -847,15 +773,6 @@ def set_include_file_to_md_text(text, filename):
     result += current_text
     return result
 
-def test_set_include_file_():
-    assert(set_include_file_to_md_text(
-        '<!-- include-file(test) -->',
-        "test") == '<!-- include-file(test) -->')
-    assert(set_include_file_to_md_text(
-        '<!-- include-file(essai) -->text',
-        "test") == '<!-- include-file(essai) -->\n'
-                   '<!-- include-file(test) -->\n\ntext')
-
 ###############################################################################
 # del a var in the markdown text
 #
@@ -906,15 +823,6 @@ def del_include_file_to_md_text(text, filename):
     result += current_text
     return result
 
-def test_del_include_file_():
-    assert(del_include_file_to_md_text(
-        '<!-- include-file(test) -->',
-        "test") == '')
-    assert(del_include_file_to_md_text(
-        '<!-- include-file(essai) -->',
-        "test") == '<!-- include-file(essai) -->')
-
-
 ###############################################################################
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
@@ -953,13 +861,6 @@ def __set_logging_system():
     logging.getLogger('').addHandler(console)
 
 ###############################################################################
-# Launch the test
-###############################################################################
-def __launch_test():
-    import pytest
-    pytest.main(__get_this_filename())
-
-###############################################################################
 # Main script call only if this script is runned directly
 ###############################################################################
 def __main():
@@ -967,15 +868,6 @@ def __main():
     logging.info('Started %s', __get_this_filename())
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    test_get_vars_from_md_text()
-    test_include_files_to_md_text()
-    test_set_var_to_md_text()
-    test_del_var_to_md_text()
-    test_set_include_file_()
-    test_del_include_file_()
-    test_set_title_in_md_text()
-    test_get_title_from_md_text()
 
     logging.info('Finished')
     # ------------------------------------

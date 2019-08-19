@@ -38,6 +38,146 @@ import pytest
 
 import pymdtools.common as common
 import pymdtools.filetools as filetools
+import pymdtools.mdcommon as mdcommon
+
+
+def test_search_link_in_md_text_1():
+    # ------
+    result = mdcommon.search_link_in_md_text(
+        """[label]    (#metadonneelabel) cqsc qsc qs""")
+    assert len(result) == 1
+    assert result[0]["name"] == """label"""
+    assert result[0]["url"] == """#metadonneelabel"""
+    assert result[0]["title"] is None
+    # ------
+    result = mdcommon.search_link_in_md_text(
+        """[Professeur de danse](www.guichet.fr)""")
+    assert len(result) == 1
+    assert result[0]["name"] == """Professeur de danse"""
+    assert result[0]["url"] == """www.guichet.fr"""
+    assert result[0]["title"] is None
+    # ------
+    result = mdcommon.search_link_in_md_text(
+        """[Professeur de danse](www.guichet.fr "avec un title")""")
+    assert len(result) == 1
+    assert result[0]["name"] == """Professeur de danse"""
+    assert result[0]["url"] == """www.guichet.fr"""
+    assert result[0]["title"] == """avec un title"""
+    # ------
+    result = mdcommon.search_link_in_md_text("""[ref1][id1] reference-style link.
+[id1]: http://example.com/id1  "un title sur
+ plusieurs lignes" """)
+    assert len(result) == 1
+    assert result[0]["name"] == """ref1"""
+    assert result[0]["url"] == """http://example.com/id1"""
+    assert result[0]["title"] == """un title sur
+ plusieurs lignes"""
+
+
+###############################################################################
+# Test the link method
+###############################################################################
+def test_replace_link_in_md_text():
+    # ------
+    new_link = {'name': 'scnge', 'url': 'www.guichet-entreprises.fr',
+                'title': 'le site du guichet'}
+
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec un """
+        """title à remplacer également") la fin du texte""",
+        new_link)
+    assert result == """du texte et un lien : [scnge](""" \
+        """www.guichet-entreprises.fr "le site """ \
+        """du guichet") la fin du texte""" \
+
+    list_new_link = [new_link]
+
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec un """
+        """title à remplacer également") la fin du texte""",
+        list_new_link)
+    assert result == """du texte et un lien : [scnge](""" \
+        """www.guichet-entreprises.fr "le site """ \
+        """du guichet") la fin du texte""" \
+
+    new_link = {'name': 'scnge', 'url': 'www.guichet-entreprises.fr'}
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec un """
+        """title à remplacer également") la fin du texte""", new_link)
+    assert result == """du texte et un lien : [scnge]""" \
+        """(www.guichet-entreprises.fr) la fin du texte"""
+
+    new_link = {'name_to_replace': 'scnge',
+                'name': 'Guichet',
+                'url': 'www.guichet-entreprises.fr',
+                'title': 'le site du guichet'}
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec """
+        """un title à remplacer également") la fin du texte""",
+        new_link)
+    assert result == """du texte et un lien : [Guichet]""" \
+        """(www.guichet-entreprises.fr "le site du guichet") la fin du texte"""
+
+    new_link1 = {'name_to_replace': 'scnge',
+                 'name': 'Guichet',
+                 'url': 'www.guichet-entreprises.fr',
+                 'title': 'le site du guichet'}
+    new_link2 = {'name': 'google', 'url': 'www.google.fr'}
+    list_link = [new_link1, new_link2]
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [scnge](mon_lien_à_remplacer "avec """
+        """un title à remplacer également") le milleu du texte """
+        """toujours du texte : [google](mon_2eme_lien_à_remplacer) """
+        """la fin du texte""", list_link)
+    assert result == """du texte et un lien : [Guichet]""" \
+        """(www.guichet-entreprises.fr "le site du guichet") le milleu """ \
+        """du texte toujours du texte : [google](www.google.fr) """ \
+        """la fin du texte"""
+
+    new_link = {'name': 'ref1',
+                'url': 'www.guichet-entreprises.fr',
+                'title': "un title"}
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [ref1][id1] reference-style link. """
+        """[id1]: http://example.com/id1
+la fin du texte""", new_link)
+
+    assert result == """du texte et un lien : [ref1][id1] """ \
+        """reference-style link. [id1]: www.guichet-entreprises.fr "un title"
+la fin du texte"""
+
+    new_link = {'name_to_replace': 'scnge',
+                'name': 'le guichet',
+                'url': 'www.guichet-entreprises.fr', 'title': "un title"}
+    result = mdcommon.update_links_in_md_text(
+        """du texte et un lien : [scnge][id1] reference-style link.
+[id1]: mon_lien_à_remplacer
+la fin du texte""", new_link)
+    assert result == """du texte et un lien : [le guichet][id1] """ \
+        """reference-style link.
+[id1]: www.guichet-entreprises.fr "un title"
+la fin du texte"""
+
+    old_link2 = {'name': 'le gip guichet?',
+                 'url': 'www.gip-entreprises.fr',
+                 'title': "le GIP"}
+    new_link2 = {'name': 'le guichet nouveau et arrivé',
+                 'url': 'www.guichet-entreprises.fr',
+                 'title': "le site du guichet"}
+    old_link1 = {'name': 'au autre lien',
+                 'url': 'www.gle.fr'}
+    new_link1 = {'name': 'GOOGLE!',
+                 'url': 'www.google.fr'}
+    result = mdcommon.update_links_from_old_link(
+        """du texte et un lien : [le gip guichet?]"""
+        """(www.gip-entreprises.fr "le """
+        """GIP") la fin du texte[au autre lien](www.gle.fr)""",
+        [(old_link1, new_link1), (old_link2, new_link2)])
+    assert result == """du texte et un lien : """ \
+        """[le guichet nouveau et arrivé](""" \
+        """www.guichet-entreprises.fr "le site """ \
+        """du guichet") la fin du texte[GOOGLE!](www.google.fr)""" \
+
 
 ###############################################################################
 #
