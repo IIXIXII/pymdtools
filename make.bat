@@ -70,6 +70,21 @@ REM ----------------------------------------------------------------------------
     python -m pip install --upgrade pip wheel setuptools
     exit /b
 )
+REM -------------------------------------------------------------------------------
+:CHECK_BUILD_FOLDER
+(
+    if not exist "%~dp0\\build" (
+        mkdir "%~dp0\\build"
+        if "!errorlevel!" EQU "0" (
+            echo Folder created successfully
+        ) else (
+            echo Error while creating folder
+        )
+    ) else (
+        echo Folder already exists
+    )
+    exit /b
+)
 
 REM -------------------------------------------------------------------------------
 :MAKE_ACTION
@@ -149,6 +164,7 @@ REM ----------------------------------------------------------------------------
 :action_doxygen
 CALL :PRINT_LINE "   Doxygen" 
 REM -------------------------------------------------------------------------------
+CALL :CHECK_BUILD_FOLDER
 cd docs
 SET DOXYGEN_PATH=C:\\Program Files\\doxygen\\bin
 SET DOXYGEN_EXE=doxygen.exe
