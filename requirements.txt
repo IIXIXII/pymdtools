@@ -23,5 +23,8 @@
 ###############################################################################
 # All dependency of the project
 ###############################################################################
+markdown
 pdfkit
+url_normalize
+PyPDF2
 git+https://github.com/BoseCorp/py-googletrans.git
