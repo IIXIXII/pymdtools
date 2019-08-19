@@ -25,7 +25,7 @@
 ###############################################################################
 
 ###############################################################################
-# @package upref
+# @package pymdtools
 # Markdown Tools develops for Gucihet Entreprises
 #
 ###############################################################################
@@ -38,7 +38,7 @@ import time
 from shutil import rmtree
 from setuptools import setup, find_packages, Command
 
-import upref as mymodule
+import pymdtools as mymodule
 
 __root__ = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
@@ -189,15 +189,15 @@ setup(
     # C'est pour cette raison que l'on a tout mis dans un seul dossier:
     # on peut ainsi utiliser cette fonction facilement
     packages=find_packages(exclude=["test_*.py"]),
-    # py_modules=['upref'],
+    # py_modules=['pymdtools'],
 
     # Active la prise en compte du fichier MANIFEST.in
     include_package_data=True,
 
     package_data={
         # If any package contains *.txt or *.rst files, include them:
-        'upref': ['*.conf', '*.ico',
-                  './README.md', './LICENSE.md'],
+        'pymdtools': ['*.conf', '*.ico',
+                      './README.md', './LICENSE.md'],
     },
 
     setup_requires=["pytest-runner"],
