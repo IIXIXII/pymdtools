@@ -188,16 +188,23 @@ setup(
     # python recursivement dans le dossier courant.
     # C'est pour cette raison que l'on a tout mis dans un seul dossier:
     # on peut ainsi utiliser cette fonction facilement
-    packages=find_packages(exclude=["test_*.py"]),
+    # packages=find_packages(exclude=["test_*.py"]),
     # py_modules=['pymdtools'],
+    packages=['pymdtools'],
+    package_dir={'pymdtools': 'pymdtools'},
 
     # Active la prise en compte du fichier MANIFEST.in
-    include_package_data=True,
+    # include_package_data=True,
 
     package_data={
-        # If any package contains *.txt or *.rst files, include them:
         'pymdtools': ['*.conf', '*.ico',
-                      './README.md', './LICENSE.md'],
+                      './*.md',
+                      "layouts/*.*",
+                      "layouts/*/*.*",
+                      "layouts/*/*/*.*",
+                      "layouts/*/*/*/*.*",
+                      "referenced_files/*.txt",
+                      ],
     },
 
     setup_requires=["pytest-runner"],
