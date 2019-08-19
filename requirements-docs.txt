@@ -30,3 +30,5 @@ breathe
 exhale
 pdfkit
 markdown
+url_normalize
+PyPDF2
