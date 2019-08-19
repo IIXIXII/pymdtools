@@ -37,8 +37,11 @@ from .common import print_conv
 from .normalize import md_file_beautifier as markdown_file_beautifier
 from .mdtopdf import convert_md_to_pdf
 from .instruction import search_include_refs_to_md_file
+from .version import __version_info__
+from .version import __release_date__
 
-__version__ = "1.0.3"
+
+__version__ = '.'.join(str(c) for c in __version_info__)
 __author__ = "Florent Tournois"
 __copyright__ = "Copyright 2018, Florent Tournois"
 
