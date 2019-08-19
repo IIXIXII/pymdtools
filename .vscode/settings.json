@@ -1,7 +1,7 @@
 {
     "python.testing.unittestEnabled": false,
-    "python.testing.pyTestEnabled": true,
-    "python.testing.pyTestArgs": [
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
         "-c",
         "${workspaceRoot}\\src\\python\\pytest.ini",
         "--junitxml=${workspaceRoot}/src/python/test_result.xml",
