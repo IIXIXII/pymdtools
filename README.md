@@ -4,6 +4,12 @@ pymdtools 🐸
 A small python module to manipulate markdown content.
 We use this library to manage a lot of content in markdown.
 
+[![Wheel Status](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
+[![Latest Version](https://img.shields.io/pypi/v/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
+[![License](https://img.shields.io/github/license/IIXIXII/pymdtools.svg?style=flat)](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md)
+[![Build Status](https://img.shields.io/travis/IIXIXII/pymdtools/master.svg?style=flat)](https://travis-ci.org/IIXIXII/pymdtools)
+[![Documentation Status](https://img.shields.io/readthedocs/pymdtools.svg?style=flat)](https://pymdtools.readthedocs.io/en/latest/?badge=latest)
+
 Features
 --------
 
