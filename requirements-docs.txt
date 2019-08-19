@@ -29,3 +29,4 @@ m2r
 breathe
 exhale
 pdfkit
+markdown
