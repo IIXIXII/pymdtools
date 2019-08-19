@@ -60,7 +60,7 @@ master_doc = 'index'
 
 # -- Setup the breathe extension ---------------------------------------------
 breathe_projects = {
-    "pymdtools": "../build/doxyoutput/xml"
+    "pymdtools": "./doxyoutput/xml"
 }
 breathe_default_project = "pymdtools"
 
