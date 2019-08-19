@@ -105,9 +105,10 @@ def get_translation(lang, domain_name, folder=None):
 ###############################################################################
 # translation function
 #
-# @param message the message to translate
+# @param obj the object to translate
 # @param lang the language
-# @return the message translated
+# @param domain_name the domain
+# @return the object translated
 ###############################################################################
 def translate(obj, lang, domain_name):
     if isinstance(obj, dict):
@@ -122,6 +123,7 @@ def translate(obj, lang, domain_name):
 #
 # @param message the message to translate
 # @param lang the language
+# @param domain_name the domain
 # @return the message translated
 ###############################################################################
 def translate_str(message, lang, domain_name):
@@ -133,8 +135,9 @@ def translate_str(message, lang, domain_name):
 ###############################################################################
 # translation function
 #
-# @param message the message to translate
+# @param obj the object to translate
 # @param lang the language
+# @param domain_name the domain
 # @return the message translated
 ###############################################################################
 def translate_dict(obj, lang, domain_name):
@@ -147,8 +150,9 @@ def translate_dict(obj, lang, domain_name):
 ###############################################################################
 # translation function
 #
-# @param message the message to translate
+# @param obj the object to translate
 # @param lang the language
+# @param domain_name the domain
 # @return the message translated
 ###############################################################################
 def translate_list(obj, lang, domain_name):
@@ -184,9 +188,9 @@ def translate_txt(text, src="fr", dest="en"):
 
 
 ###############################################################################
-# Translate a markdoan with google
+# Translate a markdown with google
 #
-# @param text the md text to translate
+# @param md_text the md text to translate
 # @param src the source language
 # @param dest the destination language
 ###############################################################################

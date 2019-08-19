@@ -33,6 +33,7 @@ import logging
 import sys
 import os
 import os.path
+import re
 import pytest
 
 import pymdtools.instruction as instruction

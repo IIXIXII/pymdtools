@@ -43,13 +43,14 @@ else:
 # get template
 #
 # @param filename the filename
+# @param start_folder the folder to search the template
 # @return the content
 ###############################################################################
 def get_template_file(filename, start_folder=None):
     if start_folder is None:
         start_folder = os.path.split(__get_this_filename())[0]
 
-    local_template_folder = common.check_folder( \
+    local_template_folder = common.check_folder(
         os.path.join(start_folder, "template"))
 
     result = common.get_file_content(os.path.join(local_template_folder,

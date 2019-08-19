@@ -7,7 +7,6 @@ pymdtools's documentation
 
    readme_link
    license_link
-   examples
    api/library_root
    api/class_view_hierarchy
    api/file_view_hierarchy

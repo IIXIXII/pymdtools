@@ -34,6 +34,7 @@ __pycache__
 test*.xml
 *.bak
 /docs/build
+/docs/api
 *.chw
 
 # Byte-compiled / optimized / DLL files
