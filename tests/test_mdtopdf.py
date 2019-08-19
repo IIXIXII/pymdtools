@@ -35,12 +35,8 @@ import os
 import os.path
 import pytest
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import mdtopdf
-    import test_general
-else:
-    from . import mdtopdf
-    from . import test_general
+import pymdtools.mdtopdf as mdtopdf
+import test_general
 
 ###############################################################################
 # find the file for test
@@ -70,6 +66,9 @@ def test_convert_to_pdf(filename, filename_result):
         filename,
         filename_result,
         mdtopdf.convert_md_to_pdf, ".pdf")
+
+def test_find_wk_html_to_pdf():
+    assert mdtopdf.find_wk_html_to_pdf() is not None
 
 ###############################################################################
 # Find the filename of this file (depend on the frozen or not)

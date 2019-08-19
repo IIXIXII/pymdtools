@@ -35,12 +35,8 @@ import os
 import os.path
 import pytest
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import normalize
-    import test_general
-else:
-    from . import normalize
-    from . import test_general
+import pymdtools.normalize as normalize
+import test_general
 
 ###############################################################################
 # find the file for test

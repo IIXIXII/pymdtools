@@ -35,12 +35,8 @@ import os
 import os.path
 import pytest
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import instruction
-    import test_general
-else:
-    from . import instruction
-    from . import test_general
+import pymdtools.instruction as instruction
+import test_general
 
 def test_strip_xml_comment():
     assert instruction.strip_xml_comment("<!---->") == ""
@@ -61,7 +57,7 @@ def test_strip_xml_comment():
     assert instruction.strip_xml_comment("A<!---->B<!---->") == "AB"
     assert instruction.strip_xml_comment("A<!-- -->B") == "AB"
     assert instruction.strip_xml_comment("A<!-- test--><!-- test-->B") == "AB"
-    assert instruction.strip_xml_comment("A<!-- test---->" \
+    assert instruction.strip_xml_comment("A<!-- test---->"
                                          "<!-- test--><!-- test-->B") == \
         "AB"
     assert instruction.strip_xml_comment("""A<!-- test

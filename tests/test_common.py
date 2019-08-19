@@ -36,10 +36,8 @@ import os.path
 import codecs
 import pytest
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import common
-else:
-    from . import common
+import pymdtools.common as common
+import pymdtools.filetools as filetools
 
 ###############################################################################
 #
@@ -343,7 +341,25 @@ def test_get_today():
 def test_search_for_file():
     start_point = os.path.split(__get_this_filename())[0]
     assert(common.search_for_file("common.py", ["./", start_point],
-                                  ["./", "python"]) is not None)
+                                  ["./", "python","pymdtools"]) is not None)
+
+
+###############################################################################
+def test_filecontent():
+    test_folder = os.path.join(os.path.split(
+        __get_this_filename())[0], 'test-md')
+
+    test1 = filetools.FileContent()
+
+    test1.full_filename = "toto.test"
+    test1.filename = "toto.test"
+    test1.content = r"lkhà_çèé-_è'è-('è-('"
+    test1.filename_path = test_folder
+
+    print(test1)
+
+    md_obj = filetools.FileContent(filename=os.path.join(test_folder, "test-0.md"))
+    print(md_obj)
 
 
 ###############################################################################
@@ -384,13 +400,6 @@ def __set_logging_system():
     logging.getLogger('').addHandler(console)
 
 
-###############################################################################
-# Launch the test
-###############################################################################
-def __launch_test():
-    pytest.main(__get_this_filename())
-
-
 ##############################################################################
 # Main script call only if this script is runned directly
 ###############################################################################
@@ -400,7 +409,7 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    __launch_test()
+    test_check_create_folder()
 
     logging.info('Finished')
     # ------------------------------------

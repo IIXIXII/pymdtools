@@ -396,24 +396,6 @@ class FileContent(FileName):
 
 
 ###############################################################################
-def test_filecontent():
-    test_folder = os.path.join(os.path.split(
-        __get_this_filename())[0], 'test-md')
-
-    test1 = FileContent()
-
-    test1.full_filename = "toto.test"
-    test1.filename = "toto.test"
-    test1.content = r"lkhà_çèé-_è'è-('è-('"
-    test1.filename_path = test_folder
-
-    print(test1)
-
-    md_obj = FileContent(filename=os.path.join(test_folder, "test-0.md"))
-    print(md_obj)
-
-
-###############################################################################
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
@@ -468,8 +450,6 @@ def __main():
     logging.info('Started %s', __get_this_filename())
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    # test_filecontent()
 
     logging.info('Finished')
     # ------------------------------------

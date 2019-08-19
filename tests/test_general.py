@@ -36,10 +36,7 @@ import os.path
 import shutil
 import pytest
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import common
-else:
-    from . import common
+import pymdtools.common as common
 
 ###############################################################################
 # Find the filename of this file (depend on the frozen or not)
@@ -67,7 +64,7 @@ def __get_this_filename():
 def get_test_folder():
     if get_test_folder.__folder_md_test__ is None:
         get_test_folder.__folder_md_test__ = common.check_folder(os.path.join(
-            os.path.split(__get_this_filename())[0], "test-md"))
+            os.path.split(__get_this_filename())[0], "data"))
 
     return get_test_folder.__folder_md_test__
 

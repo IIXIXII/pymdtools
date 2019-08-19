@@ -60,9 +60,9 @@ master_doc = 'index'
 
 # -- Setup the breathe extension ---------------------------------------------
 breathe_projects = {
-    "UPref": "../build/doxyoutput/xml"
+    "pymdtools": "../build/doxyoutput/xml"
 }
-breathe_default_project = "UPref"
+breathe_default_project = "pymdtools"
 
 # -- Setup the exhale extension ---------------------------------------------
 exhale_args = {
@@ -77,7 +77,7 @@ exhale_args = {
     # "treeViewIsBootstrap": True,
     "exhaleExecutesDoxygen": True,
     # "exhaleDoxygenStdin": textwrap.dedent('''
-    #     INPUT = ../upref
+    #     INPUT = ../pymdtools
     #     EXCLUDE_SYMBOLS  = *test_* \
     #                      __main \
     #                      __set_logging_system \
@@ -86,7 +86,7 @@ exhale_args = {
     #                      is_frozen \
     #                      __launch_test
     # ''')
-    "exhaleDoxygenStdin": "INPUT = ../upref"
+    "exhaleDoxygenStdin": "INPUT = ../pymdtools"
 }
 
 # Tell sphinx what the primary language being documented is.

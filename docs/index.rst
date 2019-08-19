@@ -1,4 +1,4 @@
-upref's documentation
+pymdtools's documentation
 =====================
 
 .. toctree::

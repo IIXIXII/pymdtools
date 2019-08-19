@@ -172,7 +172,7 @@ setup(
     long_description=__long_description__,
     long_description_content_type='text/markdown',
 
-    url='https://github.com/IIXIXII/upref',
+    url='https://github.com/IIXIXII/pymdtools',
 
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
     classifiers=[

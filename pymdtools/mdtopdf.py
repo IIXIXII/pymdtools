@@ -237,9 +237,6 @@ def find_wk_html_to_pdf():
     return common.search_for_file("wkhtmltopdf.exe", start_points,
                                   relative_paths, nb_up_path=4)
 
-def test_find_wk_html_to_pdf():
-    assert find_wk_html_to_pdf() is not None
-
 ###############################################################################
 # Convert html file to a pdf file at the same location
 #
@@ -370,8 +367,6 @@ def __main():
     logging.info('Started %s', __get_this_filename())
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    test_find_wk_html_to_pdf()
 
     logging.info('Finished')
     # ------------------------------------
