@@ -40,6 +40,35 @@ import re
 
 
 ###############################################################################
+# try to manage the exception handling
+#
+# @param kwargs list of arguments to print
+# @return the wrap function
+###############################################################################
+def handle_exception(action_desc, **kwargs_print_name):
+    def decorator(the_decorated_function):
+        # ---------------------------------------------------------------------
+        def wrapper(*args, **kwargs):
+            try:
+                return the_decorated_function(*args, **kwargs)
+            except Exception as ex:
+                message = "%s (%s)\n" % (action_desc,
+                                         the_decorated_function.__name__)
+                for key in kwargs_print_name:
+                    if key in kwargs:
+                        message += "%s : %s\n" % (kwargs_print_name[key],
+                                                  kwargs[key])
+                raise type(ex)("%s\n%s" % (str(ex), message))
+        # ---------------------------------------------------------------------
+
+        wrapper.__name__ = the_decorated_function.__name__
+        wrapper.__doc__ = the_decorated_function.__doc__
+        wrapper.__dict__.update(the_decorated_function.__dict__)
+        return wrapper
+
+    return decorator
+
+###############################################################################
 # copy all file from src to dst
 ###############################################################################
 def copytree(src, dst, symlinks=False, ignore=None):
@@ -371,13 +400,13 @@ def get_file_content(filename, encoding="utf-8"):
 # @return filename corrected
 ###############################################################################
 def set_file_content(filename, content, encoding="utf-8", bom=True):
-    logging.debug('Ser content of the filename %s', (filename))
+    logging.debug('Set content of the filename %s', (filename))
     filename = set_correct_path(filename)
 
     output_file = codecs.open(filename, "w", encoding=encoding)
 
-    if (not content.startswith(u'\ufeff')) and \
-            (encoding == "utf-8") and bom:
+    if bom and (not content.startswith(u'\ufeff')) and \
+            (encoding == "utf-8"):
         output_file.write(u'\ufeff')
 
     output_file.write(content)
