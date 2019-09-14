@@ -150,7 +150,7 @@ class Link(dict):
     # @param value The value to set
     ###########################################################################
     @title.setter
-    def urtitlel(self, value):
+    def title(self, value):
         self['title'] = value
         if value is None:
             del self['title']
