@@ -651,15 +651,23 @@ def search_include_vars_to_md_text(text):
 #                      (default: python files/referenced_files/)
 # @return the content of the file
 ###############################################################################
-def get_file_content_to_include(filename, search_folder=None):
-    local_search_folder = search_folder
-    if local_search_folder is None:
-        local_search_folder = os.path.join(os.path.split(
-            __get_this_filename())[0], "referenced_files")
+def get_file_content_to_include(filename, search_folder=None, **kwargs):
+    local_search_folder = []
+    local_search_folder.append(os.path.join(
+        os.path.split(__get_this_filename())[0]))
+    local_search_folder.append("./")
 
-    local_search_folder = common.check_folder(local_search_folder)
+    if search_folder is not None:
+        local_search_folder.append(search_folder)
 
-    return common.get_file_content(os.path.join(local_search_folder, filename))
+    if 'search_folders' in kwargs:
+        local_search_folder.extend(kwargs['search_folders'])
+
+    found_filename = common.search_for_file(filename, local_search_folder,
+                                            [".", "referenced_files"],
+                                            nb_up_path=1)
+
+    return common.get_file_content(found_filename)
 
 ###############################################################################
 # Include file to the markdown text
@@ -672,7 +680,7 @@ def get_file_content_to_include(filename, search_folder=None):
 # @return the markdown text with the include
 ###############################################################################
 def include_files_to_md_text(text, include_file_re=__include_file_re__,
-                             error_if_no_file=True):
+                             error_if_no_file=True, **kwargs):
     # search begin
     match_file = re.search(include_file_re, text)
 
@@ -684,7 +692,8 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
     filename = match_file.group('name')
     logging.debug('Find the file %s', filename)
 
-    text_file = get_file_content_to_include(filename)
+    text_file = get_file_content_to_include(
+        filename, search_folder=None, **kwargs)
     left_side = "| "
     text_file = left_side + text_file.replace('\n', '\n' + left_side)
 
@@ -701,7 +710,8 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
     result += replace_text
     result += include_files_to_md_text(text[match_file.end(0):],
                                        include_file_re=include_file_re,
-                                       error_if_no_file=error_if_no_file)
+                                       error_if_no_file=error_if_no_file,
+                                       **kwargs)
 
     return result
 
