@@ -339,6 +339,24 @@ def create_backup(filename, backup_ext=".bak"):
 
     return new_filename
 
+
+#: BOMs to indicate that a file is a text file even if it contains zero bytes.
+_TEXT_BOMS = (
+    codecs.BOM_UTF16_BE,
+    codecs.BOM_UTF16_LE,
+    codecs.BOM_UTF32_BE,
+    codecs.BOM_UTF32_LE,
+    codecs.BOM_UTF8,
+)
+
+
+def is_binary_file(source_path):
+    with open(source_path, 'rb') as source_file:
+        initial_bytes = source_file.read(8192)
+    return not any(initial_bytes.startswith(bom) for bom in _TEXT_BOMS)\
+        and b'\0' in initial_bytes
+
+
 ###############################################################################
 # Get the encoding of a file
 #
