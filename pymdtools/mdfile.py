@@ -176,7 +176,7 @@ class MarkdownContent(filetools.FileContent):
     def toc(self):
         md_reader = markdown.Markdown(extensions=['toc'])
         md_reader.convert(self.content)
-        return md_reader.toc_tokens
+        return md_reader.toc
 
     ###########################################################################
     # Access to members by identifier
