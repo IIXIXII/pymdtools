@@ -63,7 +63,7 @@ class MarkdownContent(filetools.FileContent):
     def __init__(self, filename=None,
                  content=None,
                  backup=True,
-                 encoding="unknown"):
+                 encoding="unknown", **kwargs):
 
         # init the base class
         filetools.FileContent.__init__(self,
@@ -75,6 +75,7 @@ class MarkdownContent(filetools.FileContent):
         # set the first value
         self.__var_dict = {}
         self.__var_dict_text = None
+        self.__kwargs = kwargs
 
     ###########################################################################
     # Update the dict of variable
@@ -175,7 +176,7 @@ class MarkdownContent(filetools.FileContent):
     def toc(self):
         md_reader = markdown.Markdown(extensions=['toc'])
         md_reader.convert(self.content)
-        return md_reader.toc_tokens
+        return md_reader.toc
 
     ###########################################################################
     # Access to members by identifier
@@ -206,13 +207,15 @@ class MarkdownContent(filetools.FileContent):
     # @return the content
     ###########################################################################
     def process_tags(self):
-        self.content = instruction.include_files_to_md_text(self.content)
+        self.content = instruction.include_files_to_md_text(self.content,
+                                                            **self.__kwargs)
         self.content = instruction.search_include_vars_to_md_text(self.content)
 
         refs = instruction.get_refs_around_md_file(
             self.full_filename,
             filename_ext=self.filename_ext,
             depth_up=0, depth_down=-1)
+        refs = instruction.get_refs_other(**self.__kwargs)
         self.content = instruction.include_refs_to_md_text(self.content, refs)
         self.__update_dict()
 
