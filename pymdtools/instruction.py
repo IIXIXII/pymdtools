@@ -191,6 +191,23 @@ def get_refs_from_md_directory(folder, filename_ext=".md",
 
 ###############################################################################
 # Find refs around a markdown file.
+###############################################################################
+def get_refs_other(refs=None, filename_ext=".md", **kwargs):
+    result = refs if refs is not None else {}
+
+    if 'search_folders' not in kwargs:
+        return result
+
+    for folder in kwargs['search_folders']:
+        result = get_refs_from_md_directory(folder,
+                                            filename_ext,
+                                            previous_refs=result,
+                                            depth=-1)
+
+    return result
+
+###############################################################################
+# Find refs around a markdown file.
 # Depth down parameter :
 # 		- -1-> every subfolder.
 # 		-  0-> the current level
@@ -204,7 +221,8 @@ def get_refs_from_md_directory(folder, filename_ext=".md",
 # @return the dict with the refs found key-> value
 ###############################################################################
 def get_refs_around_md_file(filename, filename_ext=".md",
-                            previous_refs=None, depth_up=1, depth_down=-1):
+                            previous_refs=None,
+                            depth_up=1, depth_down=-1):
     logging.debug('Discover refs around the file "%s"', filename)
     filename = common.set_correct_path(filename)
 
