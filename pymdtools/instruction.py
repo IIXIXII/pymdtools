@@ -717,7 +717,6 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
 
     replace_text = """<!-- include-file(%(filename)s)
 +-----------------------------------------------------------------------------+
-%(left_side)s
 %(text)s
 +--------------------------------------------------------------------------"""\
 """ -->""" % {'filename': filename,
