@@ -41,11 +41,11 @@ import test_general
 
 def test_set_var_to_md_text():
     assert(instruction.set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
-                              "test",
-                              "good") == '<!-- var(essai) = "tes\\t" -->\n'
+                                          "test",
+                                          "good") == '<!-- var(essai) = "tes\\t" -->\n'
            '<!-- var(test)="good" -->\n\ntext')
     assert(instruction.set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
-                              "essai", "good") ==
+                                          "essai", "good") ==
            '<!-- var(essai)="good" -->text')
 
 def test_strip_xml_comment():
@@ -171,10 +171,10 @@ def test_get_vars_from_md_text():
 
 def test_del_var_to_md_text():
     assert(instruction.del_var_to_md_text('<!-- var(essai) = "tes\\t" -->',
-                              "test") ==
+                                          "test") ==
            '<!-- var(essai) = "tes\\t" -->')
     assert(instruction.del_var_to_md_text('x<!-- var(essai) = "tes\\t" -->x',
-                              "essai") == 'xx')
+                                          "essai") == 'xx')
 
 def test_get_title_from_md_text():
     assert instruction.get_title_from_md_text("""
@@ -219,13 +219,13 @@ def test_set_title_in_md_text():
 
 def test_get_file_content_include():
     assert instruction.get_file_content_to_include(
-                                "license.txt")[0:4] == "Copy"
+        "license.txt")[0:4] == "Copy"
     assert instruction.get_file_content_to_include(
-                                "license.en.txt")[0:4] == "Copy"
+        "license.en.txt")[0:4] == "Copy"
 
 def test_include_files_to_md_text():
     result1 = instruction.include_files_to_md_text(
-                                '<!-- include-file(license.txt) -->')
+        '<!-- include-file(license.txt) -->')
     result2 = instruction.include_files_to_md_text(result1)
     assert result1 == result2
 
@@ -300,11 +300,11 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    test_strip_xml_comment()
+    # test_strip_xml_comment()
 
-    #  create_result_md_include(force_creation = True)
+    # create_result_md_include(force_creation=True)
     #  create_result_md_var(force_creation = True)
-    #  create_result_include_file(force_creation = True)
+    create_result_include_file(force_creation=True)
 
 #     test_general.find_and_launch_test(
 #         find_md_include_test, test_md_file_include)
