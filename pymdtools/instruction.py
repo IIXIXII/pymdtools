@@ -117,7 +117,8 @@ def get_refs_from_md_text(text, previous_refs=None):
             'Find a begin-ref(%s) and not finding the end-ref' % (key))
 
     # remove  XML comment and save
-    result[key] = strip_xml_comment(last_part[0:match_end.start(0)])
+    # result[key] = strip_xml_comment(last_part[0:match_end.start(0)])
+    result[key] = last_part[0:match_end.start(0)]
 
     new_text = last_part[match_end.end(0):]
 
@@ -244,6 +245,17 @@ def get_refs_around_md_file(filename, filename_ext=".md",
                                         depth=depth_down)
 
     return result
+
+###############################################################################
+# Include reference to the markdown text
+# \warning All the reference must be defined
+#
+# @param text the markdown text
+# @param begin_include_re the regex to match the begin
+# @return all references
+###############################################################################
+def refs_in_md_text(text, begin_include_re=__begin_include_re__):
+    return re.findall(begin_include_re, text)
 
 ###############################################################################
 # Include reference to the markdown text
@@ -532,7 +544,7 @@ def del_var_to_md_text(text, var_name):
 # @param text the markdown text
 # @return the the title
 ###############################################################################
-def get_title_from_md_text(text):
+def get_title_from_md_text(text, return_match=False):
     local_text = strip_xml_comment(text)
     title_re = r"(\s)*(?P<title>[^\n\r]+)(\n|\r\n)[=]+(\s)*"
     match = re.search(title_re, local_text)
@@ -541,6 +553,9 @@ def get_title_from_md_text(text):
         match = re.search(title2_re, local_text)
         if not match:
             return None
+
+    if return_match:
+        return match
 
     return match.group('title')
 
