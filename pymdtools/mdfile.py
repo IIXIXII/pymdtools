@@ -215,7 +215,7 @@ class MarkdownContent(filetools.FileContent):
             self.full_filename,
             filename_ext=self.filename_ext,
             depth_up=0, depth_down=-1)
-        refs = instruction.get_refs_other(**self.__kwargs)
+        refs = instruction.get_refs_other(refs, **self.__kwargs)
         self.content = instruction.include_refs_to_md_text(self.content, refs)
         self.__update_dict()
 
