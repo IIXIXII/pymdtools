@@ -686,7 +686,7 @@ def check_len(obj, length=1):
 # @return full path to the seached file
 ###############################################################################
 def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
-    logging.info('Search for the file %s', file_wanted)
+    logging.debug('Search for the file %s', file_wanted)
 
     result = []
     tested_files = []
@@ -698,7 +698,7 @@ def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
                     begin_path, "../" * num_up, relative_path, file_wanted))
                 tested_files.append(file_to_test)
                 if os.path.isfile(file_to_test):
-                    logging.info('Found the file %s', (file_to_test))
+                    logging.debug('Found the file %s', (file_to_test))
                     result.append(file_to_test)
 
     if len(result) == 0:
