@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,35 +22,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
-
-###############################################################################
-# All functions To normalize a markdown file.
-#
-###############################################################################
+# -----------------------------------------------------------------------------
+"""All functions To normalize a markdown file."""
 
 import logging
-import sys
 import os
 import os.path
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import common
-    import mistunege as mistune
-    import mdrender
-else:
-    from . import common
-    from . import mistunege as mistune
-    from . import mdrender
+from . import common
+from . import mistunege as mistune
+from . import mdrender
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Normalize a markdown text.
 # with a double conversion, the markdown text is normalized
 #
 # @param text The markdown text
 # @return the normalized markdown text
-###############################################################################
+# -----------------------------------------------------------------------------
 def md_beautifier(text):
     logging.debug('Beautify a md content')
 
@@ -61,7 +51,7 @@ def md_beautifier(text):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Normalize a markdown text.
 # with a double conversion, the markdown text is normalized
 # This function take a file, load the content, create a backup (if needed)
@@ -76,7 +66,7 @@ def md_beautifier(text):
 #                             then a file named filename.bak will be created.
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the filename normalized
-###############################################################################
+# -----------------------------------------------------------------------------
 def md_file_beautifier(filename, backup_option=True, filename_ext=".md"):
     """
     This function take a file, load the content, create a backup (if needed)
@@ -118,71 +108,3 @@ def md_file_beautifier(filename, backup_option=True, filename_ext=".md"):
     # Save the file
     os.remove(filename)
     common.set_file_content(filename, text, encoding="utf-8")
-
-###############################################################################
-# Get the local folder of this script
-#
-# @return the local folder.
-###############################################################################
-def get_local_folder():
-    return os.path.split(os.path.abspath(os.path.realpath(
-        __get_this_filename())))[0]
-
-
-###############################################################################
-# Find the filename of this file (depend on the frozen or not)
-# This function return the filename of this script.
-# The function is complex for the frozen system
-#
-# @return the filename of THIS script.
-###############################################################################
-def __get_this_filename():
-    result = ""
-
-    if getattr(sys, 'frozen', False):
-        # frozen
-        result = sys.executable
-    else:
-        # unfrozen
-        result = __file__
-
-    return result
-
-###############################################################################
-# Set up the logging system
-###############################################################################
-def __set_logging_system():
-    log_filename = os.path.splitext(os.path.abspath(
-        os.path.realpath(__get_this_filename())))[0] + '.log'
-    logging.basicConfig(filename=log_filename, level=logging.DEBUG,
-                        format='%(asctime)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s')
-    # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
-    logging.getLogger('').addHandler(console)
-
-###############################################################################
-# Main script call only if this script is runned directly
-###############################################################################
-def __main():
-    # ------------------------------------
-    logging.info('Started %s', __get_this_filename())
-    logging.info('The Python version is %s.%s.%s',
-                 sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    logging.info('Finished')
-    # ------------------------------------
-
-
-###############################################################################
-# Call main function if the script is main
-# Exec only if this script is runned directly
-###############################################################################
-if __name__ == '__main__':
-    __set_logging_system()
-    __main()

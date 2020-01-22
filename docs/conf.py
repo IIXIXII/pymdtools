@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,7 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 # pylint: skip-file
 
 from recommonmark.parser import CommonMarkParser

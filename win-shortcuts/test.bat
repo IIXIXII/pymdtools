@@ -1,5 +1,5 @@
 @ECHO off
-REM ###############################################################################
+REM # -----------------------------------------------------------------------------
 REM # 
 REM # Copyright (c) 2018 Florent TOURNOIS
 REM # 
@@ -21,5 +21,5 @@ REM # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FR
 REM # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 REM # SOFTWARE.
 REM # 
-REM ###############################################################################
+REM # -----------------------------------------------------------------------------
 ../make.bat %~n0

@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,12 +22,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the file normalize
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
 import logging
 import sys
@@ -38,45 +38,45 @@ import pytest
 import pymdtools.normalize as normalize
 import test_general
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # find the file for test
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_md_beautifier_test():
     return test_general.find_test_file_couple(
         "_MdBeautifier.md",
         filename_ext=".md",
         folder_search=test_general.get_test_folder() + "/md_beautifier/")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # find the file for test
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_md_correct_test():
     return test_general.find_test_file_couple(
         "_MdCorrect.md",
         filename_ext=".md",
         folder_search=test_general.get_test_folder() + "/md_correct/")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the md_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize("filename, filename_result",
                          find_md_beautifier_test())
 def test_md_beautifier(filename, filename_result):
     test_general.check_transform_text_function(
         filename, filename_result, normalize.md_beautifier)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the md_file_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize("filename, filename_result",
                          find_md_beautifier_test())
 def test_md_file_beautifier(filename, filename_result):
     test_general.check_trans_file_inside_fun(
         filename, filename_result, normalize.md_file_beautifier)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result md_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_md_beautifier(force_creation=False):
     test_general.create_result_transform_text(
         normalize.md_beautifier,
@@ -84,9 +84,9 @@ def create_result_md_beautifier(force_creation=False):
         folder_search=test_general.get_test_folder() + "/md_beautifier/",
         force_creation=force_creation)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result md_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_md_correct(force_creation=False):
     test_general.create_result_transform_text(
         normalize.correct_markdown_text,
@@ -94,13 +94,13 @@ def create_result_md_correct(force_creation=False):
         folder_search=test_general.get_test_folder() + "/md_correct/",
         force_creation=force_creation)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return the filename of THIS script.
-###############################################################################
+# -----------------------------------------------------------------------------
 def __get_this_filename():
     result = ""
 
@@ -113,9 +113,9 @@ def __get_this_filename():
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Set up the logging system
-###############################################################################
+# -----------------------------------------------------------------------------
 def __set_logging_system():
     log_filename = os.path.splitext(os.path.abspath(
         os.path.realpath(__get_this_filename())))[0] + '.log'
@@ -131,9 +131,9 @@ def __set_logging_system():
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Main script call only if this script is runned directly
-###############################################################################
+# -----------------------------------------------------------------------------
 def __main():
     # ------------------------------------
     logging.info('Started %s', __get_this_filename())
@@ -152,10 +152,10 @@ def __main():
     # ------------------------------------
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Call main function if the script is main
 # Exec only if this script is runned directly
-###############################################################################
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     __set_logging_system()
     __main()

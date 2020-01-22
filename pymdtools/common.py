@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,11 +22,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
-
-###############################################################################
-# Standard function are here. Common function and object.
-###############################################################################
+# -----------------------------------------------------------------------------
+"""Standard function are here. Common function and object."""
 
 import logging
 import sys
@@ -39,12 +36,12 @@ import time
 import re
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # try to manage the exception handling
 #
 # @param kwargs list of arguments to print
 # @return the wrap function
-###############################################################################
+# -----------------------------------------------------------------------------
 def handle_exception(action_desc, **kwargs_print_name):
     def decorator(the_decorated_function):
         # ---------------------------------------------------------------------
@@ -68,9 +65,9 @@ def handle_exception(action_desc, **kwargs_print_name):
 
     return decorator
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # copy all file from src to dst
-###############################################################################
+# -----------------------------------------------------------------------------
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
         os.makedirs(dst)
@@ -85,43 +82,44 @@ def copytree(src, dst, symlinks=False, ignore=None):
                 logging.info("Copy file %s -> %s", source, destin)
                 shutil.copy2(source, destin)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # A Constant class object simple to contain a const value
-###############################################################################
+# -----------------------------------------------------------------------------
 class Constant:
-    ###########################################################################
+
+    # -------------------------------------------------------------------------
     # Create the constant
     # @param value the constant value
-    ###########################################################################
+    # -------------------------------------------------------------------------
     def __init__(self, value=None):
         self.value = value
 
-    ###########################################################################
+    # -------------------------------------------------------------------------
     # Obtain the value
-    ###########################################################################
+    # -------------------------------------------------------------------------
     def get_value(self):
         return self.value
 
-    ###########################################################################
+    # -------------------------------------------------------------------------
     # Obtain the value
-    ###########################################################################
+    # -------------------------------------------------------------------------
     def get(self):
         return self.value
 
-    ###########################################################################
+    # -------------------------------------------------------------------------
     # Obtain the value
-    ###########################################################################
+    # -------------------------------------------------------------------------
     def __get__(self, _ignore_instance, _ignore_owner):
         return self.value
 
-    ###########################################################################
+    # -------------------------------------------------------------------------
     # Protection for changed
-    ###########################################################################
+    # -------------------------------------------------------------------------
     def __set__(self, _ignore_instance, _ignore_value):
         raise ValueError("You can't change a constant value")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # This decorator can be used to turn simple functions
 #     into well-behaved decorators, so long as the decorators
 #     are fairly simple. If a decorator expects a function and
@@ -131,7 +129,7 @@ class Constant:
 #     your decorator and it will automatically preserve the
 #     docstring and function attributes of functions to which
 #     it is applied.
-###############################################################################
+# -----------------------------------------------------------------------------
 def simple_decorator(decorator):
     def new_decorator(the_function):
         result = decorator(the_function)
@@ -147,7 +145,8 @@ def simple_decorator(decorator):
     new_decorator.__dict__.update(decorator.__dict__)
     return new_decorator
 
-###############################################################################
+
+# -----------------------------------------------------------------------------
 # define a static decorator for function
 #
 # @code{.py}
@@ -161,7 +160,7 @@ def simple_decorator(decorator):
 #
 # @param kwargs list of arguments
 # @return the wrap function
-###############################################################################
+# -----------------------------------------------------------------------------
 def static(**kwargs):
     def wrap(the_decorated_function):
         for key, value in kwargs.items():
@@ -170,14 +169,14 @@ def static(**kwargs):
     return wrap
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Convert string to the output
 #
 # @param text the text
 # @param coding_in initial coding of the string
 # @param coding_out final coding of the string
 # @return the text converted
-###############################################################################
+# -----------------------------------------------------------------------------
 def print_conv(text, coding_in='utf-8', coding_out=None):
     if (coding_out is None) and (sys.stdout is not None):
         coding_out = sys.stdout.encoding
@@ -187,12 +186,12 @@ def print_conv(text, coding_in='utf-8', coding_out=None):
     return text.encode(coding_in).decode(coding_out, 'ignore')
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Remove all whitespace from the beginning and the end of the text
 #
 # @param text the text
 # @return the text without the whitespace at the beginning and at the end
-###############################################################################
+# -----------------------------------------------------------------------------
 def strip_first_and_last_space(text):
     whitespace_list = [' ', '\t', '\r', '\n']
     result = text
@@ -204,18 +203,18 @@ def strip_first_and_last_space(text):
     return result
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Retrive the correct complet path
 # This function return a folder or filename with a standard way of writing.
 #
 # @param folder_or_file_name the folder or file name
 # @return the folder or filename normalized.
-###############################################################################
+# -----------------------------------------------------------------------------
 def set_correct_path(folder_or_file_name):
     return os.path.abspath(folder_or_file_name)
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Test a folder
 # Test if the folder exist.
 #
@@ -223,7 +222,7 @@ def set_correct_path(folder_or_file_name):
 #
 # @param folder the folder name
 # @return the folder normalized.
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_folder(folder):
     if os.path.isfile(folder):
         logging.error('%s can not be a folder (it is a file)', folder)
@@ -236,7 +235,7 @@ def check_folder(folder):
     return set_correct_path(folder)
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Test a folder
 # test if the folder exist and create it if possible and necessary.
 #
@@ -244,7 +243,7 @@ def check_folder(folder):
 #
 # @param folder the folder name
 # @return the folder normalized.
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_create_folder(folder):
     if os.path.isfile(folder):
         logging.error('%s can not be a folder (it is a file)', folder)
@@ -255,7 +254,7 @@ def check_create_folder(folder):
 
     return set_correct_path(folder)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test if this is a file and correct the path
 #
 # @exception RuntimeError if the name is not a file or if the extension
@@ -264,7 +263,7 @@ def check_create_folder(folder):
 # @param filename the file name
 # @param filename_ext the file name extension like ".ext" or ".md"
 # @return the filename normalized.
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_is_file_and_correct_path(filename, filename_ext=None):
     filename = set_correct_path(filename)
 
@@ -282,12 +281,12 @@ def check_is_file_and_correct_path(filename, filename_ext=None):
     return filename
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # get the number of subfolder in an path
 #
 # @param filename the filename
 # @return the value
-###############################################################################
+# -----------------------------------------------------------------------------
 def number_of_subfolder(filename):
     name = os.path.normpath(filename)
 
@@ -305,7 +304,7 @@ def number_of_subfolder(filename):
 
     return max(counter, 0)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create a backup of a file in the same folder with an extension .xxx.bak
 #
 #
@@ -314,7 +313,7 @@ def number_of_subfolder(filename):
 # @param filename the file name
 # @param backup_ext the backup file name extension like ".bak"
 # @return the backup filename normalized.
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_backup(filename, backup_ext=".bak"):
     logging.info('Create the backup file for %s', filename)
 
@@ -357,12 +356,12 @@ def is_binary_file(source_path):
         and b'\0' in initial_bytes
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Get the encoding of a file
 #
 # @param filename the file name
 # @return the encoding detect
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_file_encoding(filename):
     logging.debug('Get encoding of the filename %s', (filename))
 
@@ -378,13 +377,13 @@ def get_file_encoding(filename):
     return detector.result['encoding']
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Get the content of a file. This function delete the BOM.
 #
 # @param filename the file name
 # @param encoding the encoding of the file
 # @return the content
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_file_content(filename, encoding="utf-8"):
     logging.debug('Get content of the filename %s', (filename))
     filename = check_is_file_and_correct_path(filename)
@@ -407,7 +406,7 @@ def get_file_content(filename, encoding="utf-8"):
 
     return content
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Set the content of a file. This function create a BOM in the UTF-8 encoding.
 # This function create the file or overwrite the file.
 #
@@ -416,7 +415,7 @@ def get_file_content(filename, encoding="utf-8"):
 # @param encoding the encoding of the file
 # @param bom the bit order mark at the beginning of the file
 # @return filename corrected
-###############################################################################
+# -----------------------------------------------------------------------------
 def set_file_content(filename, content, encoding="utf-8", bom=True):
     logging.debug('Set content of the filename %s', (filename))
     filename = set_correct_path(filename)
@@ -433,21 +432,21 @@ def set_file_content(filename, content, encoding="utf-8", bom=True):
     return filename
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Transform a string to be a good filename for windows
 #
 # @param filename the file name
 # @param char_to_replace the special char to replace
 # @param replacement the replacement char ("_" for example)
 # @return the right filename
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_valid_filename(filename,
                        char_to_replace=r'[\\/*?:"<>|()]', replacement="_"):
     name = re.sub(char_to_replace, replacement, filename)
     return name
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # cut string with words
 #
 # @param value the phrase to simplify
@@ -455,7 +454,7 @@ def get_valid_filename(filename,
 # @param char_split the character to split the string
 # @param min_last_word the number of cher minimum for the last word
 # @return the simplified phrase
-###############################################################################
+# -----------------------------------------------------------------------------
 def limit_str(value, limit, char_split, min_last_word=2):
     words = value.split(char_split)
     result = ""
@@ -469,18 +468,18 @@ def limit_str(value, limit, char_split, min_last_word=2):
     return result
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Convert to ascii char
 #
 # @param value the phrase to simplify
 # @return the simplified phrase
-###############################################################################
+# -----------------------------------------------------------------------------
 def str_to_ascii(value):
     import unidecode
     return unidecode.unidecode(value)
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # simplify name or phrase
 # Normalizes string, converts to lowercase, removes non-alpha characters,
 # and converts spaces to hyphens.
@@ -491,7 +490,7 @@ def str_to_ascii(value):
 # @param value the phrase to simplify
 # @param allow_unicode unicode possibility
 # @return the simplified phrase
-###############################################################################
+# -----------------------------------------------------------------------------
 def slugify(value, allow_unicode=False):
     value = str(value)
 
@@ -507,23 +506,23 @@ def slugify(value, allow_unicode=False):
     return re.sub(r'[-\s]+', '-', value)
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Transform a string to be a good filename for windows
 #
 # @param filename the file name
 # @param replacement the replacement char
 # @return the right filename
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_flat_filename(filename, replacement="_"):
     return get_valid_filename(filename,
                               char_to_replace=r'[\.\\/*?:"<>|() \'’,]',
                               replacement=replacement)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create a temproray folder in an appropriate temp area
 #
 # @return A empty folder located in a temp area
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_new_temp_dir():
     tmp_start = os.path.join(tempfile.gettempdir(),
                              get_valid_filename(
@@ -547,117 +546,117 @@ def get_new_temp_dir():
 
     return new_tmp
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension
 #
 # @param filename the filename
 # @param ext the new extension with a dot (ext = '.txt')
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to(filename, ext):
     return os.path.splitext(filename)[0] + ext
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to html
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_html(filename):
     return filename_ext_to(filename, ".html")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to md
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_md(filename):
     return filename_ext_to(filename, ".md")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to pdf
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_pdf(filename):
     return filename_ext_to(filename, ".pdf")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to hhp
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_hhp(filename):
     return filename_ext_to(filename, ".hhp")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to hhc
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_hhc(filename):
     return filename_ext_to(filename, ".hhc")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to hhk
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_hhk(filename):
     return filename_ext_to(filename, ".hhk")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Change the filename extension to chm
 #
 # @param filename the filename
 # @return the filename with the new extension
-###############################################################################
+# -----------------------------------------------------------------------------
 def filename_ext_to_chm(filename):
     return filename_ext_to(filename, ".chm")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Get today date
 #
 # @return a string "YYYY-MM-DD"
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_today():
     return time.strftime("%Y-%m-%d", time.gmtime())
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Apply function to every files in folder
 #
 # @param folder	The folder to scan
 # @param process The function to pally to each file the function take one
 #                parameter (the filename)
 # @param filename_ext The file extension (markdown for the default)
-###############################################################################
+# -----------------------------------------------------------------------------
 def apply_function_in_folder(folder, process, filename_ext=".md"):
     for root, unused_dirs, files in os.walk(folder):
         for filename in files:
             if os.path.join(root, filename).endswith(filename_ext):
                 process(os.path.join(root, filename))
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Check the length of an object
 #
 # @param obj the object.
 # @param length the object length (default = 1).
 # @return the object.
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_len(obj, length=1):
     if not len(obj) == length:
         logging.error('The list is supposed to have a '
@@ -669,7 +668,7 @@ def check_len(obj, length=1):
     return obj
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find a file with a deep search
 # the search is like this
 # 	for begin_path in start_points:
@@ -684,7 +683,7 @@ def check_len(obj, length=1):
 # @param relative_paths potential relative path to search for
 # @param nb_up_path up path to search
 # @return full path to the seached file
-###############################################################################
+# -----------------------------------------------------------------------------
 def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
     logging.debug('Search for the file %s', file_wanted)
 
@@ -709,14 +708,14 @@ def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
     # take the first result
     return result[0]
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # convert a path to url
 #
 # @param path the path to convert
 # @param remove_accent remove the accents of the path and convert them
 #                      in the base letters
 # @return string cleaned
-###############################################################################
+# -----------------------------------------------------------------------------
 def path_to_url(path, remove_accent=True):
     result = path.lower()
     result = re.sub(r"\s+", '-', result)
@@ -730,13 +729,13 @@ def path_to_url(path, remove_accent=True):
     return result
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return the filename of THIS script.
-###############################################################################
+# -----------------------------------------------------------------------------
 def __get_this_filename():
     result = ""
 
@@ -748,44 +747,3 @@ def __get_this_filename():
         result = __file__
 
     return result
-
-
-###############################################################################
-# Set up the logging system
-###############################################################################
-def __set_logging_system():
-    log_filename = os.path.splitext(os.path.abspath(
-        os.path.realpath(__get_this_filename())))[0] + '.log'
-    logging.basicConfig(filename=log_filename, level=logging.DEBUG,
-                        format='%(asctime)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s')
-    # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
-    logging.getLogger('').addHandler(console)
-
-
-###############################################################################
-# Main script call only if this script is runned directly
-###############################################################################
-def __main():
-    # ------------------------------------
-    logging.info('Started %s', __get_this_filename())
-    logging.info('The Python version is %s.%s.%s',
-                 sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    logging.info('Finished')
-    # ------------------------------------
-
-
-###############################################################################
-# Call main function if the script is main
-# Exec only if this script is runned directly
-###############################################################################
-if __name__ == '__main__':
-    __set_logging_system()
-    __main()

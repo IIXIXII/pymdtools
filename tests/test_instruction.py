@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,12 +22,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the file normalize
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
 import logging
 import sys
@@ -42,7 +42,8 @@ import test_general
 def test_set_var_to_md_text():
     assert(instruction.set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
                                           "test",
-                                          "good") == '<!-- var(essai) = "tes\\t" -->\n'
+                                          "good") == '<!-- var(essai) = "tes'
+           '\\t" -->\n'
            '<!-- var(test)="good" -->\n\ntext')
     assert(instruction.set_var_to_md_text('<!-- var(essai) = "tes\\t" -->text',
                                           "essai", "good") ==
@@ -74,17 +75,17 @@ def test_strip_xml_comment():
     ----><!-- test--><!-- test-->B""") == \
         "AB"
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # find the file for test
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_md_include_test():
     return test_general.find_test_file_couple(
         "_MdInclude.md", filename_ext=".tmd",
         folder_search=test_general.get_test_folder() + "/md_include/")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the md_file_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize("filename, filename_result", find_md_include_test())
 def test_md_file_include(filename, filename_result):
     test_general.check_trans_file_inside_fun(
@@ -94,9 +95,9 @@ def test_md_file_include(filename, filename_result):
         filename_ext=".tmd")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result md_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_md_include(force_creation=False):
     test_general.create_result_trans_file_inside(
         instruction.search_include_refs_to_md_file,
@@ -105,25 +106,25 @@ def create_result_md_include(force_creation=False):
         force_creation=force_creation,
         filename_ext=".tmd")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # find the file for test
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_md_var_test():
     return test_general.find_test_file_couple(
         "_MdVar.md", filename_ext=".md",
         folder_search=test_general.get_test_folder() + "/md_var/")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the md_file_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize("filename, filename_result", find_md_var_test())
 def test__md_file_var(filename, filename_result):
     test_general.check_trans_file_inside_fun(
         filename, filename_result, instruction.search_include_vars_to_md_file)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result md_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_md_var(force_creation=False):
     test_general.create_result_trans_file_inside(
         instruction.search_include_vars_to_md_file,
@@ -132,26 +133,26 @@ def create_result_md_var(force_creation=False):
         force_creation=force_creation,
         filename_ext=".md")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # find the file for test
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_include_file_test():
     return test_general.find_test_file_couple(
         "_IncludeFile.md",
         filename_ext=".md",
         folder_search=test_general.get_test_folder() + "/include_file/")
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test the md_file_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize("filename, filename_result", find_include_file_test())
 def test_include_files_to_md_file(filename, filename_result):
     test_general.check_trans_file_inside_fun(
         filename, filename_result, instruction.include_files_to_md_file)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result md_beautifier
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_include_file(force_creation=False):
     test_general.create_result_trans_file_inside(
         instruction.include_files_to_md_file,
@@ -170,11 +171,10 @@ def test_get_vars_from_md_text():
         '<!-- var(essai2)="test" -->')['essai'] == "test")
 
 def test_del_var_to_md_text():
-    assert(instruction.del_var_to_md_text('<!-- var(essai) = "tes\\t" -->',
-                                          "test") ==
+    fun = instruction.del_var_to_md_text
+    assert(fun('<!-- var(essai) = "tes\\t" -->', "test") ==
            '<!-- var(essai) = "tes\\t" -->')
-    assert(instruction.del_var_to_md_text('x<!-- var(essai) = "tes\\t" -->x',
-                                          "essai") == 'xx')
+    assert(fun('x<!-- var(essai) = "tes\\t" -->x', "essai") == 'xx')
 
 def test_get_title_from_md_text():
     assert instruction.get_title_from_md_text("""
@@ -247,20 +247,20 @@ def test_del_include_file_():
         "test") == '<!-- include-file(essai) -->')
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Launch the test
-###############################################################################
+# -----------------------------------------------------------------------------
 def __launch_test():
     pytest.main(__get_this_filename())
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return the filename of THIS script.
-###############################################################################
+# -----------------------------------------------------------------------------
 def __get_this_filename():
     result = ""
 
@@ -273,9 +273,9 @@ def __get_this_filename():
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Set up the logging system
-###############################################################################
+# -----------------------------------------------------------------------------
 def __set_logging_system():
     log_filename = os.path.splitext(os.path.abspath(
         os.path.realpath(__get_this_filename())))[0] + '.log'
@@ -291,9 +291,9 @@ def __set_logging_system():
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Main script call only if this script is runned directly
-###############################################################################
+# -----------------------------------------------------------------------------
 def __main():
     # ------------------------------------
     logging.info('Started %s', __get_this_filename())
@@ -318,10 +318,10 @@ def __main():
     # ------------------------------------
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Call main function if the script is main
 # Exec only if this script is runned directly
-###############################################################################
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     __set_logging_system()
     __main()

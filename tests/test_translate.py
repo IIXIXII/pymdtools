@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 #
@@ -33,58 +33,36 @@ import logging
 import sys
 import os
 import os.path
-import pytest
 
-import pymdtools.mdcommon as mdcommon
-import test_general
+import pymdtools.translate as translate
 
 # -----------------------------------------------------------------------------
-# find the file for test
-# -----------------------------------------------------------------------------
-def find_search_link_in_md_t_test():
-    return test_general.find_test_file_couple(
-        "_LinkInMdText.json",
-        filename_ext=".md",
-        folder_search=test_general.get_test_folder() + "/search_links/")
+def test_eu_lang():
+    assert len(translate.eu_lang_list()) == 26
+
 
 # -----------------------------------------------------------------------------
-# test the md_file_beautifier
-# -----------------------------------------------------------------------------
-@pytest.mark.parametrize("filename, filename_result",
-                         find_search_link_in_md_t_test())
-def test_search_link_in_md_text(filename, filename_result):
-    test_general.check_trans_text_function_one(
-        filename, filename_result, mdcommon.search_link_in_md_text_json)
+def test_hello():
+    assert translate.translate_txt(
+        "bonjour", src="fr", dest="en").lower() == "hello"
+
 
 # -----------------------------------------------------------------------------
-# Create result md_beautifier
-# -----------------------------------------------------------------------------
-def create_search_link_in_md_text(force_creation=False):
-    test_general.create_result_transform_text(
-        mdcommon.search_link_in_md_text_json,
-        "_LinkInMdText.json",
-        filename_ext=".md",
-        folder_search=test_general.get_test_folder() + "/SearchLinks/",
-        force_creation=force_creation)
+def __get_this_folder():
+    """ Return the folder of this script with frozen compatibility
+    @return the folder of THIS script.
+    """
+    return os.path.split(os.path.abspath(os.path.realpath(
+        __get_this_filename())))[0]
 
-# -----------------------------------------------------------------------------
-# Find the filename of this file (depend on the frozen or not)
-# This function return the filename of this script.
-# The function is complex for the frozen system
-#
-# @return the filename of THIS script.
+
 # -----------------------------------------------------------------------------
 def __get_this_filename():
-    result = ""
+    """ Return the filename of this script with frozen compatibility
+    @return the filename of THIS script.
+    """
+    return __file__ if not getattr(sys, 'frozen', False) else sys.executable
 
-    if getattr(sys, 'frozen', False):
-        # frozen
-        result = sys.executable
-    else:
-        # unfrozen
-        result = __file__
-
-    return result
 
 # -----------------------------------------------------------------------------
 # Set up the logging system
@@ -104,6 +82,7 @@ def __set_logging_system():
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
 
+
 # -----------------------------------------------------------------------------
 # Main script call only if this script is runned directly
 # -----------------------------------------------------------------------------
@@ -113,11 +92,8 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    #  create_search_link_in_md_text(force_creation = True)
-
-    test_general.find_and_launch_test(
-        find_search_link_in_md_t_test,
-        test_search_link_in_md_text)
+    test_eu_lang()
+    test_hello()
 
     logging.info('Finished')
     # ------------------------------------

@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,12 +22,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # test framework
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
 import logging
 import sys
@@ -38,13 +38,13 @@ import pytest
 
 import pymdtools.common as common
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return the filename of THIS script.
-###############################################################################
+# -----------------------------------------------------------------------------
 def __get_this_filename():
     result = ""
 
@@ -57,9 +57,9 @@ def __get_this_filename():
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Folder to find the file for test
-###############################################################################
+# -----------------------------------------------------------------------------
 @common.static(__folder_md_test__=None)
 def get_test_folder():
     if get_test_folder.__folder_md_test__ is None:
@@ -68,9 +68,9 @@ def get_test_folder():
 
     return get_test_folder.__folder_md_test__
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Compare two files
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_same_files(file1, file2):
     content1 = common.get_file_content(file1)
     content2 = common.get_file_content(file2)
@@ -80,10 +80,10 @@ def check_same_files(file1, file2):
 
     return (len(content1) == len(content2)) and (content1 == content2)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Function to test the transformation from a text
 # From a function function_trans you can convert filename to filename_result
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_transform_text_function(filename, filename_result,
                                   transform_function):
     input_filename = common.check_is_file_and_correct_path(filename)
@@ -102,10 +102,10 @@ def check_transform_text_function(filename, filename_result,
     assert trans1 == result
     # assert trans2 == result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Function to test the transformation from a text
 # From a function function_trans you can convert filename to filename_result
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_trans_text_function_one(filename, filename_result,
                                   transform_function):
     input_filename = common.check_is_file_and_correct_path(filename)
@@ -121,10 +121,10 @@ def check_trans_text_function_one(filename, filename_result,
 
     assert trans1 == result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Function to test the transformation from a text
 # From a function function_trans you can convert filename to filename_result
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_trans_file_inside_fun(filename,
                                 filename_result,
                                 transform_function,
@@ -171,10 +171,10 @@ def check_trans_file_inside_fun(filename,
     # with pytest.raises(Exception):
     #     common.check_is_file_and_correct_path(bak1)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Function to test the transformation from a file
 # From a function function_trans you can convert filename to filename_result
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_transform_file_function(filename,
                                   filename_result,
                                   transform_function,
@@ -218,9 +218,9 @@ def check_transform_file_function(filename,
     with pytest.raises(Exception):
         common.check_is_file_and_correct_path(test_filename_result)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Function to find all couple for test
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_test_file_couple(new_extension_for_result, filename_ext=".md",
                           folder_search=get_test_folder()):
     logging.info('Search test files for %s', new_extension_for_result)
@@ -248,9 +248,9 @@ def find_test_file_couple(new_extension_for_result, filename_ext=".md",
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_transform_text(function_test, new_extension_for_result,
                                  filename_ext=".md",
                                  folder_search=get_test_folder(),
@@ -278,9 +278,9 @@ def create_result_transform_text(function_test, new_extension_for_result,
     common.apply_function_in_folder(
         folder_search, __create_result__, filename_ext=filename_ext)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_transform_file(function_test,
                                  new_extension_for_result,
                                  filename_ext=".md",
@@ -308,9 +308,9 @@ def create_result_transform_file(function_test,
     common.apply_function_in_folder(
         folder_search, __create_result__, filename_ext=filename_ext)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Create result
-###############################################################################
+# -----------------------------------------------------------------------------
 def create_result_trans_file_inside(function_test,
                                     new_extension_for_result,
                                     filename_ext=".md",
@@ -344,13 +344,13 @@ def create_result_trans_file_inside(function_test,
     common.apply_function_in_folder(
         folder_search, __create_result__, filename_ext=filename_ext)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return nothing
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_and_launch_test(fun_find, fun_test):
     files_found = fun_find()
     for files in files_found:
@@ -358,11 +358,11 @@ def find_and_launch_test(fun_find, fun_test):
         print("file output:%s" % files[1])
         fun_test(files[0], files[1])
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # rename some file reult
 #
 # @return nothing
-###############################################################################
+# -----------------------------------------------------------------------------
 def rename_file_result(test_folder, extension, new_extension):
     logging.info('rename_file_result in %s from %s to %s',
                  test_folder, extension, new_extension)
@@ -385,9 +385,9 @@ def rename_file_result(test_folder, extension, new_extension):
 
     return
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Set up the logging system
-###############################################################################
+# -----------------------------------------------------------------------------
 def __set_logging_system():
     log_filename = os.path.splitext(os.path.abspath(
         os.path.realpath(__get_this_filename())))[0] + '.log'
@@ -403,9 +403,9 @@ def __set_logging_system():
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Main script call only if this script is runned directly
-###############################################################################
+# -----------------------------------------------------------------------------
 def __main():
     # ------------------------------------
     logging.info('Started %s', __get_this_filename())
@@ -418,10 +418,10 @@ def __main():
     # ------------------------------------
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Call main function if the script is main
 # Exec only if this script is runned directly
-###############################################################################
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     __set_logging_system()
     __main()
