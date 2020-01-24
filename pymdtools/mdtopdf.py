@@ -240,13 +240,16 @@ def find_wk_html_to_pdf():
 #
 # @return full path to the pdf file
 # -----------------------------------------------------------------------------
-def convert_html_to_pdf(filename, filename_ext=".html"):
+def convert_html_to_pdf(filename, filename_ext=".html", **kwargs):
     logging.info('Convert html -> pdf %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
 
     config = pdfkit.configuration(wkhtmltopdf=find_wk_html_to_pdf())
 
-    header_text = '%s' % (os.path.splitext(os.path.basename(filename))[0])
+    if 'title' in kwargs and kwargs['title'] is not None:
+        header_text = kwargs['title']
+    else:
+        header_text = '%s' % (os.path.splitext(os.path.basename(filename))[0])
 
     date_print = time.strftime("%d/%m/%Y", time.gmtime())
     options = {
@@ -270,13 +273,76 @@ def convert_html_to_pdf(filename, filename_ext=".html"):
     return pdf_filename
 
 # -----------------------------------------------------------------------------
+# Add features to the pdf
+#
+# @param filename the filename of the pdf
+# @param filename_ext This parameter the pdf extension for the filename.
+# @param kwargs all the options.
+# @return the pdf filename
+# -----------------------------------------------------------------------------
+def pdf_features(filename, filename_ext=".pdf", **kwargs):
+    logging.info('pdf features %s', filename)
+    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+
+    temp_dir = common.get_new_temp_dir()
+    temp_pdf_filename = os.path.join(temp_dir, os.path.basename(filename))
+    shutil.copy(filename, temp_pdf_filename)
+
+    file_in = open(temp_pdf_filename, 'rb')
+    pdf_reader = PyPDF2.PdfFileReader(file_in)
+    pdf_metadata = pdf_reader.getDocumentInfo()
+
+    metadata = {}
+    for key in pdf_metadata:
+        metadata[key] = ''
+    if 'metadata' in kwargs:
+        for key in kwargs['metadata']:
+            metadata['/' + key[0].upper() + key[1:]] = kwargs['metadata'][key]
+
+    pdf_args = {}
+    for key in kwargs:
+        if key[-4:] == '_pdf':
+            local_name = kwargs[key]
+            if 'path' in kwargs:
+                local_name = os.path.join(kwargs['path'], local_name)
+            local_name = common.check_is_file_and_correct_path(local_name)
+            pdf_args[key[:-4]] = PyPDF2.PdfFileReader(open(local_name, "rb"))
+
+    num_pages = pdf_reader.getNumPages()
+    pdf_writer = PyPDF2.PdfFileWriter()
+
+    for page_number in range(num_pages):
+        page = pdf_reader.getPage(page_number)
+        if page_number == 0:
+            if 'background_first_page' in pdf_args:
+                page.mergePage(pdf_args['background_first_page'].getPage(0))
+            elif 'background' in pdf_args:
+                page.mergePage(pdf_args['background'].getPage(0))
+        else:
+            if 'background' in pdf_args:
+                page.mergePage(pdf_args['background'].getPage(0))
+        if 'watermark' in pdf_args:
+            page.mergePage(pdf_args['watermark'].getPage(0))
+        pdf_writer.addPage(page)
+
+    pdf_writer.addMetadata(metadata)
+
+    file_out = open(filename, 'wb')
+    pdf_writer.write(file_out)
+
+    file_out.close()
+    file_in.close()
+    shutil.rmtree(temp_dir)
+    return filename
+
+# -----------------------------------------------------------------------------
 # Convert md file to pdf
 #
 # @param filename the filename of the markdon file
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the pdf filename
 # -----------------------------------------------------------------------------
-def convert_md_to_pdf(filename, filename_ext=".md"):
+def convert_md_to_pdf(filename, filename_ext=".md", **kwargs):
     """
     This function take a file, load the content, create a pdf
     with the same name.
@@ -297,42 +363,33 @@ def convert_md_to_pdf(filename, filename_ext=".md"):
 
     temp_dir = common.get_new_temp_dir()
     temp_md_filename = os.path.join(temp_dir, os.path.basename(filename))
-    temp_html_filename = os.path.splitext(temp_md_filename)[0] + ".html"
-    temp_pdf_filename = os.path.splitext(temp_md_filename)[0] + ".pdf"
 
     logging.info('Copy file to temp')
     shutil.copy(filename, temp_md_filename)
     logging.info('Convert md to html')
-    convert_md_to_html(temp_md_filename, converter='mistune')
-    logging.info('Convert html to pdf')
-    convert_html_to_pdf(temp_html_filename)
+    temp_html_filename = convert_md_to_html(
+        temp_md_filename, converter='mistune')
+
+    title = None
+    if 'title' in md_metadata:
+        title = md_metadata['title']
+    if 'page:title' in md_metadata:
+        title = md_metadata['page:title']
+
+    logging.info('Convert html to pdf title=%s', title)
+    temp_pdf_filename = convert_html_to_pdf(temp_html_filename, title=title)
 
     logging.info('Copy file from temp')
     pdf_filename = os.path.splitext(filename)[0] + ".pdf"
-    # shutil.copy(temp_pdf_filename, pdf_filename)
-
-    file_in = open(temp_pdf_filename, 'rb')
-    pdf_reader = PyPDF2.PdfFileReader(file_in)
-    pdf_metadata = pdf_reader.getDocumentInfo()
-    print(pdf_metadata)
-    new_meta = {}
-    for key in pdf_metadata:
-        new_meta[key] = ''
-    for key in md_metadata:
-        new_meta['/' + key[0].upper() + key[1:]] = md_metadata[key]
-
-    pdf_writer = PyPDF2.PdfFileWriter()
-    pdf_writer.appendPagesFromReader(pdf_reader)
-    pdf_writer.addMetadata(new_meta)
-    file_out = open(pdf_filename, 'wb')
-    pdf_writer.write(file_out)
-
-    file_in.close()
-    file_out.close()
+    shutil.copy(temp_pdf_filename, pdf_filename)
 
     # remove the temp dir
     logging.info('Remove the temp dir')
     shutil.rmtree(temp_dir)
+
+    # add features
+    pdf_features(pdf_filename, filename_ext=".pdf",
+                 metadata=md_metadata, **kwargs)
 
     return pdf_filename
 

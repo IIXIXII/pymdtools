@@ -76,7 +76,12 @@ def test_manip_pdf():
     folder_search = test_general.get_test_folder() + "/pdf_manip/"
     md_filename = os.path.join(folder_search, "test.md")
     html_filename = mdtopdf.convert_md_to_html(md_filename)
-    pdf_filename = mdtopdf.convert_md_to_pdf(md_filename)
+    pdf_filename = mdtopdf.convert_md_to_pdf(
+        md_filename,
+        path=folder_search,
+        background_pdf="background_other_page_ge.pdf",
+        background_first_page_pdf="background_first_page_ge.pdf",
+    )
 
 # -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
