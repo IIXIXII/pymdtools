@@ -301,12 +301,14 @@ def pdf_features(filename, filename_ext=".pdf", **kwargs):
 
     pdf_args = {}
     for key in kwargs:
-        if key[-4:] == '_pdf':
+        if len(key) < 4:
+            continue
+        if key[:4] == 'pdf_':
             local_name = kwargs[key]
             if 'path' in kwargs:
                 local_name = os.path.join(kwargs['path'], local_name)
             local_name = common.check_is_file_and_correct_path(local_name)
-            pdf_args[key[:-4]] = PyPDF2.PdfFileReader(open(local_name, "rb"))
+            pdf_args[key[4:]] = PyPDF2.PdfFileReader(open(local_name, "rb"))
 
     num_pages = pdf_reader.getNumPages()
     pdf_writer = PyPDF2.PdfFileWriter()
