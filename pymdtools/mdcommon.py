@@ -30,7 +30,7 @@ import json
 import os
 import re
 import copy
-from url_normalize import url_normalize
+from urllib.parse import urlparse
 
 if (__package__ in [None, '']) and ('.' not in __name__):
     import common
@@ -45,8 +45,13 @@ else:
 # @return True if it is an external link
 # -----------------------------------------------------------------------------
 def is_external_link(url):
-    target_url = url.lower().replace(" ", "")
-    return len(target_url) > 4 and target_url[0:4] == "http"
+    try:
+        result = urlparse(url)
+        if result.scheme in ['http', 'https']:
+            return all([result.scheme, result.netloc])
+        return all([result.scheme])
+    except ValueError:
+        return False
 
 
 # -----------------------------------------------------------------------------
@@ -59,11 +64,13 @@ def get_domain_name(url):
     if not is_external_link(url):
         return url
 
-    target_url_norm = url_normalize(url)
-    result = target_url_norm.split(
-        "://")[1].split("?")[0].split('/')[0].split(':')[0].lower()
-
-    return result
+    try:
+        analyse = urlparse(url)
+        if analyse.scheme in ['mailto']:
+            return analyse.path
+        return analyse.netloc
+    except ValueError:
+        return url
 
 # -----------------------------------------------------------------------------
 # An object to rule the web page (only one page)

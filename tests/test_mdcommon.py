@@ -39,6 +39,11 @@ import pymdtools.mdcommon as mdcommon
 import test_general
 
 # -----------------------------------------------------------------------------
+def test_is_url():
+    assert mdcommon.is_external_link("mailto:contact@guichet-partenaires.fr")
+    assert mdcommon.is_external_link("http://www.google.fr/")
+
+# -----------------------------------------------------------------------------
 # find the file for test
 # -----------------------------------------------------------------------------
 def find_search_link_in_md_t_test():
@@ -115,9 +120,11 @@ def __main():
 
     #  create_search_link_in_md_text(force_creation = True)
 
-    test_general.find_and_launch_test(
-        find_search_link_in_md_t_test,
-        test_search_link_in_md_text)
+    # test_general.find_and_launch_test(
+    #     find_search_link_in_md_t_test,
+    #     test_search_link_in_md_text)
+
+    test_is_url()
 
     logging.info('Finished')
     # ------------------------------------
