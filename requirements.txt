@@ -27,3 +27,4 @@ markdown
 pdfkit
 PyPDF2
 git+https://github.com/BoseCorp/py-googletrans.git
+goslate

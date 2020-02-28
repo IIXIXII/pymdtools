@@ -95,6 +95,11 @@ def __main():
     test_eu_lang()
     test_hello()
 
+    # import goslate
+    # gs = goslate.Goslate()
+
+    # print(gs.translate('hello world', 'de'))
+
     logging.info('Finished')
     # ------------------------------------
 

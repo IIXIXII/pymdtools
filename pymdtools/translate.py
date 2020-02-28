@@ -32,6 +32,7 @@ import os
 import gettext
 
 from googletrans import Translator as GTranslator
+from goslate import Goslate as GoTranslator
 
 from . import common
 from . import mistunege as mistune
@@ -189,9 +190,18 @@ def eu_lang_list():
 # @param dest the destination language
 # -----------------------------------------------------------------------------
 def translate_txt(text, src="fr", dest="en"):
-    trans = GTranslator()
-    result_trans = trans.translate(text, src=src, dest=dest)
-    return result_trans.text
+    if text and not text.isspace():
+        # option 1
+        trans = GTranslator()
+        result_trans = trans.translate(text, src=src, dest=dest)
+        return result_trans.text
+
+        # option 2
+        # trans = GoTranslator()
+        # result_trans = trans.translate(text, dest, source_language=src)
+        # return result_trans
+
+    return text
 
 
 # -----------------------------------------------------------------------------
