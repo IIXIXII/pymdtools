@@ -174,6 +174,8 @@ setup(
 
     url='https://github.com/IIXIXII/pymdtools',
 
+    install_requires=['markdown', 'pdfkit', 'PyPDF2'],
+
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
     classifiers=[
         "Programming Language :: Python",
