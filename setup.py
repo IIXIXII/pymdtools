@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,13 +22,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # @package pymdtools
 # Markdown Tools develops for Gucihet Entreprises
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
 import sys
 import io
@@ -36,7 +36,7 @@ import os
 import os.path
 import time
 from shutil import rmtree
-from setuptools import setup, find_packages, Command
+from setuptools import setup, Command
 
 import pymdtools as mymodule
 
@@ -173,6 +173,8 @@ setup(
     long_description_content_type='text/markdown',
 
     url='https://github.com/IIXIXII/pymdtools',
+
+    install_requires=['markdown', 'pdfkit', 'PyPDF2'],
 
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
     classifiers=[

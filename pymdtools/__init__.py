@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,13 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
-
-###############################################################################
-# @package pymdtools
-# Markdown Tools develops for Gucihet Entreprises
-#
-###############################################################################
+# -----------------------------------------------------------------------------
+"""@package pymdtools
+Markdown Tools developed for Gucihet Entreprises
+"""
 
 import logging
 import sys
@@ -44,38 +41,16 @@ from .version import __release_date__
 __version__ = '.'.join(str(c) for c in __version_info__)
 __author__ = "Florent Tournois"
 __copyright__ = "Copyright 2018, Florent Tournois"
-
 __credits__ = ["Arnaud Boidard"]
 __license__ = "MIT"
 __maintainer__ = "Florent Tournois"
 __email__ = "florent.tournois@gmail.fr"
 __status__ = "Production"
+__module_name__ = "pymdtools"
 
-
-__all__ = ['print_conv',
-           'markdown_file_beautifier',
-           'convert_md_to_pdf',
-           'search_include_refs_to_md_file',
-           ]
-
-
-###############################################################################
-# Main script call only if this script is runned directly
-###############################################################################
-def __main():
-    # ------------------------------------
-    logging.info('Started %s', __file__)
-    logging.info('The Python version is %s.%s.%s',
-                 sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    logging.info('Finished')
-
-    # ------------------------------------
-
-
-###############################################################################
-# Call main function if the script is main
-# Exec only if this script is runned directly
-###############################################################################
-if __name__ == '__main__':
-    __main()
+__all__ = [
+    'print_conv',
+    'markdown_file_beautifier',
+    'convert_md_to_pdf',
+    'search_include_refs_to_md_file',
+]

@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,12 +22,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # All functions To convert markdown file to pdf
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
 import logging
 import sys
@@ -41,19 +41,14 @@ import pdfkit
 import markdown as mkd
 import PyPDF2
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import common
-    import instruction
-    import mistunege as mistune
-else:
-    from . import common
-    from . import instruction
-    from . import mistunege as mistune
+from . import common
+from . import instruction
+from . import mistunege as mistune
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Add blank pages to the pdf to have
-###############################################################################
+# -----------------------------------------------------------------------------
 def check_odd_pages(filename):
     filename = common.check_is_file_and_correct_path(filename,
                                                      filename_ext=".pdf")
@@ -81,22 +76,22 @@ def check_odd_pages(filename):
 
     return filename
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Convert md text to html
 #
 # @param text the markdown text
 # @return the html fragment
-###############################################################################
+# -----------------------------------------------------------------------------
 def converter_md_to_html_markdown(text):
     return mkd.markdown(text, output_format="xhtml5")
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Convert md text to html
 #
 # @param text the markdown text
 # @return the html fragment
-###############################################################################
+# -----------------------------------------------------------------------------
 def converter_md_to_html_mistune(text):
     renderer = mistune.Renderer(use_xhtml=True)
     # use this renderer instance
@@ -104,9 +99,9 @@ def converter_md_to_html_mistune(text):
     return markdown(text)
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # get the markdown to html converter
-###############################################################################
+# -----------------------------------------------------------------------------
 @common.static(__converters__=None)
 def get_md_to_html_converter(converter_name):
 
@@ -125,7 +120,7 @@ def get_md_to_html_converter(converter_name):
     return get_md_to_html_converter.__converters__[converter_name]
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Convert md file to html with a layout
 #
 # @param filename the filename of the markdon file
@@ -135,7 +130,7 @@ def get_md_to_html_converter(converter_name):
 # @param converter the html converter. a string with the name of the converter
 # @param path_dest the destination folder for the html
 # @return the html filename
-###############################################################################
+# -----------------------------------------------------------------------------
 def convert_md_to_html(filename, layout="jasonm23-swiss",
                        filename_ext=".md", encoding="utf-8",
                        path_dest=None, converter=None):
@@ -149,6 +144,7 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
 
     # Read the file
     content = common.get_file_content(filename)
+    content_vars = instruction.get_vars_from_md_text(content)
     title = instruction.get_title_from_md_text(content)
     if title is None:
         title = ""
@@ -181,9 +177,9 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
         logging.debug('instruction %s', inst)
         if inst == '{{title}}':
             page_html = page_html.replace(inst, title)
-        if inst == '{{~> content}}':
+        elif inst == '{{~> content}}':
             page_html = page_html.replace(inst, content)
-        if inst[0:7] == '{{asset':
+        elif len(inst) > 6 and inst[0:7] == '{{asset':
             file_objet = inst[9:-3]
             if file_objet[0] == '/':
                 file_objet = file_objet[1:]
@@ -196,6 +192,8 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
                                                              file_objet)),
                         dst_file)
             page_html = page_html.replace(inst, file_objet)
+        elif inst[2:-2] in content_vars:
+            page_html = page_html.replace(inst, content_vars[inst[2:-2]])
 
     html_filename = common.set_correct_path(os.path.join(
         path_dest, os.path.splitext(os.path.split(filename)[1])[0] + ".html"))
@@ -209,11 +207,11 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
 
     return html_filename
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the wkhtmltopdf tool
 #
 # @return full path to the file "wkhtmltopdf.exe"
-###############################################################################
+# -----------------------------------------------------------------------------
 def find_wk_html_to_pdf():
     logging.info('Search wkhtmltopdf')
 
@@ -237,29 +235,35 @@ def find_wk_html_to_pdf():
     return common.search_for_file("wkhtmltopdf.exe", start_points,
                                   relative_paths, nb_up_path=4)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Convert html file to a pdf file at the same location
 #
 # @return full path to the pdf file
-###############################################################################
-def convert_html_to_pdf(filename, filename_ext=".html"):
+# -----------------------------------------------------------------------------
+def convert_html_to_pdf(filename, filename_ext=".html", **kwargs):
     logging.info('Convert html -> pdf %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
 
     config = pdfkit.configuration(wkhtmltopdf=find_wk_html_to_pdf())
 
-    header_text = '%s' % (os.path.splitext(os.path.basename(filename))[0])
+    if 'title' in kwargs and kwargs['title'] is not None:
+        header_text = kwargs['title']
+    else:
+        header_text = '%s' % (os.path.splitext(os.path.basename(filename))[0])
 
     date_print = time.strftime("%d/%m/%Y", time.gmtime())
-    options = {'header-center': header_text,
-               'footer-center': 'page [page] sur [toPage]',
-               'footer-font-size': '8',
-               'footer-right': date_print,
-               'margin-top': '20mm',
-               'margin-bottom': '20mm',
-               'footer-spacing': '10',
-               'header-spacing': '10',
-               'header-font-size': '8'}
+    options = {
+        'header-center': header_text,
+        'footer-center': 'page [page] sur [toPage]',
+        'footer-font-size': '8',
+        'footer-right': date_print,
+        'margin-top': '20mm',
+        'margin-bottom': '20mm',
+        'footer-spacing': '10',
+        'header-spacing': '10',
+        'header-font-size': '8',
+        'quiet': '',
+    }
 
     pdf_filename = os.path.splitext(filename)[0] + ".pdf"
     pdfkit.from_file(filename, pdf_filename,
@@ -268,14 +272,79 @@ def convert_html_to_pdf(filename, filename_ext=".html"):
 
     return pdf_filename
 
-###############################################################################
+# -----------------------------------------------------------------------------
+# Add features to the pdf
+#
+# @param filename the filename of the pdf
+# @param filename_ext This parameter the pdf extension for the filename.
+# @param kwargs all the options.
+# @return the pdf filename
+# -----------------------------------------------------------------------------
+def pdf_features(filename, filename_ext=".pdf", **kwargs):
+    logging.info('pdf features %s', filename)
+    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+
+    temp_dir = common.get_new_temp_dir()
+    temp_pdf_filename = os.path.join(temp_dir, os.path.basename(filename))
+    shutil.copy(filename, temp_pdf_filename)
+
+    file_in = open(temp_pdf_filename, 'rb')
+    pdf_reader = PyPDF2.PdfFileReader(file_in)
+    pdf_metadata = pdf_reader.getDocumentInfo()
+
+    metadata = {}
+    for key in pdf_metadata:
+        metadata[key] = ''
+    if 'metadata' in kwargs:
+        for key in kwargs['metadata']:
+            metadata['/' + key[0].upper() + key[1:]] = kwargs['metadata'][key]
+
+    pdf_args = {}
+    for key in kwargs:
+        if len(key) < 4:
+            continue
+        if key[:4] == 'pdf_':
+            local_name = kwargs[key]
+            if 'path' in kwargs:
+                local_name = os.path.join(kwargs['path'], local_name)
+            local_name = common.check_is_file_and_correct_path(local_name)
+            pdf_args[key[4:]] = PyPDF2.PdfFileReader(open(local_name, "rb"))
+
+    num_pages = pdf_reader.getNumPages()
+    pdf_writer = PyPDF2.PdfFileWriter()
+
+    for page_number in range(num_pages):
+        page = pdf_reader.getPage(page_number)
+        if page_number == 0:
+            if 'background_first_page' in pdf_args:
+                page.mergePage(pdf_args['background_first_page'].getPage(0))
+            elif 'background' in pdf_args:
+                page.mergePage(pdf_args['background'].getPage(0))
+        else:
+            if 'background' in pdf_args:
+                page.mergePage(pdf_args['background'].getPage(0))
+        if 'watermark' in pdf_args:
+            page.mergePage(pdf_args['watermark'].getPage(0))
+        pdf_writer.addPage(page)
+
+    pdf_writer.addMetadata(metadata)
+
+    file_out = open(filename, 'wb')
+    pdf_writer.write(file_out)
+
+    file_out.close()
+    file_in.close()
+    shutil.rmtree(temp_dir)
+    return filename
+
+# -----------------------------------------------------------------------------
 # Convert md file to pdf
 #
 # @param filename the filename of the markdon file
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the pdf filename
-###############################################################################
-def convert_md_to_pdf(filename, filename_ext=".md"):
+# -----------------------------------------------------------------------------
+def convert_md_to_pdf(filename, filename_ext=".md", **kwargs):
     """
     This function take a file, load the content, create a pdf
     with the same name.
@@ -292,36 +361,47 @@ def convert_md_to_pdf(filename, filename_ext=".md"):
     """
     logging.info('Convert md -> pdf %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    md_metadata = instruction.get_vars_from_md_file(filename)
 
     temp_dir = common.get_new_temp_dir()
     temp_md_filename = os.path.join(temp_dir, os.path.basename(filename))
-    temp_html_filename = os.path.splitext(temp_md_filename)[0] + ".html"
-    temp_pdf_filename = os.path.splitext(temp_md_filename)[0] + ".pdf"
 
     logging.info('Copy file to temp')
     shutil.copy(filename, temp_md_filename)
     logging.info('Convert md to html')
-    convert_md_to_html(temp_md_filename, converter='mistune')
-    logging.info('Convert html to pdf')
-    convert_html_to_pdf(temp_html_filename)
+    temp_html_filename = convert_md_to_html(
+        temp_md_filename, converter='mistune')
+
+    title = None
+    if 'title' in md_metadata:
+        title = md_metadata['title']
+    if 'page:title' in md_metadata:
+        title = md_metadata['page:title']
+
+    logging.info('Convert html to pdf title=%s', title)
+    temp_pdf_filename = convert_html_to_pdf(temp_html_filename, title=title)
 
     logging.info('Copy file from temp')
     pdf_filename = os.path.splitext(filename)[0] + ".pdf"
-    shutil.copy(temp_pdf_filename, os.path.splitext(filename)[0] + ".pdf")
+    shutil.copy(temp_pdf_filename, pdf_filename)
 
     # remove the temp dir
     logging.info('Remove the temp dir')
     shutil.rmtree(temp_dir)
 
+    # add features
+    pdf_features(pdf_filename, filename_ext=".pdf",
+                 metadata=md_metadata, **kwargs)
+
     return pdf_filename
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return the filename of THIS script.
-###############################################################################
+# -----------------------------------------------------------------------------
 def __get_this_filename():
     result = ""
 
@@ -333,42 +413,3 @@ def __get_this_filename():
         result = __file__
 
     return result
-
-###############################################################################
-# Set up the logging system
-###############################################################################
-def __set_logging_system():
-    log_filename = os.path.splitext(os.path.abspath(
-        os.path.realpath(__get_this_filename())))[0] + '.log'
-    logging.basicConfig(filename=log_filename, level=logging.DEBUG,
-                        format='%(asctime)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s')
-    # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
-    logging.getLogger('').addHandler(console)
-
-###############################################################################
-# Main script call only if this script is runned directly
-###############################################################################
-def __main():
-    # ------------------------------------
-    logging.info('Started %s', __get_this_filename())
-    logging.info('The Python version is %s.%s.%s',
-                 sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    logging.info('Finished')
-    # ------------------------------------
-
-
-###############################################################################
-# Call main function if the script is main
-# Exec only if this script is runned directly
-###############################################################################
-if __name__ == '__main__':
-    __set_logging_system()
-    __main()

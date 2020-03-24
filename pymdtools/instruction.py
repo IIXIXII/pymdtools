@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-###############################################################################
+# -----------------------------------------------------------------------------
 #
 # Copyright (c) 2018 Florent TOURNOIS
 #
@@ -22,27 +22,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # @package mdtools
 # Markdown Tools develops for Guichet Entreprises
 #
-###############################################################################
+# -----------------------------------------------------------------------------
 import logging
 import sys
 import os
 import re
 
-if (__package__ in [None, '']) and ('.' not in __name__):
-    import common
-else:
-    from . import common
+from . import common
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # re expression used for instruction
-###############################################################################
+# -----------------------------------------------------------------------------
 __comment_re__ = \
     r"<!--(?P<comment>[\s\S]*?)-->"
 __begin_ref_re__ = \
@@ -64,25 +61,25 @@ __include_file_re__ = \
     r"<!--\s+include-file\((?P<name>[\.a-zA-Z0-9_-]+)\)" \
     r"(?P<content>[\s\S]*?)-->"
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # strip XML comment.
 # Remove all xml comment from a text
 #
 # @param text the markdown text
 # @return the text without xml comment
-###############################################################################
+# -----------------------------------------------------------------------------
 def strip_xml_comment(text):
     result = re.sub(__comment_re__, "", text)
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find refs in a markdown text
 #
 # @param text the markdown text
 # @param previous_refs the previous refs dict for a recursive call
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_refs_from_md_text(text, previous_refs=None):
     result = {}
     if previous_refs is not None:
@@ -117,7 +114,8 @@ def get_refs_from_md_text(text, previous_refs=None):
             'Find a begin-ref(%s) and not finding the end-ref' % (key))
 
     # remove  XML comment and save
-    result[key] = strip_xml_comment(last_part[0:match_end.start(0)])
+    # result[key] = strip_xml_comment(last_part[0:match_end.start(0)])
+    result[key] = last_part[0:match_end.start(0)]
 
     new_text = last_part[match_end.end(0):]
 
@@ -126,14 +124,14 @@ def get_refs_from_md_text(text, previous_refs=None):
     return result
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find refs in a markdown file
 #
 # @param filename the markdown file
 # @param filename_ext the extension of the markdown file
 # @param previous_refs the previous refs dict for a recursive call
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_refs_from_md_file(filename, filename_ext=".md", previous_refs=None):
     logging.debug('Find refs in the MD the file %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
@@ -146,7 +144,7 @@ def get_refs_from_md_file(filename, filename_ext=".md", previous_refs=None):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find refs in markdown file in a folder and subfolder.
 # Depth parameter :
 # 		- -1-> every subfolder.
@@ -158,7 +156,7 @@ def get_refs_from_md_file(filename, filename_ext=".md", previous_refs=None):
 # @param previous_refs the previous refs dict for a recursive call
 # @param depth the depth to search for.
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_refs_from_md_directory(folder, filename_ext=".md",
                                previous_refs=None, depth=-1):
     logging.debug('Find refs in the MD in the folder "%s"', folder)
@@ -189,9 +187,9 @@ def get_refs_from_md_directory(folder, filename_ext=".md",
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find refs around a markdown file.
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_refs_other(refs=None, filename_ext=".md", **kwargs):
     result = refs if refs is not None else {}
 
@@ -206,7 +204,7 @@ def get_refs_other(refs=None, filename_ext=".md", **kwargs):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find refs around a markdown file.
 # Depth down parameter :
 # 		- -1-> every subfolder.
@@ -219,7 +217,7 @@ def get_refs_other(refs=None, filename_ext=".md", **kwargs):
 # @param depth_up the number of upper folder to search for.
 # @param depth_down the depth to search for.
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_refs_around_md_file(filename, filename_ext=".md",
                             previous_refs=None,
                             depth_up=1, depth_down=-1):
@@ -245,7 +243,18 @@ def get_refs_around_md_file(filename, filename_ext=".md",
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
+# Include reference to the markdown text
+# \warning All the reference must be defined
+#
+# @param text the markdown text
+# @param begin_include_re the regex to match the begin
+# @return all references
+# -----------------------------------------------------------------------------
+def refs_in_md_text(text, begin_include_re=__begin_include_re__):
+    return re.findall(begin_include_re, text)
+
+# -----------------------------------------------------------------------------
 # Include reference to the markdown text
 # \warning All the reference must be defined
 #
@@ -256,7 +265,7 @@ def get_refs_around_md_file(filename, filename_ext=".md",
 # @param error_if_no_key boolean :
 #                        throw Exception if the key is not found
 # @return the markdown text with the include
-###############################################################################
+# -----------------------------------------------------------------------------
 def include_refs_to_md_text(text, refs_include,
                             begin_include_re=__begin_include_re__,
                             end_include_re=__end_include_re__,
@@ -307,7 +316,7 @@ def include_refs_to_md_text(text, refs_include,
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Include reference to the markdown text
 # \warning All the reference must be defined
 #
@@ -323,7 +332,7 @@ def include_refs_to_md_text(text, refs_include,
 # @param error_if_no_key boolean : throw Exception
 #                                         if the key is not found
 # @return the filename normalized
-###############################################################################
+# -----------------------------------------------------------------------------
 def include_refs_to_md_file(filename,
                             refs,
                             backup_option=True,
@@ -353,7 +362,7 @@ def include_refs_to_md_file(filename,
     common.set_file_content(filename, text, encoding="utf-8")
     return filename
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Search and include reference to the markdown text
 # \warning All the reference must be defined
 #
@@ -371,7 +380,7 @@ def include_refs_to_md_file(filename,
 # @param depth_up the number of upper folder to search for.
 # @param depth_down the depth to search for.
 # @return the filename normalized
-###############################################################################
+# -----------------------------------------------------------------------------
 def search_include_refs_to_md_file(filename,
                                    backup_option=True,
                                    filename_ext=".md",
@@ -410,13 +419,13 @@ def search_include_refs_to_md_file(filename,
                                    backup_option=backup_option,
                                    filename_ext=filename_ext)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find vars in a markdown test
 #
 # @param text the markdown text
 # @param previous_vars the previous vars dict for a recursive call
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_vars_from_md_text(text, previous_vars=None):
     # search begin
     match_var = re.search(__var_re__, text)
@@ -449,14 +458,14 @@ def get_vars_from_md_text(text, previous_vars=None):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # set a var in the markdown text
 #
 # @param text the markdown text
 # @param var_name the variable name
 # @param value the value to set
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def set_var_to_md_text(text, var_name, value):
 
     result = ""
@@ -498,13 +507,13 @@ def set_var_to_md_text(text, var_name, value):
     return result
 
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # del a var in the markdown text
 #
 # @param text the markdown text
 # @param var_name the variable name
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def del_var_to_md_text(text, var_name):
 
     result = ""
@@ -527,12 +536,12 @@ def del_var_to_md_text(text, var_name):
     result += current_text
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Get title in md text
 # @param text the markdown text
 # @return the the title
-###############################################################################
-def get_title_from_md_text(text):
+# -----------------------------------------------------------------------------
+def get_title_from_md_text(text, return_match=False):
     local_text = strip_xml_comment(text)
     title_re = r"(\s)*(?P<title>[^\n\r]+)(\n|\r\n)[=]+(\s)*"
     match = re.search(title_re, local_text)
@@ -542,14 +551,17 @@ def get_title_from_md_text(text):
         if not match:
             return None
 
+    if return_match:
+        return match
+
     return match.group('title')
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Set title in md text
 # @param text the markdown text
 # @param new_title the new title
 # @return the title
-###############################################################################
+# -----------------------------------------------------------------------------
 def set_title_in_md_text(text, new_title):
     old_title = get_title_from_md_text(text)
     new_second_line = "=" * len(new_title)
@@ -561,14 +573,14 @@ def set_title_in_md_text(text, new_title):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find vars in a markdown file
 #
 # @param filename the markdown file
 # @param filename_ext the extension of the markdown file
 # @param previous_vars the previous refs dict for a recursive call
 # @return the dict with the vars found: key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_vars_from_md_file(filename, filename_ext=".md", previous_vars=None):
     logging.debug('Find vars in the MD the file %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
@@ -581,7 +593,7 @@ def get_vars_from_md_file(filename, filename_ext=".md", previous_vars=None):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Include vars to the markdown text
 # \warning All the reference must be defined
 #
@@ -592,7 +604,7 @@ def get_vars_from_md_file(filename, filename_ext=".md", previous_vars=None):
 # @param error_if_var_not_found boolean : throw Exception
 #                                         if the var is not found
 # @return the markdown text with the include
-###############################################################################
+# -----------------------------------------------------------------------------
 def include_vars_to_md_text(text, vars_include,
                             begin_var_re=__begin_var_re__,
                             end_var_re=__end_var_re__,
@@ -602,7 +614,7 @@ def include_vars_to_md_text(text, vars_include,
                                    end_include_re=end_var_re,
                                    error_if_no_key=error_if_var_not_found)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Include variable to the markdown text
 # \warning All the reference must be defined
 #
@@ -618,7 +630,7 @@ def include_vars_to_md_text(text, vars_include,
 # @param error_if_var_not_found boolean : throw Exception
 #                                         if the var is not found
 # @return the filename normalized
-###############################################################################
+# -----------------------------------------------------------------------------
 def include_vars_to_md_file(filename, text_vars, backup_option=True,
                             filename_ext=".md",
                             begin_var_re=__begin_var_re__,
@@ -631,7 +643,7 @@ def include_vars_to_md_file(filename, text_vars, backup_option=True,
                                    end_include_re=end_var_re,
                                    error_if_no_key=error_if_var_not_found)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Search and include vars to the markdown text
 # \warning All the reference must be defined
 #
@@ -642,7 +654,7 @@ def include_vars_to_md_file(filename, text_vars, backup_option=True,
 #                          named filename.bak will be created.
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the filename normalized
-###############################################################################
+# -----------------------------------------------------------------------------
 def search_include_vars_to_md_file(filename, backup_option=True,
                                    filename_ext=".md"):
     text_vars = get_vars_from_md_file(filename, filename_ext=filename_ext)
@@ -650,25 +662,25 @@ def search_include_vars_to_md_file(filename, backup_option=True,
                                    backup_option=backup_option,
                                    filename_ext=filename_ext)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Search and include vars to the markdown text
 # \warning All the reference must be defined
 #
 # @param text the markdown text
 # @return the text completed
-###############################################################################
+# -----------------------------------------------------------------------------
 def search_include_vars_to_md_text(text):
     text_vars = get_vars_from_md_text(text)
     return include_vars_to_md_text(text, text_vars)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Reteive the content a referenced file
 #
 # @param filename the filename
 # @param search_folder the folder to find all the files
 #                      (default: python files/referenced_files/)
 # @return the content of the file
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_file_content_to_include(filename, search_folder=None, **kwargs):
     local_search_folder = []
     local_search_folder.append(os.path.join(
@@ -687,7 +699,7 @@ def get_file_content_to_include(filename, search_folder=None, **kwargs):
 
     return common.get_file_content(found_filename)
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Include file to the markdown text
 # \warning All the reference must be defined
 #
@@ -696,7 +708,7 @@ def get_file_content_to_include(filename, search_folder=None, **kwargs):
 # @param error_if_no_file boolean : throw Exception
 #                                            if the key is not found
 # @return the markdown text with the include
-###############################################################################
+# -----------------------------------------------------------------------------
 def include_files_to_md_text(text, include_file_re=__include_file_re__,
                              error_if_no_file=True, **kwargs):
     # search begin
@@ -720,7 +732,6 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
 %(text)s
 +--------------------------------------------------------------------------"""\
 """ -->""" % {'filename': filename,
-              'left_side': left_side,
               'text': text_file}
 
     result = text[:match_file.start(0)]
@@ -732,7 +743,7 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Include file to the markdown file
 #
 # @param filename The name and path of the file to work with.
@@ -742,7 +753,7 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
 #                           filename.bak will be created.
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the filename normalized
-###############################################################################
+# -----------------------------------------------------------------------------
 def include_files_to_md_file(filename, backup_option=True, filename_ext=".md"):
     logging.debug('Include file to the file %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
@@ -762,13 +773,13 @@ def include_files_to_md_file(filename, backup_option=True, filename_ext=".md"):
     common.set_file_content(filename, text, encoding="utf-8")
     return filename
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # set a var in the markdown text
 #
 # @param text the markdown text
 # @param filename the filename
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def set_include_file_to_md_text(text, filename):
 
     result = ""
@@ -800,12 +811,12 @@ def set_include_file_to_md_text(text, filename):
     result += current_text
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # del a var in the markdown text
 #
 # @param text the markdown text
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def get_include_file_list(text):
 
     result = []
@@ -821,13 +832,13 @@ def get_include_file_list(text):
 
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # del a var in the markdown text
 #
 # @param text the markdown text
 # @param filename the filename
 # @return the dict with the refs found key-> value
-###############################################################################
+# -----------------------------------------------------------------------------
 def del_include_file_to_md_text(text, filename):
 
     result = ""
@@ -850,13 +861,13 @@ def del_include_file_to_md_text(text, filename):
     result += current_text
     return result
 
-###############################################################################
+# -----------------------------------------------------------------------------
 # Find the filename of this file (depend on the frozen or not)
 # This function return the filename of this script.
 # The function is complex for the frozen system
 #
 # @return the filename of THIS script.
-###############################################################################
+# -----------------------------------------------------------------------------
 def __get_this_filename():
     result = ""
 
@@ -868,42 +879,3 @@ def __get_this_filename():
         result = __file__
 
     return result
-
-###############################################################################
-# Set up the logging system
-###############################################################################
-def __set_logging_system():
-    log_filename = os.path.splitext(os.path.abspath(
-        os.path.realpath(__get_this_filename())))[0] + '.log'
-    logging.basicConfig(filename=log_filename, level=logging.DEBUG,
-                        format='%(asctime)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s')
-    # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
-    logging.getLogger('').addHandler(console)
-
-###############################################################################
-# Main script call only if this script is runned directly
-###############################################################################
-def __main():
-    # ------------------------------------
-    logging.info('Started %s', __get_this_filename())
-    logging.info('The Python version is %s.%s.%s',
-                 sys.version_info[0], sys.version_info[1], sys.version_info[2])
-
-    logging.info('Finished')
-    # ------------------------------------
-
-
-###############################################################################
-# Call main function if the script is main
-# Exec only if this script is runned directly
-###############################################################################
-if __name__ == '__main__':
-    __set_logging_system()
-    __main()
