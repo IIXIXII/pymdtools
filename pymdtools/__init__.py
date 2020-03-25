@@ -23,9 +23,7 @@
 # SOFTWARE.
 #
 # -----------------------------------------------------------------------------
-"""@package pymdtools
-Markdown Tools developed for Gucihet Entreprises
-"""
+""" Markdown Tools developed for Gucihet Entreprises """
 
 import logging
 import sys
