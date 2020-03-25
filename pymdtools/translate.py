@@ -31,8 +31,10 @@ import sys
 import os
 import gettext
 
-from googletrans import Translator as GTranslator
-from goslate import Goslate as GoTranslator
+# from googletrans import Translator as GTranslator
+# from goslate import Goslate as GoTranslator
+from translate import Translator
+import upref
 
 from . import common
 from . import mistunege as mistune
@@ -181,6 +183,33 @@ def eu_lang_list():
         'fi', 'sv', 'tr', 'ru',
     ]
 
+# -----------------------------------------------------------------------------
+# Translation parameters
+#
+# @return the parameter
+# -----------------------------------------------------------------------------
+def _translation_parameter():
+    data_conf = {
+        'provider': {
+            'label': "Provider for the translation",
+            'description': "There is two provider : microsoft or mymemory",
+            'value': 'mymemory',
+        },
+        'secret_access_key': {
+            'label': "Secret key ",
+            'description': "Secrect key to access the service",
+            'value': '',
+        },
+    }
+    parameter = upref.get_pref(data_conf, name="translation")
+
+    secret_key = parameter['secret_access_key']
+    if secret_key is None or len(secret_key) < 1:
+        del parameter['secret_access_key']
+
+    parameter['provider'] = parameter['provider'].lower()
+
+    return parameter
 
 # -----------------------------------------------------------------------------
 # Translate a phrase with google
@@ -192,14 +221,18 @@ def eu_lang_list():
 def translate_txt(text, src="fr", dest="en"):
     if text and not text.isspace():
         # option 1
-        trans = GTranslator()
-        result_trans = trans.translate(text, src=src, dest=dest)
-        return result_trans.text
+        # trans = GTranslator()
+        # result_trans = trans.translate(text, src=src, dest=dest)
+        # return result_trans.text
 
         # option 2
         # trans = GoTranslator()
         # result_trans = trans.translate(text, dest, source_language=src)
         # return result_trans
+
+        translator = Translator(from_lang=src, to_lang=dest,
+                                **_translation_parameter())
+        return translator.translate(text)
 
     return text
 

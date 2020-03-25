@@ -45,6 +45,8 @@ def test_eu_lang():
 def test_hello():
     assert translate.translate_txt(
         "bonjour", src="fr", dest="en").lower() == "hello"
+    print(translate.translate_txt(
+        "monsieur", src="fr", dest="en"))
 
 
 # -----------------------------------------------------------------------------
@@ -92,7 +94,7 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    test_eu_lang()
+    # test_eu_lang()
     test_hello()
 
     # import goslate
