@@ -28,3 +28,4 @@ pdfkit
 PyPDF2
 translate
 upref
+beautifulsoup4

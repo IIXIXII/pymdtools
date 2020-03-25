@@ -256,6 +256,14 @@ def translate_md(md_text, src="fr", dest="en"):
     result = markdown(md_text)
     return result
 
+# def translate_md2(md_text, src="fr", dest="en"):
+#     from . import mdtopdf
+#     from . import instruction
+#     from . import markdownify
+#     md_pure_text = instruction.strip_xml_comment(md_text)
+#     html_text = mdtopdf.get_md_to_html_converter('mistune')(md_pure_text)
+#     result_html = translate_txt(html_text, src=src, dest=dest)
+#     return markdownify.markdownify(result_html)
 
 # -----------------------------------------------------------------------------
 def __get_this_folder():

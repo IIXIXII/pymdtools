@@ -34,6 +34,9 @@ import sys
 import os
 import os.path
 
+import test_general
+import pymdtools.common as common
+import pymdtools.mdfile as mdfile
 import pymdtools.translate as translate
 
 # -----------------------------------------------------------------------------
@@ -47,6 +50,22 @@ def test_hello():
         "bonjour", src="fr", dest="en").lower() == "hello"
     print(translate.translate_txt(
         "monsieur", src="fr", dest="en"))
+
+# -----------------------------------------------------------------------------
+def test_md():
+    filename = test_general.get_test_folder() \
+        + "/translate/DS004-boucher.fr.md"
+    filename_res1 = filename + ".res1.md"
+    filename_res2 = filename + ".res2.md"
+
+    md1 = mdfile.MarkdownContent(filename)
+    if not os.path.isfile(filename_res1):
+        result1 = translate.translate_md(md1.content, src="fr", dest="en")
+        common.set_file_content(filename_res1, result1)
+
+    # if not os.path.isfile(filename_res2):
+    #     result2 = translate.translate_md2(md1.content, src="fr", dest="en")
+    #     common.set_file_content(filename_res2, result2)
 
 
 # -----------------------------------------------------------------------------
@@ -95,8 +114,8 @@ def __main():
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
     # test_eu_lang()
-    test_hello()
-
+    # test_hello()
+    test_md()
     # import goslate
     # gs = goslate.Goslate()
 
