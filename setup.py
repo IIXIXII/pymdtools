@@ -50,7 +50,6 @@ try:
 except FileNotFoundError:
     __long_description__ = mymodule.__doc__
 
-
 # -------------------------------------------------------------------------------
 # Increase the version number
 # -------------------------------------------------------------------------------
@@ -109,7 +108,7 @@ class UploadCommand(Command):
                   '--universal'.format(sys.executable))
 
         self.status('Uploading the package to PyPI via Twine…')
-        os.system('twine upload dist/*')
+        os.system('twine upload --verbose dist/*')
 
         sys.exit()
 
@@ -167,8 +166,8 @@ setup(
     version=mymodule.__version__,
     author=mymodule.__author__,
     author_email=mymodule.__email__,
-    description=mymodule.__doc__,
     license=mymodule.__license__,
+    description=mymodule.__doc__,
     long_description=__long_description__,
     long_description_content_type='text/markdown',
 
