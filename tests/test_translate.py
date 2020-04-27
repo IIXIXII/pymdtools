@@ -52,6 +52,11 @@ def test_hello():
         "monsieur", src="fr", dest="en"))
 
 # -----------------------------------------------------------------------------
+def test_hello2():
+    result = translate.translate_txt("de la ", src="fr", dest="pt")
+    assert result == ""
+
+# -----------------------------------------------------------------------------
 def test_md():
     filename = test_general.get_test_folder() \
         + "/translate/DS004-boucher.fr.md"
@@ -115,7 +120,8 @@ def __main():
 
     # test_eu_lang()
     # test_hello()
-    test_md()
+    # test_md()
+    test_hello2()
     # import goslate
     # gs = goslate.Goslate()
 

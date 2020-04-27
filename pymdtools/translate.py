@@ -232,7 +232,11 @@ def translate_txt(text, src="fr", dest="en"):
 
         translator = Translator(from_lang=src, to_lang=dest,
                                 **_translation_parameter())
-        return translator.translate(text)
+        try:
+            return translator.translate(text)
+        except BaseException as err:
+            logging.error("Error in translation '%s' for '%s'", text, err)
+            return ""
 
     return text
 
