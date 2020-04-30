@@ -41,6 +41,13 @@ import pymdtools.filetools as filetools
 import pymdtools.mdcommon as mdcommon
 
 
+def test_today():
+    stamp = common.timestamp_now()
+    assert len(stamp) > 0
+    dtime = common.timestamp_read(stamp)
+    assert stamp == str(dtime)
+
+
 def test_search_link_in_md_text_1():
     # ------
     result = mdcommon.search_link_in_md_text(
@@ -551,7 +558,7 @@ def __main():
     logging.info('The Python version is %s.%s.%s',
                  sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
-    test_check_create_folder()
+    test_today()
 
     logging.info('Finished')
     # ------------------------------------

@@ -197,7 +197,9 @@ def search_link_in_md_text(text, previous_links=None):
     for match in re.finditer(md_link_re, text):
         result.append({'name': match.group('name'),
                        'url': match.group('url'),
-                       'title': match.group('title')})
+                       'title': match.group('title'),
+                       'line': text[0:match.start()].count("\n") + 1,
+                       })
 
     links_by_ref = {}
     for match in re.finditer(md_link_ref_name_re, text):
@@ -209,6 +211,8 @@ def search_link_in_md_text(text, previous_links=None):
         if links_by_ref.get(id_link) is not None:
             links_by_ref[id_link]['url'] = match.group('url')
             links_by_ref[id_link]['title'] = match.group('title')
+            links_by_ref[id_link]['line'] = text[0:match.start()
+                                                 ].count("\n") + 1
             result.append(links_by_ref[id_link])
 
     return result

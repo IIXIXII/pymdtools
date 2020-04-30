@@ -33,6 +33,8 @@ import shutil
 import codecs
 import tempfile
 import time
+import datetime
+import dateutil.parser
 import re
 
 
@@ -635,6 +637,22 @@ def filename_ext_to_chm(filename):
 def get_today():
     return time.strftime("%Y-%m-%d", time.gmtime())
 
+
+# -----------------------------------------------------------------------------
+# Get now date time
+#
+# @return a string "YYYY-MM-DD HH:MM:SS"
+# -----------------------------------------------------------------------------
+def timestamp_now():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+# -----------------------------------------------------------------------------
+# Read a time stamp
+#
+# @return a datetime
+# -----------------------------------------------------------------------------
+def timestamp_read(datetime_str):
+    return dateutil.parser.parse(datetime_str)
 
 # -----------------------------------------------------------------------------
 # Apply function to every files in folder
