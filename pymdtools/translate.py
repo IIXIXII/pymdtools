@@ -219,6 +219,8 @@ def _translation_parameter():
 # @param dest the destination language
 # -----------------------------------------------------------------------------
 def translate_txt(text, src="fr", dest="en"):
+    if dest == src:
+        return text
     if text and not text.isspace():
         # option 1
         # trans = GTranslator()
