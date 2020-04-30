@@ -29,3 +29,4 @@ PyPDF2
 translate
 upref
 beautifulsoup4
+python-dateutil
