@@ -493,7 +493,7 @@ def str_to_ascii(value):
 # @param allow_unicode unicode possibility
 # @return the simplified phrase
 # -----------------------------------------------------------------------------
-def slugify(value, allow_unicode=False):
+def slugify(value, allow_unicode=False, separator="-"):
     value = str(value)
 
     import unicodedata
@@ -505,7 +505,7 @@ def slugify(value, allow_unicode=False):
             encode('ascii', 'ignore').decode('ascii')
 
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
-    return re.sub(r'[-\s]+', '-', value)
+    return re.sub(r'[-\s]+', separator, value)
 
 
 # -----------------------------------------------------------------------------
