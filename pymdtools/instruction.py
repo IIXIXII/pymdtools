@@ -683,15 +683,16 @@ def search_include_vars_to_md_text(text):
 # -----------------------------------------------------------------------------
 def get_file_content_to_include(filename, search_folder=None, **kwargs):
     local_search_folder = []
-    local_search_folder.append(os.path.join(
-        os.path.split(__get_this_filename())[0]))
-    local_search_folder.append("./")
 
     if search_folder is not None:
         local_search_folder.append(search_folder)
 
     if 'search_folders' in kwargs:
         local_search_folder.extend(kwargs['search_folders'])
+
+    local_search_folder.append(os.path.join(
+        os.path.split(__get_this_filename())[0]))
+    local_search_folder.append("./")
 
     found_filename = common.search_for_file(filename, local_search_folder,
                                             [".", "referenced_files"],
