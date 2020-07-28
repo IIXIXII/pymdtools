@@ -40,6 +40,13 @@ import pymdtools.mdfile as mdfile
 import pymdtools.translate as translate
 
 # -----------------------------------------------------------------------------
+def test_deepl():
+    import pydeepl
+    phrase = "J'aime les tortue."
+    print(pydeepl.translate(phrase, "ES", from_lang="FR"))
+
+
+# -----------------------------------------------------------------------------
 def test_eu_lang():
     assert len(translate.eu_lang_list()) == 26
 
@@ -121,7 +128,7 @@ def __main():
     # test_eu_lang()
     # test_hello()
     # test_md()
-    test_hello2()
+    test_deepl()
     # import goslate
     # gs = goslate.Goslate()
 

@@ -30,3 +30,4 @@ translate
 upref
 beautifulsoup4
 python-dateutil
+pydeepl
