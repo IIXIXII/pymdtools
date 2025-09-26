@@ -26,7 +26,7 @@
 
 # -----------------------------------------------------------------------------
 # @package mdtools
-# Markdown Tools develops for Guichet Entreprises
+# Markdown Tools develops for Florent TOURNOIS
 #
 # -----------------------------------------------------------------------------
 import logging
@@ -68,6 +68,8 @@ __include_file_re__ = \
 # @param text the markdown text
 # @return the text without xml comment
 # -----------------------------------------------------------------------------
+
+
 def strip_xml_comment(text):
     result = re.sub(__comment_re__, "", text)
 
@@ -80,6 +82,8 @@ def strip_xml_comment(text):
 # @param previous_refs the previous refs dict for a recursive call
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def get_refs_from_md_text(text, previous_refs=None):
     result = {}
     if previous_refs is not None:
@@ -157,6 +161,8 @@ def get_refs_from_md_file(filename, filename_ext=".md", previous_refs=None):
 # @param depth the depth to search for.
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def get_refs_from_md_directory(folder, filename_ext=".md",
                                previous_refs=None, depth=-1):
     logging.debug('Find refs in the MD in the folder "%s"', folder)
@@ -190,6 +196,8 @@ def get_refs_from_md_directory(folder, filename_ext=".md",
 # -----------------------------------------------------------------------------
 # Find refs around a markdown file.
 # -----------------------------------------------------------------------------
+
+
 def get_refs_other(refs=None, filename_ext=".md", **kwargs):
     result = refs if refs is not None else {}
 
@@ -218,6 +226,8 @@ def get_refs_other(refs=None, filename_ext=".md", **kwargs):
 # @param depth_down the depth to search for.
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def get_refs_around_md_file(filename, filename_ext=".md",
                             previous_refs=None,
                             depth_up=1, depth_down=-1):
@@ -251,6 +261,8 @@ def get_refs_around_md_file(filename, filename_ext=".md",
 # @param begin_include_re the regex to match the begin
 # @return all references
 # -----------------------------------------------------------------------------
+
+
 def refs_in_md_text(text, begin_include_re=__begin_include_re__):
     return re.findall(begin_include_re, text)
 
@@ -266,6 +278,8 @@ def refs_in_md_text(text, begin_include_re=__begin_include_re__):
 #                        throw Exception if the key is not found
 # @return the markdown text with the include
 # -----------------------------------------------------------------------------
+
+
 def include_refs_to_md_text(text, refs_include,
                             begin_include_re=__begin_include_re__,
                             end_include_re=__end_include_re__,
@@ -333,6 +347,8 @@ def include_refs_to_md_text(text, refs_include,
 #                                         if the key is not found
 # @return the filename normalized
 # -----------------------------------------------------------------------------
+
+
 def include_refs_to_md_file(filename,
                             refs,
                             backup_option=True,
@@ -381,6 +397,8 @@ def include_refs_to_md_file(filename,
 # @param depth_down the depth to search for.
 # @return the filename normalized
 # -----------------------------------------------------------------------------
+
+
 def search_include_refs_to_md_file(filename,
                                    backup_option=True,
                                    filename_ext=".md",
@@ -426,6 +444,8 @@ def search_include_refs_to_md_file(filename,
 # @param previous_vars the previous vars dict for a recursive call
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def get_vars_from_md_text(text, previous_vars=None):
     # search begin
     match_var = re.search(__var_re__, text)
@@ -466,6 +486,8 @@ def get_vars_from_md_text(text, previous_vars=None):
 # @param value the value to set
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def set_var_to_md_text(text, var_name, value):
 
     result = ""
@@ -541,6 +563,8 @@ def del_var_to_md_text(text, var_name):
 # @param text the markdown text
 # @return the the title
 # -----------------------------------------------------------------------------
+
+
 def get_title_from_md_text(text, return_match=False):
     local_text = strip_xml_comment(text)
     title_re = r"(\s)*(?P<title>[^\n\r]+)(\n|\r\n)[=]+(\s)*"
@@ -562,6 +586,8 @@ def get_title_from_md_text(text, return_match=False):
 # @param new_title the new title
 # @return the title
 # -----------------------------------------------------------------------------
+
+
 def set_title_in_md_text(text, new_title):
     old_title = get_title_from_md_text(text)
     new_second_line = "=" * len(new_title)
@@ -581,6 +607,8 @@ def set_title_in_md_text(text, new_title):
 # @param previous_vars the previous refs dict for a recursive call
 # @return the dict with the vars found: key-> value
 # -----------------------------------------------------------------------------
+
+
 def get_vars_from_md_file(filename, filename_ext=".md", previous_vars=None):
     logging.debug('Find vars in the MD the file %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
@@ -605,6 +633,8 @@ def get_vars_from_md_file(filename, filename_ext=".md", previous_vars=None):
 #                                         if the var is not found
 # @return the markdown text with the include
 # -----------------------------------------------------------------------------
+
+
 def include_vars_to_md_text(text, vars_include,
                             begin_var_re=__begin_var_re__,
                             end_var_re=__end_var_re__,
@@ -631,6 +661,8 @@ def include_vars_to_md_text(text, vars_include,
 #                                         if the var is not found
 # @return the filename normalized
 # -----------------------------------------------------------------------------
+
+
 def include_vars_to_md_file(filename, text_vars, backup_option=True,
                             filename_ext=".md",
                             begin_var_re=__begin_var_re__,
@@ -655,6 +687,8 @@ def include_vars_to_md_file(filename, text_vars, backup_option=True,
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the filename normalized
 # -----------------------------------------------------------------------------
+
+
 def search_include_vars_to_md_file(filename, backup_option=True,
                                    filename_ext=".md"):
     text_vars = get_vars_from_md_file(filename, filename_ext=filename_ext)
@@ -669,6 +703,8 @@ def search_include_vars_to_md_file(filename, backup_option=True,
 # @param text the markdown text
 # @return the text completed
 # -----------------------------------------------------------------------------
+
+
 def search_include_vars_to_md_text(text):
     text_vars = get_vars_from_md_text(text)
     return include_vars_to_md_text(text, text_vars)
@@ -681,6 +717,8 @@ def search_include_vars_to_md_text(text):
 #                      (default: python files/referenced_files/)
 # @return the content of the file
 # -----------------------------------------------------------------------------
+
+
 def get_file_content_to_include(filename, search_folder=None, **kwargs):
     local_search_folder = []
     local_search_folder.append(os.path.join(
@@ -709,6 +747,8 @@ def get_file_content_to_include(filename, search_folder=None, **kwargs):
 #                                            if the key is not found
 # @return the markdown text with the include
 # -----------------------------------------------------------------------------
+
+
 def include_files_to_md_text(text, include_file_re=__include_file_re__,
                              error_if_no_file=True, **kwargs):
     # search begin
@@ -754,6 +794,8 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
 # @param filename_ext This parameter the markdown extension for the filename.
 # @return the filename normalized
 # -----------------------------------------------------------------------------
+
+
 def include_files_to_md_file(filename, backup_option=True, filename_ext=".md"):
     logging.debug('Include file to the file %s', filename)
     filename = common.check_is_file_and_correct_path(filename, filename_ext)
@@ -780,6 +822,8 @@ def include_files_to_md_file(filename, backup_option=True, filename_ext=".md"):
 # @param filename the filename
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def set_include_file_to_md_text(text, filename):
 
     result = ""
@@ -817,6 +861,8 @@ def set_include_file_to_md_text(text, filename):
 # @param text the markdown text
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def get_include_file_list(text):
 
     result = []
@@ -839,6 +885,8 @@ def get_include_file_list(text):
 # @param filename the filename
 # @return the dict with the refs found key-> value
 # -----------------------------------------------------------------------------
+
+
 def del_include_file_to_md_text(text, filename):
 
     result = ""
@@ -868,6 +916,8 @@ def del_include_file_to_md_text(text, filename):
 #
 # @return the filename of THIS script.
 # -----------------------------------------------------------------------------
+
+
 def __get_this_filename():
     result = ""
 

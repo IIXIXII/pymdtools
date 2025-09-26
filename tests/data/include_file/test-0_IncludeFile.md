@@ -1,11 +1,11 @@
 ﻿<!-- include-file(license.txt)
 +-----------------------------------------------------------------------------+
-| Copyright © Guichet Entreprises - All Rights Reserved
+| Copyright © Florent TOURNOIS - All Rights Reserved
 | 	All Rights Reserved.
 | 	Unauthorized copying of this file, via any medium is strictly prohibited
 | 	Dissemination of this information or reproduction of this material
 | 	is strictly forbidden unless prior written permission is obtained
-| 	from Guichet Entreprises.
+| 	from Florent TOURNOIS.
 +-------------------------------------------------------------------------- -->
 <!-- var(nom-variable)	= "Valeur var" -->
 <!-- var(lang)		= "Valeur lang" -->
@@ -18,12 +18,12 @@
 
 <!-- include-file(license.txt)
 +-----------------------------------------------------------------------------+
-| Copyright © Guichet Entreprises - All Rights Reserved
+| Copyright © Florent TOURNOIS - All Rights Reserved
 | 	All Rights Reserved.
 | 	Unauthorized copying of this file, via any medium is strictly prohibited
 | 	Dissemination of this information or reproduction of this material
 | 	is strictly forbidden unless prior written permission is obtained
-| 	from Guichet Entreprises.
+| 	from Florent TOURNOIS.
 +-------------------------------------------------------------------------- -->
 
 S004 - BOUCHER

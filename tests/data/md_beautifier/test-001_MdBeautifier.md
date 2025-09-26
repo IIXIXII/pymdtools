@@ -3,7 +3,7 @@
 
 *Date de mise à jour : 25/05/2018*
 
-La politique de protection des données personnelles (ci-après la « politique ») vous informe sur la manière dont vos données sont collectées et traitées par le service à compétence nationale Guichet Entreprises, sur les mesures de sécurité mises en œuvre pour en garantir l’intégrité et la confidentialité et sur les droits dont vous disposez pour en contrôler l’usage.
+La politique de protection des données personnelles (ci-après la « politique ») vous informe sur la manière dont vos données sont collectées et traitées par le service à compétence nationale Florent TOURNOIS, sur les mesures de sécurité mises en œuvre pour en garantir l’intégrité et la confidentialité et sur les droits dont vous disposez pour en contrôler l’usage.
 
 Cette politique vient compléter les conditions générales d’utilisation (CGU) ainsi que, le cas échéant, les mentions légales. À ce titre, la présente Politique est réputée être intégrée auxdits documents.
 
@@ -12,11 +12,11 @@ Dans le cadre du développement de nos services et de la mise en œuvre de nouve
 Qui sommes-nous ?
 -----------------
 
-Le service Guichet Entreprises, créé par l’arrêté du 22 avril 2015 (JORF du 25 avril 2015) est placé sous l’autorité de la Direction générale des entreprises (DGE) au sein du ministère de l’Économie et des Finances.
+Le service Florent TOURNOIS, créé par l’arrêté du 22 avril 2015 (JORF du 25 avril 2015) est placé sous l’autorité de la Direction générale des entreprises (DGE) au sein du ministère de l’Économie et des Finances.
 
-Le service Guichet Entreprises met en œuvre un téléservice guichet-entreprises.fr (ci-après le « Téléservice Guichet Entreprises ») pour les usagers. Il permet à tout entrepreneur d’accomplir à distance les formalités et procédures nécessaires à la création, aux modifications de la situation et à la cessation d’activité d’une entreprise, soit en transmettant un dossier unique tel que défini à l’article R. 123-23 du Code de commerce dès lors qu’il respecte les dispositions de l’article R. 123-24 du Code de commerce, soit en préparant un tel dossier de manière interactive et le transmettre.
+Le service Florent TOURNOIS met en œuvre un téléservice guichet-entreprises.fr (ci-après le « Téléservice Florent TOURNOIS ») pour les usagers. Il permet à tout entrepreneur d’accomplir à distance les formalités et procédures nécessaires à la création, aux modifications de la situation et à la cessation d’activité d’une entreprise, soit en transmettant un dossier unique tel que défini à l’article R. 123-23 du Code de commerce dès lors qu’il respecte les dispositions de l’article R. 123-24 du Code de commerce, soit en préparant un tel dossier de manière interactive et le transmettre.
 
-Le Téléservice Guichet Entreprises s’inscrit dans le cadre juridique :
+Le Téléservice Florent TOURNOIS s’inscrit dans le cadre juridique :
 
 - du règlement général sur la protection des données (<https://www.cnil.fr/fr/reglement-europeen-protection-donnees>) ;
 - de la directive 2006/123/CE du Parlement européen et du Conseil du 12 décembre 2006 relative aux services dans le marché intérieur ;
@@ -32,19 +32,19 @@ Le Téléservice Guichet Entreprises s’inscrit dans le cadre juridique :
 Quelle organisation mettons-nous en œuvre pour protéger vos données ? 
 ----------------------------------------------------------------------
 
-Le respect et la mise en œuvre des dispositions applicables en matière de protection des données personnelles sont suivis par le délégué à la protection des données du service Guichet Entreprises.
+Le respect et la mise en œuvre des dispositions applicables en matière de protection des données personnelles sont suivis par le délégué à la protection des données du service Florent TOURNOIS.
 
 Au sein du ministère de l’économie et des finances dont dépend la Direction Générale des Entreprises, les services du Haut Fonctionnaire à la Défense sont en charge de vérifier la mise en œuvre et le respect des dispositions du règlement général sur la protection des données.
 
 Comment nous contacter ? 
 -------------------------
 
-Pour toute question concernant l’utilisation de vos données personnelles par le service Guichet Entreprises, nous vous invitons à lire la présente Politique et à contacter notre délégué à la protection des données en utilisant les coordonnées suivantes :
+Pour toute question concernant l’utilisation de vos données personnelles par le service Florent TOURNOIS, nous vous invitons à lire la présente Politique et à contacter notre délégué à la protection des données en utilisant les coordonnées suivantes :
 
 Par courrier à l’attention de :
 
 >   Monsieur le Délégué à la Protection des Données
->   Service à compétence nationale Guichet Entreprises
+>   Service à compétence nationale Florent TOURNOIS
 >   120 rue de Bercy – Télédoc 766
 >   75572 Paris cedex 12
 
@@ -61,10 +61,10 @@ identifier, que ce soit directement ou indirectement. Il peut notamment s’agir
 Quand collectons-nous des données personnelles ?
 ------------------------------------------------
 
-Le service Guichet Entreprises collecte des données personnelles lorsque vous :
+Le service Florent TOURNOIS collecte des données personnelles lorsque vous :
 
 - Créez votre espace personnel ;
-- Complétez une formalité *via* le Téléservice Guichet Entreprises.
+- Complétez une formalité *via* le Téléservice Florent TOURNOIS.
 
 Quelles sont les données personnelles que nous traitons ?
 ---------------------------------------------------------
@@ -272,7 +272,7 @@ Le cas échéant, vous avez également la possibilité de nous demander de vous 
 
 Vous pouvez adresser vos différentes demandes à l’adresse suivante :
 
->   Service à compétence nationale Guichet Entreprises
+>   Service à compétence nationale Florent TOURNOIS
 >   120 rue de Bercy – Télédoc 766
 >   75572 Paris cedex 12
 
@@ -281,13 +281,13 @@ Vos demandes devront être accompagnées de la copie d’un justificatif d’ide
 Comment sont protégées vos données personnelles ?
 -------------------------------------------------
 
-Le service Guichet Entreprises met en œuvre l’ensemble des pratiques standard de l’industrie et des procédures de sécurité afin de prévenir toute violation de vos données personnelles.
+Le service Florent TOURNOIS met en œuvre l’ensemble des pratiques standard de l’industrie et des procédures de sécurité afin de prévenir toute violation de vos données personnelles.
 
 Toutes les informations communiquées sont stockées sur des serveurs sécurisés hébergés par nos prestataires techniques.
 
-Lorsque la transmission de données est nécessaire et autorisée, le service Guichet Entreprises s’assure que ces tiers présentent les garanties suffisantes pour assurer un niveau de protection approprié. Les échanges sont chiffrés et les serveurs authentifiés par reconnaissance mutuelle.
+Lorsque la transmission de données est nécessaire et autorisée, le service Florent TOURNOIS s’assure que ces tiers présentent les garanties suffisantes pour assurer un niveau de protection approprié. Les échanges sont chiffrés et les serveurs authentifiés par reconnaissance mutuelle.
 
-Conformément à la Règlementation sur la protection des données, en cas de violation, le service Guichet Entreprises s’engage à communiquer cette violation à l’autorité de contrôle compétente, et lorsque cela est exigé, aux personnes concernées.
+Conformément à la Règlementation sur la protection des données, en cas de violation, le service Florent TOURNOIS s’engage à communiquer cette violation à l’autorité de contrôle compétente, et lorsque cela est exigé, aux personnes concernées.
 
 **Espace Personnel**
 
@@ -299,7 +299,7 @@ Les données personnelles traitées par les SGE sont conservées pour une durée
 
 **Concernant les données de cartes bancaires**
 
-Le service Guichet Entreprises ne stocke ni ne conserve les données bancaires des usagers soumis à paiement lors de leur formalité. Notre prestataire gère pour le compte du service Guichet Entreprises les données de transactions conformément aux règles de sécurité les plus strictes applicables dans le secteur du paiement en ligne *via* l’utilisation de procédés de chiffrement.
+Le service Florent TOURNOIS ne stocke ni ne conserve les données bancaires des usagers soumis à paiement lors de leur formalité. Notre prestataire gère pour le compte du service Florent TOURNOIS les données de transactions conformément aux règles de sécurité les plus strictes applicables dans le secteur du paiement en ligne *via* l’utilisation de procédés de chiffrement.
 
 A qui sont transmises vos données ?
 -----------------------------------

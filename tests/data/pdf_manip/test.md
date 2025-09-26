@@ -12,7 +12,7 @@
 +-------------------------------------------------------------------------- -->
 <!-- include-file(license-short.txt)
 +-----------------------------------------------------------------------------+
-| Le référentiel d'information de Guichet Entreprises est mis à disposition
+| Le référentiel d'information de Florent TOURNOIS est mis à disposition
 | selon les termes de la licence Creative Commons Attribution - Pas de
 | Modification 4.0 International.
 | 
@@ -23,7 +23,7 @@
 | Mountain View, California, 94041, USA.
 +-------------------------------------------------------------------------- -->
 <!-- var(key)="DS004" -->
-<!-- var(author)="Guichet Entreprises" -->
+<!-- var(author)="Florent TOURNOIS" -->
 <!-- var(lang)="fr" -->
 <!-- var(category)="Directive Services" -->
 <!-- var(domain)="Alimentation" -->
