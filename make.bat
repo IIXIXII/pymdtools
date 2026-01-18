@@ -66,7 +66,7 @@ REM ----------------------------------------------------------------------------
 :UPDATE_PIP
 (
     python -V
-    pip -V
+    python -m pip -V
     python -m pip install --upgrade pip wheel setuptools
     exit /b
 )
@@ -118,7 +118,7 @@ REM ----------------------------------------------------------------------------
 CALL :PRINT_LINE "   Clean the folder" 
 REM -------------------------------------------------------------------------------
 CALL :UPDATE_PIP
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 goto :ENDOFFILE
 
 REM -------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ REM ----------------------------------------------------------------------------
 CALL :PRINT_LINE "   Requirements python packages for running the lib" 
 REM -------------------------------------------------------------------------------
 CALL :UPDATE_PIP
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 goto :ENDOFFILE
 
 REM -------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ REM ----------------------------------------------------------------------------
 CALL :PRINT_LINE "   Requirements python packages for devs" 
 REM -------------------------------------------------------------------------------
 CALL :UPDATE_PIP
-pip install -r requirements-dev.txt
+python -m pip install -r requirements-dev.txt
 goto :ENDOFFILE
 
 REM -------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ REM ----------------------------------------------------------------------------
 CALL :PRINT_LINE "   Requirements python packages for devs" 
 REM -------------------------------------------------------------------------------
 CALL :UPDATE_PIP
-pip install -r requirements-docs.txt
+python -m pip install -r requirements-docs.txt
 goto :ENDOFFILE
 
 REM -------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ REM ----------------------------------------------------------------------------
 CALL :PRINT_LINE "   Install editable version" 
 REM -------------------------------------------------------------------------------
 CALL :UPDATE_PIP
-pip install -e .
+python -m pip install -e .
 goto :ENDOFFILE
 
 REM -------------------------------------------------------------------------------

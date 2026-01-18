@@ -34,7 +34,7 @@ import codecs
 import tempfile
 import time
 import datetime
-import dateutil.parser
+import dateutil
 import re
 
 
@@ -70,6 +70,8 @@ def handle_exception(action_desc, **kwargs_print_name):
 # -----------------------------------------------------------------------------
 # copy all file from src to dst
 # -----------------------------------------------------------------------------
+
+
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
         os.makedirs(dst)
@@ -87,6 +89,8 @@ def copytree(src, dst, symlinks=False, ignore=None):
 # -----------------------------------------------------------------------------
 # A Constant class object simple to contain a const value
 # -----------------------------------------------------------------------------
+
+
 class Constant:
 
     # -------------------------------------------------------------------------
@@ -266,6 +270,8 @@ def check_create_folder(folder):
 # @param filename_ext the file name extension like ".ext" or ".md"
 # @return the filename normalized.
 # -----------------------------------------------------------------------------
+
+
 def check_is_file_and_correct_path(filename, filename_ext=None):
     filename = set_correct_path(filename)
 
@@ -316,6 +322,8 @@ def number_of_subfolder(filename):
 # @param backup_ext the backup file name extension like ".bak"
 # @return the backup filename normalized.
 # -----------------------------------------------------------------------------
+
+
 def create_backup(filename, backup_ext=".bak"):
     logging.info('Create the backup file for %s', filename)
 
@@ -418,6 +426,8 @@ def get_file_content(filename, encoding="utf-8"):
 # @param bom the bit order mark at the beginning of the file
 # @return filename corrected
 # -----------------------------------------------------------------------------
+
+
 def set_file_content(filename, content, encoding="utf-8", bom=True):
     logging.debug('Set content of the filename %s', (filename))
     filename = set_correct_path(filename)
@@ -525,6 +535,8 @@ def get_flat_filename(filename, replacement="_"):
 #
 # @return A empty folder located in a temp area
 # -----------------------------------------------------------------------------
+
+
 def get_new_temp_dir():
     tmp_start = os.path.join(tempfile.gettempdir(),
                              get_valid_filename(
@@ -555,6 +567,8 @@ def get_new_temp_dir():
 # @param ext the new extension with a dot (ext = '.txt')
 # @return the filename with the new extension
 # -----------------------------------------------------------------------------
+
+
 def filename_ext_to(filename, ext):
     return os.path.splitext(filename)[0] + ext
 
@@ -651,6 +665,8 @@ def timestamp_now():
 #
 # @return a datetime
 # -----------------------------------------------------------------------------
+
+
 def timestamp_read(datetime_str):
     return dateutil.parser.parse(datetime_str)
 
@@ -662,6 +678,8 @@ def timestamp_read(datetime_str):
 #                parameter (the filename)
 # @param filename_ext The file extension (markdown for the default)
 # -----------------------------------------------------------------------------
+
+
 def apply_function_in_folder(folder, process, filename_ext=".md"):
     for root, unused_dirs, files in os.walk(folder):
         for filename in files:
@@ -675,6 +693,8 @@ def apply_function_in_folder(folder, process, filename_ext=".md"):
 # @param length the object length (default = 1).
 # @return the object.
 # -----------------------------------------------------------------------------
+
+
 def check_len(obj, length=1):
     if not len(obj) == length:
         logging.error('The list is supposed to have a '
@@ -734,6 +754,8 @@ def search_for_file(file_wanted, start_points, relative_paths, nb_up_path=4):
 #                      in the base letters
 # @return string cleaned
 # -----------------------------------------------------------------------------
+
+
 def path_to_url(path, remove_accent=True):
     result = path.lower()
     result = re.sub(r"\s+", '-', result)

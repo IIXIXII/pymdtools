@@ -25,30 +25,53 @@
 # -----------------------------------------------------------------------------
 """ Markdown Tools developed for Gucihet Entreprises """
 
-import logging
-import sys
+from __future__ import annotations
 
-from .common import print_conv
-from .normalize import md_file_beautifier as markdown_file_beautifier
-from .mdtopdf import convert_md_to_pdf
-from .instruction import search_include_refs_to_md_file
-from .version import __version_info__
-from .version import __release_date__
+# ---------------------------------------------------------------------------
+# Package metadata (lightweight, no side effects)
+# ---------------------------------------------------------------------------
+from .version import __version_info__, __release_date__
+from ._about import (
+    __author__,
+    __author_email__,
+    __license__,
+    __status__,
+)
 
-
-__version__ = '.'.join(str(c) for c in __version_info__)
-__author__ = "Florent Tournois"
-__copyright__ = "Copyright 2018, Florent Tournois"
-__credits__ = ["Arnaud Boidard"]
-__license__ = "MIT"
-__maintainer__ = "Florent Tournois"
-__email__ = "florent.tournois@gmail.fr"
-__status__ = "Production"
+__version__ = ".".join(str(c) for c in __version_info__)
 __module_name__ = "pymdtools"
 
+# ---------------------------------------------------------------------------
+# Public API (lazy-loaded)
+# ---------------------------------------------------------------------------
 __all__ = [
-    'print_conv',
-    'markdown_file_beautifier',
-    'convert_md_to_pdf',
-    'search_include_refs_to_md_file',
+    "print_conv",
+    "markdown_file_beautifier",
+    "convert_md_to_pdf",
+    "search_include_refs_to_md_file",
+    "__version__",
 ]
+
+
+def __getattr__(name: str):
+    """
+    Lazy import of public symbols to avoid importing heavy dependencies
+    (dateutil, pdfkit, etc.) at package import time.
+    """
+    if name == "print_conv":
+        from .common import print_conv
+        return print_conv
+
+    if name == "markdown_file_beautifier":
+        from .normalize import md_file_beautifier as markdown_file_beautifier
+        return markdown_file_beautifier
+
+    if name == "convert_md_to_pdf":
+        from .mdtopdf import convert_md_to_pdf
+        return convert_md_to_pdf
+
+    if name == "search_include_refs_to_md_file":
+        from .instruction import search_include_refs_to_md_file
+        return search_include_refs_to_md_file
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -38,30 +38,49 @@ import time
 from shutil import rmtree
 from setuptools import setup, Command
 
-import pymdtools as mymodule
-
 __root__ = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+
+# ---------------------------------------------------------------------------
+# Load package metadata WITHOUT importing the package (PEP517/660 safe)
+# ---------------------------------------------------------------------------
+__root__ = os.path.abspath(os.path.dirname(__file__))
+
+about = {}
+with open(os.path.join(__root__, "pymdtools", "_about.py"), encoding="utf-8") as f:
+    exec(f.read(), about)
+
+version = {}
+with open(os.path.join(__root__, "pymdtools", "version.py"), encoding="utf-8") as f:
+    exec(f.read(), version)
+
+__version__ = ".".join(map(str, version["__version_info__"]))
+
 
 # Import the README and use it as the long-description.
 # Note: this will only work if 'README.md' is present in your MANIFEST.in file!
+__long_description__ = ""
 try:
     with io.open(os.path.join(__root__, 'README.md'), encoding='utf-8') as f:
         __long_description__ = '\n' + f.read()
 except FileNotFoundError:
-    __long_description__ = mymodule.__doc__
+    __long_description__ = ""
 
 # -------------------------------------------------------------------------------
 # Increase the version number
 # -------------------------------------------------------------------------------
+
+
 def print_status(msg):
     print('>> {0}'.format(msg))
 
 # -------------------------------------------------------------------------------
 # Increase the version number
 # -------------------------------------------------------------------------------
+
+
 def increase_version():
     about = {}
-    with open(os.path.join(__root__, mymodule.__name__,
+    with open(os.path.join(__root__, "pymdtools",
                            'version.py'), "r") as ver:
         exec(ver.read(), about)
 
@@ -71,7 +90,7 @@ def increase_version():
                    current_version[2] + 1)
     print_status("New version = %s.%s.%s" % new_version)
 
-    with open(os.path.join(__root__, mymodule.__name__,
+    with open(os.path.join(__root__, "pymdtools",
                            'version.py'), "w") as ver:
         ver.write("#!/usr/bin/env python\n")
         ver.write("# -*- coding: utf-8 -*-\n\n")
@@ -112,6 +131,7 @@ class UploadCommand(Command):
 
         sys.exit()
 
+
 class IncreaseVersionCommand(Command):
     """Support setup.py increaseversion."""
 
@@ -151,9 +171,9 @@ class TagVersionCommand(Command):
         pass
 
     def run(self):
-        self.status('Tag the version number {0}'.format(mymodule.__version__))
+        self.status('Tag the version number {0}'.format(__version__))
         self.status('Pushing git tags…')
-        os.system('git tag v{0}'.format(mymodule.__version__))
+        os.system('git tag v{0}'.format(__version__))
         os.system('git push --tags')
         sys.exit()
 
@@ -162,58 +182,52 @@ class TagVersionCommand(Command):
 # All setup parameter
 # -------------------------------------------------------------------------------
 setup(
-    name=mymodule.__name__,  # pypi name
-    version=mymodule.__version__,
-    author=mymodule.__author__,
-    author_email=mymodule.__email__,
-    license=mymodule.__license__,
-    description=mymodule.__doc__,
+    name=about["__title__"],
+    version=__version__,
+    author=about["__author__"],
+    author_email=about["__author_email__"],
+    license=about["__license__"],
+    description=about["__description__"],
     long_description=__long_description__,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
 
-    url='https://github.com/IIXIXII/pymdtools',
+    url="https://github.com/IIXIXII/pymdtools",
 
-    install_requires=['markdown', 'pdfkit', 'PyPDF2'],
-
-    # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
-    classifiers=[
-        "Programming Language :: Python",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
+    install_requires=[
+        "markdown",
+        "pdfkit",
+        "PyPDF2",
+        "python-dateutil",
     ],
 
-    # Liste les packages à insérer dans la distribution
-    # plutôt que de le faire à la main, on utilise la foncton
-    # find_packages() de setuptools qui va cherche tous les packages
-    # python recursivement dans le dossier courant.
-    # C'est pour cette raison que l'on a tout mis dans un seul dossier:
-    # on peut ainsi utiliser cette fonction facilement
-    # packages=find_packages(exclude=["test_*.py"]),
-    # py_modules=['pymdtools'],
-    packages=['pymdtools'],
-    package_dir={'pymdtools': 'pymdtools'},
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "License :: OSI Approved :: MIT License",
+    ],
 
-    # Active la prise en compte du fichier MANIFEST.in
-    # include_package_data=True,
+    packages=["pymdtools"],
+    package_dir={"pymdtools": "pymdtools"},
 
     package_data={
-        'pymdtools': ['*.conf', '*.ico',
-                      './*.md',
-                      "layouts/*.*",
-                      "layouts/*/*.*",
-                      "layouts/*/*/*.*",
-                      "layouts/*/*/*/*.*",
-                      "referenced_files/*.txt",
-                      ],
+        "pymdtools": [
+            "*.conf",
+            "*.ico",
+            "*.md",
+            "layouts/**/*",
+            "referenced_files/*.txt",
+        ],
     },
 
-    setup_requires=["pytest-runner"],
+    python_requires=">=3.7",
+
     tests_require=["pytest"],
+    setup_requires=["pytest-runner"],
 
     cmdclass={
-        'upload': UploadCommand,
-        'increaseversion': IncreaseVersionCommand,
-        'tagversion': TagVersionCommand,
+        "upload": UploadCommand,
+        "increaseversion": IncreaseVersionCommand,
+        "tagversion": TagVersionCommand,
     },
 )
+# -----------------------------------------------------------------------------
