@@ -36,4 +36,10 @@
     },
     "git.ignoreLimitWarning": true,
     "python.testing.nosetestsEnabled": false,
+    "autopep8.args": [
+        "--ignore=E302,W504"
+    ],
+    "autopep8.path": [
+        "\"${workspaceFolder}/.config\""
+    ],
 }

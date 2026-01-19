@@ -22,223 +22,75 @@ REM # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
 REM # SOFTWARE.
 REM # 
 REM # -----------------------------------------------------------------------------
-GOTO MAKE_ACTION
-REM -------------------------------------------------------------------------------
-:PRINT_LINE <textVar>
-(
-    SET "LINE_HERE=%~1"
-    SETLOCAL EnableDelayedExpansion
-    @ECHO !LINE_HERE!
-    ENDLOCAL
-    exit /b
-)
-REM -------------------------------------------------------------------------------
-:CONFIGURE_DISPLAY
-(
-    CHCP 65001
-    MODE 100,40
-    exit /b
-)
-REM -------------------------------------------------------------------------------
-:CLEAR_SCREEN
-(
-	CLS
-    CALL :PRINT_LINE "╔══════════════════════════════════════════════════════════════════════════════════════════════════╗"
-    CALL :PRINT_LINE "║                                                _ _              _                                ║"
-    CALL :PRINT_LINE "║                                               | | |            | |                               ║"
-    CALL :PRINT_LINE "║                      _ __  _   _ _ __ ___   __| | |_ ___   ___ | |___                            ║"
-    CALL :PRINT_LINE "║                     | '_ \| | | | '_ ` _ \ / _` | __/ _ \ / _ \| / __|                           ║"
-    CALL :PRINT_LINE "║                     | |_) | |_| | | | | | | (_| | || (_) | (_) | \__ \                           ║"
-    CALL :PRINT_LINE "║                     | .__/ \__, |_| |_| |_|\__,_|\__\___/ \___/|_|___/                           ║"
-    CALL :PRINT_LINE "║                     | |     __/ |                                                                ║"
-    CALL :PRINT_LINE "║                     |_|    |___/                                                                 ║"
-    CALL :PRINT_LINE "║                                                                                                  ║"
-    CALL :PRINT_LINE "╚══════════════════════════════════════════════════════════════════════════════════════════════════╝"
-    exit /b
-)
-REM -------------------------------------------------------------------------------
-:LINE_BREAK
-(
-	CALL :PRINT_LINE "├──────────────────────────────────────────────────────────────────────────────────────────────────┤"
-    exit /b
-)
-REM -------------------------------------------------------------------------------
-:UPDATE_PIP
-(
-    python -V
-    python -m pip -V
-    python -m pip install --upgrade pip wheel setuptools
-    exit /b
-)
-REM -------------------------------------------------------------------------------
-:CHECK_BUILD_FOLDER
-(
-    if not exist "%~dp0\\build" (
-        mkdir "%~dp0\\build"
-        if "!errorlevel!" EQU "0" (
-            echo Folder created successfully
-        ) else (
-            echo Error while creating folder
-        )
-    ) else (
-        echo Folder already exists
-    )
-    exit /b
+@ECHO OFF
+SETLOCAL EnableExtensions
+
+REM -----------------------------------------------------------------------------
+REM Init
+REM -----------------------------------------------------------------------------
+SET "MYPATH=%~dp0"
+
+CD /D "%MYPATH%" || (ECHO ERROR: cannot cd to "%MYPATH%" & EXIT /B 1)
+
+SET "MODULE=pymdtools"
+SET "FUN=%MYPATH%scripts\common.bat"
+SET "ARGUMENT=%~1"
+
+IF "%ARGUMENT%"=="" (
+  ECHO Usage: %~nx0 ^<requirements^|install_editable^|<setup_action>^>
+  EXIT /B 2
 )
 
-REM -------------------------------------------------------------------------------
-:MAKE_ACTION
-CALL :CONFIGURE_DISPLAY
-CALL :CLEAR_SCREEN
+IF NOT EXIST "%FUN%" (
+  ECHO ERROR: common script not found: "%FUN%"
+  EXIT /B 1
+)
 
-SET MYPATH=%~dp0
-cd %MYPATH%
-
-CALL :PRINT_LINE "    MYPATH=%MYPATH%" 
-CALL :LINE_BREAK
-
-IF /I "%1" == "clean"              GOTO :action_clean
-IF /I "%1" == "requirements"       GOTO :action_requirements
-IF /I "%1" == "requirements-dev"   GOTO :action_requirements_dev
-IF /I "%1" == "requirements-docs"  GOTO :action_requirements_docs
-IF /I "%1" == "install-editable"   GOTO :action_install_editable
-IF /I "%1" == "test"               GOTO :action_test
-IF /I "%1" == "doxygen"            GOTO :action_doxygen
-IF /I "%1" == "sphinx"             GOTO :action_sphinx
-IF /I "%1" == "build"              GOTO :action_build
-IF /I "%1" == "increase_version"   GOTO :action_increaseversion
-IF /I "%1" == "upload"             GOTO :action_upload
-IF /I "%1" == "tag_version"        GOTO :action_tag_version
-
-CALL :PRINT_LINE "   '%1' is not an action. Can not find the right action." 
-GOTO :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_clean
-CALL :PRINT_LINE "   Clean the folder" 
-REM -------------------------------------------------------------------------------
-CALL :UPDATE_PIP
-python -m pip install -r requirements.txt
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_requirements
-CALL :PRINT_LINE "   Requirements python packages for running the lib" 
-REM -------------------------------------------------------------------------------
-CALL :UPDATE_PIP
-python -m pip install -r requirements.txt
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_requirements_dev
-CALL :PRINT_LINE "   Requirements python packages for devs" 
-REM -------------------------------------------------------------------------------
-CALL :UPDATE_PIP
-python -m pip install -r requirements-dev.txt
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_requirements_docs
-CALL :PRINT_LINE "   Requirements python packages for devs" 
-REM -------------------------------------------------------------------------------
-CALL :UPDATE_PIP
-python -m pip install -r requirements-docs.txt
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_install_editable
-CALL :PRINT_LINE "   Install editable version" 
-REM -------------------------------------------------------------------------------
-CALL :UPDATE_PIP
-python -m pip install -e .
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_test
-CALL :PRINT_LINE "   Launch test" 
-REM -------------------------------------------------------------------------------
-pytest -v
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_doxygen
-CALL :PRINT_LINE "   Doxygen" 
-REM -------------------------------------------------------------------------------
-CALL :CHECK_BUILD_FOLDER
-cd docs
-SET DOXYGEN_PATH=C:\\Program Files\\doxygen\\bin
-SET DOXYGEN_EXE=doxygen.exe
-SET DOXYGEN_CMD=%DOXYGEN_PATH%\\%DOXYGEN_EXE%
-SET DOC_FOLDER=%~dp0\\docs
-
-SET CONFIG_FILE="%DOC_FOLDER%\\config_doc.dox"
-
-IF EXIST "%DOXYGEN_CMD%" (
-    ECHO "Found doxygen %DOXYGEN_CMD%"
+REM -----------------------------------------------------------------------------
+REM Version
+REM -----------------------------------------------------------------------------
+IF EXIST "%MYPATH%%MODULE%\version.bat" (
+  CALL "%MYPATH%%MODULE%\version.bat"
 ) ELSE (
-    ECHO "%DOXYGEN_CMD%"
-    ECHO "Doxygen not found"
-    pause
-    GOTO :ENDOFFILE
+  SET "VERSION=Not found"
 )
 
-IF EXIST "%CONFIG_FILE%" (
-    ECHO "Found config file %CONFIG_FILE%"
+REM -----------------------------------------------------------------------------
+REM Main loop
+REM -----------------------------------------------------------------------------
+:STARTAGAIN
+CALL "%FUN%" :CONFIGURE_DISPLAY
+CALL "%FUN%" :CLEAR_SCREEN
+CALL "%FUN%" :PRINT_LINE "    VERSION=%VERSION%"
+CALL "%FUN%" :PRINT_LINE "    MYPATH=%MYPATH%"
+CALL "%FUN%" :LINE_BREAK
+
+TITLE "[%MODULE%] MAKE %ARGUMENT%"
+
+IF /I "%ARGUMENT%"=="requirements" (
+  CALL "%FUN%" :INSTALL_REQUIREMENTS "requirements.txt"
+  IF ERRORLEVEL 1 GOTO :FAILED
+) ELSE IF /I "%ARGUMENT%"=="install_editable" (
+  CALL "%FUN%" :INSTALL_EDITABLE
+  IF ERRORLEVEL 1 GOTO :FAILED
 ) ELSE (
-    ECHO "%CONFIG_FILE%"
-    ECHO "Config file not found"
-    pause
-    GOTO :ENDOFFILE
+  CALL "%FUN%" :PYTHON_SETUP "%ARGUMENT%"
+  IF ERRORLEVEL 1 GOTO :FAILED
 )
 
-CALL :PRINT_LINE "Start doxygen generation"
-"%DOXYGEN_CMD%"  "%CONFIG_FILE%"
+CALL "%FUN%" :LINE_BREAK
+CALL "%FUN%" :PRINT_LINE "   End of the make execution"
+CALL "%FUN%" :LINE_BREAK
 
-goto :ENDOFFILE
+CHOICE /C YN /M "Do it again ? (Y/N)"
+IF ERRORLEVEL 2 GOTO :EOF
+GOTO :STARTAGAIN
 
-REM -------------------------------------------------------------------------------
-:action_sphinx
-CALL :PRINT_LINE "   Launch sphinx documentation" 
-REM -------------------------------------------------------------------------------
-set SPHINXBUILD=sphinx-build
-set SOURCEDIR=docs
-set BUILDDIR=build
+:FAILED
+CALL "%FUN%" :LINE_BREAK
+CALL "%FUN%" :PRINT_LINE "   ERROR: make execution failed (action=%ARGUMENT%)"
+CALL "%FUN%" :LINE_BREAK
+EXIT /B 1
 
-%SPHINXBUILD% -M html %SOURCEDIR% %BUILDDIR%
-
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_build
-CALL :PRINT_LINE "   Build" 
-REM -------------------------------------------------------------------------------
-python setup.py sdist bdist_wheel --universal
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_increaseversion
-CALL :PRINT_LINE "   Increase version" 
-REM -------------------------------------------------------------------------------
-python setup.py increaseversion
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_upload
-CALL :PRINT_LINE "   Upload package" 
-REM -------------------------------------------------------------------------------
-python setup.py upload
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:action_tag_version
-CALL :PRINT_LINE "   Tag version" 
-REM -------------------------------------------------------------------------------
-python setup.py tagversion
-goto :ENDOFFILE
-
-REM -------------------------------------------------------------------------------
-:ENDOFFILE
-CALL :PRINT_LINE "   End of the configuration"
-CALL :LINE_BREAK
-PAUSE
-REM -------------------------------------------------------------------------------
+:EOF
+EXIT /B 0
