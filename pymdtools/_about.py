@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# =============================================================================
+#                    Author: Florent TOURNOIS | License: MIT                   
+# =============================================================================
+
 # ---------------------------------------------------------------------------
 # Package metadata for pymdtools
 # This file MUST NOT import any other module.

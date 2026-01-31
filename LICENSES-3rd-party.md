@@ -1,3 +1,9 @@
+<!--
+===============================================================================
+                    Author: Florent TOURNOIS | License: MIT
+===============================================================================
+-->
+
 # License overview of included 3rd party libraries
 
 The pymdtools project is licensed under the terms of the [MIT](LICENSE.md).
