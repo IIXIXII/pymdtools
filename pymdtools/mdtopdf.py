@@ -31,7 +31,7 @@ from . import mistunege as mistune
 # Add blank pages to the pdf to have
 # -----------------------------------------------------------------------------
 def check_odd_pages(filename):
-    filename = common.check_is_file_and_correct_path(filename,
+    filename = common.check_file(filename,
                                                      filename_ext=".pdf")
 
     input_pdf = open(filename, 'rb')
@@ -117,7 +117,7 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
                        path_dest=None, converter=None):
     logging.info('Convert md -> html %s', filename)
 
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     if path_dest is None:
         path_dest = os.path.split(os.path.abspath(filename))[0]
@@ -165,10 +165,10 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
             if file_objet[0] == '/':
                 file_objet = file_objet[1:]
 
-            dst_file = common.set_correct_path(
+            dst_file = common.normpath(
                 os.path.join(path_dest, file_objet))
             os.makedirs(os.path.dirname(dst_file), exist_ok=True)
-            shutil.copy(common.set_correct_path(os.path.join(layout_path,
+            shutil.copy(common.normpath(os.path.join(layout_path,
                                                              "assets",
                                                              file_objet)),
                         dst_file)
@@ -176,7 +176,7 @@ def convert_md_to_html(filename, layout="jasonm23-swiss",
         elif inst[2:-2] in content_vars:
             page_html = page_html.replace(inst, content_vars[inst[2:-2]])
 
-    html_filename = common.set_correct_path(os.path.join(
+    html_filename = common.normpath(os.path.join(
         path_dest, os.path.splitext(os.path.split(filename)[1])[0] + ".html"))
     logging.info('        -> html %s', html_filename)
 
@@ -223,7 +223,7 @@ def find_wk_html_to_pdf():
 # -----------------------------------------------------------------------------
 def convert_html_to_pdf(filename, filename_ext=".html", **kwargs):
     logging.info('Convert html -> pdf %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     config = pdfkit.configuration(wkhtmltopdf=find_wk_html_to_pdf())
 
@@ -263,9 +263,9 @@ def convert_html_to_pdf(filename, filename_ext=".html", **kwargs):
 # -----------------------------------------------------------------------------
 def pdf_features(filename, filename_ext=".pdf", **kwargs):
     logging.info('pdf features %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
-    temp_dir = common.get_new_temp_dir()
+    temp_dir = common.make_temp_dir()
     temp_pdf_filename = os.path.join(temp_dir, os.path.basename(filename))
     shutil.copy(filename, temp_pdf_filename)
 
@@ -288,7 +288,7 @@ def pdf_features(filename, filename_ext=".pdf", **kwargs):
             local_name = kwargs[key]
             if 'path' in kwargs:
                 local_name = os.path.join(kwargs['path'], local_name)
-            local_name = common.check_is_file_and_correct_path(local_name)
+            local_name = common.check_file(local_name)
             pdf_args[key[4:]] = PyPDF2.PdfFileReader(open(local_name, "rb"))
 
     num_pages = pdf_reader.getNumPages()
@@ -341,10 +341,10 @@ def convert_md_to_pdf(filename, filename_ext=".md", **kwargs):
     @return nothing
     """
     logging.info('Convert md -> pdf %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
     md_metadata = instruction.get_vars_from_md_file(filename)
 
-    temp_dir = common.get_new_temp_dir()
+    temp_dir = common.make_temp_dir()
     temp_md_filename = os.path.join(temp_dir, os.path.basename(filename))
 
     logging.info('Copy file to temp')

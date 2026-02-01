@@ -1,7 +1,3 @@
-# =============================================================================
-#                    Author: Florent TOURNOIS | License: MIT                   
-# =============================================================================
-
 from bs4 import BeautifulSoup, NavigableString, Comment
 import re
 import six

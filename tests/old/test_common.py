@@ -22,9 +22,9 @@ import pymdtools.mdcommon as mdcommon
 
 
 def test_today():
-    stamp = common.timestamp_now()
+    stamp = common.now_utc_timestamp()
     assert len(stamp) > 0
-    dtime = common.timestamp_read(stamp)
+    dtime = common.parse_timestamp(stamp)
     assert stamp == str(dtime)
 
 
@@ -170,12 +170,12 @@ la fin du texte"""
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
-def test_set_correct_path():
+def test_normpath():
     # current_dir = os.path.split(__get_this_filename())[0]
     # root = os.path.abspath(os.path.join(current_dir, "./../../"))
-    # assert set_correct_path(current_dir + "/././../") == root + "\\python"
-    # assert set_correct_path(current_dir + "/././../../") == root
-    assert common.set_correct_path("C:/") == "C:\\"
+    # assert normpath(current_dir + "/././../") == root + "\\python"
+    # assert normpath(current_dir + "/././../../") == root
+    assert common.normpath("C:/") == "C:\\"
 
 
 # -----------------------------------------------------------------------------
@@ -196,16 +196,16 @@ def test_check_folder():
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
-def test_check_create_folder():
+def test_ensure_folder():
     current_folder = os.path.abspath("./")
-    assert common.check_create_folder("./") == current_folder
+    assert common.ensure_folder("./") == current_folder
 
     random_name = '.{}'.format(hash(os.times()))
     test_foldername = "./" + random_name
 
     with pytest.raises(RuntimeError):
         common.check_folder(test_foldername)
-    assert common.check_create_folder(
+    assert common.ensure_folder(
         test_foldername) == os.path.abspath(test_foldername)
     assert common.check_folder(
         test_foldername) == os.path.abspath(test_foldername)
@@ -215,7 +215,7 @@ def test_check_create_folder():
         common.check_folder(test_foldername)
 
     with pytest.raises(RuntimeError):
-        common.check_create_folder(__file__)
+        common.ensure_folder(__file__)
 
 
 # -----------------------------------------------------------------------------
@@ -228,20 +228,20 @@ def test_check_is_file_and_correct():
     with pytest.raises(RuntimeError):
         common.check_folder(test_filename)
 
-    assert common.check_is_file_and_correct_path(
+    assert common.check_file(
         __get_this_filename()) == os.path.abspath(__get_this_filename())
 
 
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
-def test_number_of_subfolder():
-    assert common.number_of_subfolder("A/B") == 1
-    assert common.number_of_subfolder("A/////B") == 1
-    assert common.number_of_subfolder("A\\\\B") == 1
-    assert common.number_of_subfolder("/A/B") == 1
-    assert common.number_of_subfolder("//A/////B") == 1
-    assert common.number_of_subfolder("//A\\\\B") == 1
+def test_path_depth():
+    assert common.path_depth("A/B") == 1
+    assert common.path_depth("A/////B") == 1
+    assert common.path_depth("A\\\\B") == 1
+    assert common.path_depth("/A/B") == 1
+    assert common.path_depth("//A/////B") == 1
+    assert common.path_depth("//A\\\\B") == 1
 
 
 # -----------------------------------------------------------------------------
@@ -253,7 +253,7 @@ def test_create_backup():
     test_filename = "./" + random_name + ".txt"
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename)
+        common.check_file(test_filename)
 
     file_content = "Test"
 
@@ -262,10 +262,10 @@ def test_create_backup():
     output_file.write(file_content)
     output_file.close()
 
-    assert(common.check_is_file_and_correct_path(
+    assert(common.check_file(
         test_filename) == os.path.abspath(test_filename))
 
-    today = common.get_today()
+    today = common.today_utc()
     bak1 = os.path.abspath("./" + test_filename + "." + today + "-000.bak")
     bak2 = os.path.abspath("./" + test_filename + "." + today + "-001.bak")
 
@@ -275,14 +275,14 @@ def test_create_backup():
         os.remove(bak2)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(bak1)
+        common.check_file(bak1)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(bak2)
+        common.check_file(bak2)
 
     assert common.create_backup(test_filename) == bak1
     assert common.create_backup(test_filename) == bak2
-    assert common.check_is_file_and_correct_path(bak1) == os.path.abspath(bak1)
-    assert common.check_is_file_and_correct_path(bak2) == os.path.abspath(bak2)
+    assert common.check_file(bak1) == os.path.abspath(bak1)
+    assert common.check_file(bak2) == os.path.abspath(bak2)
 
     input_file = codecs.open(bak1, mode="r", encoding="utf-8")
     content_bak1 = input_file.read()
@@ -301,15 +301,15 @@ def test_create_backup():
         os.remove(bak2)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(bak1)
+        common.check_file(bak1)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(bak2)
+        common.check_file(bak2)
 
     if os.path.isfile(test_filename):
         os.remove(test_filename)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename)
+        common.check_file(test_filename)
 
 
 # -----------------------------------------------------------------------------
@@ -322,9 +322,9 @@ def test_get_file_content():
     test_filename_2 = "./" + random_name + "2.txt"
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename_1)
+        common.check_file(test_filename_1)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename_2)
+        common.check_file(test_filename_2)
 
     file_content = "Test"
 
@@ -337,9 +337,9 @@ def test_get_file_content():
     output_file.write(u'\ufeff' + file_content)
     output_file.close()
 
-    assert common.check_is_file_and_correct_path(
+    assert common.check_file(
         test_filename_1) == os.path.abspath(test_filename_1)
-    assert common.check_is_file_and_correct_path(
+    assert common.check_file(
         test_filename_2) == os.path.abspath(test_filename_2)
 
     assert common.get_file_content(test_filename_1) == file_content
@@ -351,9 +351,9 @@ def test_get_file_content():
         os.remove(test_filename_2)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename_2)
+        common.check_file(test_filename_2)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename_2)
+        common.check_file(test_filename_2)
 
 
 # -----------------------------------------------------------------------------
@@ -365,9 +365,9 @@ def test_set_file_content():
     test_filename2 = "./" + random_name + "2.txt"
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename1)
+        common.check_file(test_filename1)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename2)
+        common.check_file(test_filename2)
 
     file_content = "Test"
 
@@ -398,9 +398,9 @@ def test_set_file_content():
         os.remove(test_filename2)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename2)
+        common.check_file(test_filename2)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename2)
+        common.check_file(test_filename2)
 
 
 # -----------------------------------------------------------------------------
@@ -432,9 +432,9 @@ def test_get_flat_filename():
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
-def test_get_new_temp_dir():
-    temp1 = common.get_new_temp_dir()
-    temp2 = common.get_new_temp_dir()
+def test_make_temp_dir():
+    temp1 = common.make_temp_dir()
+    temp2 = common.make_temp_dir()
 
     assert temp1 != temp2
     assert common.check_folder(temp1) == os.path.abspath(temp1)
@@ -457,10 +457,10 @@ def test_get_new_temp_dir():
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
-def test_get_today():
-    assert len(common.get_today()) == 10
-    assert common.get_today()[4] == "-"
-    assert common.get_today()[7] == "-"
+def test_today_utc():
+    assert len(common.today_utc()) == 10
+    assert common.today_utc()[4] == "-"
+    assert common.today_utc()[7] == "-"
 
 
 # -----------------------------------------------------------------------------

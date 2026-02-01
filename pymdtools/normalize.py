@@ -71,7 +71,7 @@ def md_file_beautifier(filename, backup_option=True, filename_ext=".md"):
     @return nothing
     """
     logging.debug('Beautify the file %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     # Read the file
     text = common.get_file_content(filename)

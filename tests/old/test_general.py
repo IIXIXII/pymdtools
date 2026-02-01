@@ -67,8 +67,8 @@ def check_same_files(file1, file2):
 # -----------------------------------------------------------------------------
 def check_transform_text_function(filename, filename_result,
                                   transform_function):
-    input_filename = common.check_is_file_and_correct_path(filename)
-    result_filename = common.check_is_file_and_correct_path(filename_result)
+    input_filename = common.check_file(filename)
+    result_filename = common.check_file(filename_result)
 
     input1 = common.get_file_content(input_filename)
     result = common.get_file_content(result_filename)
@@ -89,8 +89,8 @@ def check_transform_text_function(filename, filename_result,
 # -----------------------------------------------------------------------------
 def check_trans_text_function_one(filename, filename_result,
                                   transform_function):
-    input_filename = common.check_is_file_and_correct_path(filename)
-    result_filename = common.check_is_file_and_correct_path(filename_result)
+    input_filename = common.check_file(filename)
+    result_filename = common.check_file(filename_result)
 
     input1 = common.get_file_content(input_filename)
     result = common.get_file_content(result_filename)
@@ -111,19 +111,19 @@ def check_trans_file_inside_fun(filename,
                                 transform_function,
                                 filename_ext=".md"):
     input_filename = \
-        common.check_is_file_and_correct_path(
+        common.check_file(
             filename, filename_ext=filename_ext)
-    result_filename = common.check_is_file_and_correct_path(filename_result)
+    result_filename = common.check_file(filename_result)
 
     local_folder = os.path.split(input_filename)[0]
     random_name = '.{}'.format(hash(os.times()))
     filename_temp_ext = ".md"
-    test_filename = common.set_correct_path(os.path.join(
+    test_filename = common.normpath(os.path.join(
         local_folder,
         common.get_flat_filename(random_name) + filename_temp_ext))
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename)
+        common.check_file(test_filename)
 
     shutil.copyfile(input_filename, test_filename)
 
@@ -133,8 +133,8 @@ def check_trans_file_inside_fun(filename,
                        filename_ext=filename_temp_ext)
 
     new_test_filename = "%s.%s-%03d%s" % (test_filename,
-                                          common.get_today(), 0, ".bak")
-    bak1 = common.set_correct_path(new_test_filename)
+                                          common.today_utc(), 0, ".bak")
+    bak1 = common.normpath(new_test_filename)
 
     assert os.path.isfile(bak1)
 
@@ -147,10 +147,10 @@ def check_trans_file_inside_fun(filename,
         os.remove(bak1)
 
     # with pytest.raises(Exception):
-    #     common.check_is_file_and_correct_path(test_filename)
+    #     common.check_file(test_filename)
 
     # with pytest.raises(Exception):
-    #     common.check_is_file_and_correct_path(bak1)
+    #     common.check_file(bak1)
 
 # -----------------------------------------------------------------------------
 # Function to test the transformation from a file
@@ -162,26 +162,26 @@ def check_transform_file_function(filename,
                                   new_extension_for_result,
                                   filename_ext=".md"):
     input_filename = \
-        common.check_is_file_and_correct_path(
+        common.check_file(
             filename, filename_ext=filename_ext)
-    common.check_is_file_and_correct_path(filename_result)
+    common.check_file(filename_result)
 
     local_folder = os.path.split(__get_this_filename())[0]
     random_name = '.{}'.format(hash(os.times()))
     filename_temp_ext = ".md"
-    test_filename = common.set_correct_path(
+    test_filename = common.normpath(
         local_folder +
         common.get_flat_filename(random_name) + filename_temp_ext)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename)
+        common.check_file(test_filename)
 
     shutil.copyfile(input_filename, test_filename)
 
     assert os.path.isfile(test_filename)
 
     transform_function(test_filename, filename_ext=filename_temp_ext)
-    test_filename_result = common.set_correct_path(
+    test_filename_result = common.normpath(
         os.path.splitext(test_filename)[0] +
         new_extension_for_result)
 
@@ -195,9 +195,9 @@ def check_transform_file_function(filename,
         os.remove(test_filename_result)
 
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename)
+        common.check_file(test_filename)
     with pytest.raises(Exception):
-        common.check_is_file_and_correct_path(test_filename_result)
+        common.check_file(test_filename_result)
 
 # -----------------------------------------------------------------------------
 # Function to find all couple for test
@@ -211,8 +211,8 @@ def find_test_file_couple(new_extension_for_result, filename_ext=".md",
     result = []
 
     def __search_test_file__(filename):
-        filename = common.check_is_file_and_correct_path(filename)
-        result_filename = common.set_correct_path(os.path.splitext(filename)[
+        filename = common.check_file(filename)
+        result_filename = common.normpath(os.path.splitext(filename)[
             0] + new_extension_for_result)
 
         # case when the filename is a result filename
@@ -224,7 +224,7 @@ def find_test_file_couple(new_extension_for_result, filename_ext=".md",
         if os.path.isfile(result_filename):
             result.append((filename, result_filename))
 
-    common.apply_function_in_folder(
+    common.apply_to_files(
         folder_search, __search_test_file__, filename_ext=filename_ext)
 
     return result
@@ -241,8 +241,8 @@ def create_result_transform_text(function_test, new_extension_for_result,
     len_end_of_filename = len(new_extension_for_result)
 
     def __create_result__(filename):
-        filename = common.check_is_file_and_correct_path(filename)
-        result_filename = common.set_correct_path(os.path.splitext(filename)[
+        filename = common.check_file(filename)
+        result_filename = common.normpath(os.path.splitext(filename)[
             0] + new_extension_for_result)
 
         if (len(filename) > len_end_of_filename) and \
@@ -256,7 +256,7 @@ def create_result_transform_text(function_test, new_extension_for_result,
         common.set_file_content(result_filename, function_test(
             common.get_file_content(filename)))
 
-    common.apply_function_in_folder(
+    common.apply_to_files(
         folder_search, __create_result__, filename_ext=filename_ext)
 
 # -----------------------------------------------------------------------------
@@ -272,8 +272,8 @@ def create_result_transform_file(function_test,
     len_end_of_filename = len(new_extension_for_result)
 
     def __create_result__(filename):
-        filename = common.check_is_file_and_correct_path(filename)
-        result_filename = common.set_correct_path(os.path.splitext(filename)[
+        filename = common.check_file(filename)
+        result_filename = common.normpath(os.path.splitext(filename)[
             0] + new_extension_for_result)
 
         if (len(filename) > len_end_of_filename) and \
@@ -284,9 +284,9 @@ def create_result_transform_file(function_test,
 
         logging.info('Create result for the file %s', filename)
         function_test(filename)
-        common.check_is_file_and_correct_path(result_filename)
+        common.check_file(result_filename)
 
-    common.apply_function_in_folder(
+    common.apply_to_files(
         folder_search, __create_result__, filename_ext=filename_ext)
 
 # -----------------------------------------------------------------------------
@@ -302,8 +302,8 @@ def create_result_trans_file_inside(function_test,
     len_end_of_filename = len(new_extension_for_result)
 
     def __create_result__(filename):
-        filename = common.check_is_file_and_correct_path(filename)
-        result_filename = common.set_correct_path(os.path.splitext(filename)[
+        filename = common.check_file(filename)
+        result_filename = common.normpath(os.path.splitext(filename)[
             0] + new_extension_for_result)
 
         if (len(filename) > len_end_of_filename) and \
@@ -316,13 +316,13 @@ def create_result_trans_file_inside(function_test,
         shutil.copyfile(filename, result_filename)
         function_test(result_filename)
         new_result_filename = "%s.%s-" % (result_filename,
-                                          common.get_today())
+                                          common.today_utc())
         if os.path.isfile(new_result_filename + "000.bak"):
             os.remove(new_result_filename + "000.bak")
         if os.path.isfile(new_result_filename + "001.bak"):
             os.remove(new_result_filename + "001.bak")
 
-    common.apply_function_in_folder(
+    common.apply_to_files(
         folder_search, __create_result__, filename_ext=filename_ext)
 
 # -----------------------------------------------------------------------------
@@ -352,7 +352,7 @@ def rename_file_result(test_folder, extension, new_extension):
     len_end_of_filename = len(extension)
 
     def __rename_test_file__(filename):
-        filename = common.check_is_file_and_correct_path(filename)
+        filename = common.check_file(filename)
 
         if (len(filename) > len_end_of_filename) \
                 and (filename[-len_end_of_filename:] == extension):
@@ -361,7 +361,7 @@ def rename_file_result(test_folder, extension, new_extension):
             print(filename)
             return
 
-    common.apply_function_in_folder(
+    common.apply_to_files(
         folder_search, __rename_test_file__, filename_ext=".md")
 
     return

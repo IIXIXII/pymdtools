@@ -6,388 +6,307 @@
 
 # -----------------------------------------------------------------------------
 # standard object to wrap file and access easily to the filename
-#
 # -----------------------------------------------------------------------------
 
 import logging
 import sys
 import os
 import os.path
+from pathlib import Path
+from typing import Optional, Union, List
+from dataclasses import dataclass
 
 from . import common
 
 # -----------------------------------------------------------------------------
-# get template
-#
-# @param filename the filename
-# @param start_folder the folder to search the template
-# @return the content
+def _get_this_filename() -> str:
+    """
+    Return the filename of the current module or executable.
+
+    If the application is running in a frozen environment (e.g. PyInstaller),
+    the path to the executable is returned. Otherwise, the path to this module
+    file is returned.
+
+    Returns:
+        Absolute path to the current module file or executable.
+    """
+    if getattr(sys, "frozen", False):
+        return str(Path(sys.executable).resolve())
+
+    return str(Path(__file__).resolve())
 # -----------------------------------------------------------------------------
-def get_template_file(filename, start_folder=None):
+
+
+# -----------------------------------------------------------------------------
+def get_template_file(filename: str, start_folder: Optional[Union[str, Path]] = None) -> str:
+    """
+    Read a template file from a `template/` folder.
+
+    The template folder is resolved as:
+    - `<start_folder>/template` if `start_folder` is provided,
+    - otherwise `<module_folder>/template`.
+
+    Args:
+        filename: Template filename to read (relative to the template folder).
+        start_folder: Base folder used to locate the `template/` directory.
+
+    Returns:
+        The template file content as a string.
+
+    Raises:
+        ValueError: If `filename` is empty.
+        RuntimeError: If the template folder does not exist or is not a directory.
+        Exception/IOError: Propagated from file reading helpers.
+    """
+    if not isinstance(filename, str) or not filename.strip():
+        raise ValueError("filename must be a non-empty string")
+
     if start_folder is None:
-        start_folder = os.path.split(__get_this_filename())[0]
+        base = Path(_get_this_filename()).resolve().parent
+    else:
+        base = Path(start_folder)
 
-    local_template_folder = common.check_folder(
-        os.path.join(start_folder, "template"))
-
-    result = common.get_file_content(os.path.join(local_template_folder,
-                                                  filename))
-
-    return result
+    template_dir = common.ensure_folder(str(base / "template"))
+    return common.get_file_content(str(Path(template_dir) / filename))
+# -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-# get template folder file list
-#
-# @param folder the folder to scan
-# @return the list of template files in a subfolder of template
+def get_template_files_in_folder(folder: str) -> List[str]:
+    """
+    List template files contained in `template/<folder>`.
+
+    Args:
+        folder: Subfolder name under the local `template/` directory.
+
+    Returns:
+        A list of relative template paths (POSIX-style), e.g. ["emails/a.html"].
+        The result is sorted for determinism.
+
+    Raises:
+        RuntimeError: If the template folder does not exist or is not a directory.
+    """
+    template_dir = Path(_get_this_filename()).resolve().parent / "template" / folder
+    local_template_folder = Path(common.check_folder(str(template_dir)))
+
+    files: List[str] = []
+    for p in sorted(local_template_folder.iterdir(), key=lambda x: x.name):
+        if p.is_file():
+            files.append((Path(folder) / p.name).as_posix())
+
+    return files
 # -----------------------------------------------------------------------------
-def get_template_files_in_folder(folder):
-    local_template_folder = common.check_folder(os.path.join(os.path.split(
-        __get_this_filename())[0], os.path.join("template", folder)))
-
-    result = []
-    for filename in os.listdir(local_template_folder):
-        if os.path.isfile(os.path.join(local_template_folder, filename)):
-            result.append(os.path.join(folder, filename))
-
-    return result
 
 
 # -----------------------------------------------------------------------------
-# Object for file name.
-# Provide manipulation on filename
-# Can be a object base for other purpose.
-# -----------------------------------------------------------------------------
+@dataclass
 class FileName:
+    """
+    Utility object to manipulate a file path.
 
-    # -------------------------------------------------------------------------
-    # Initialize the object with the filename
-    #
-    # @param filename the filename to deal with
-    # -------------------------------------------------------------------------
-    def __init__(self, filename=None):
-        # set the first value
-        self.__full_filename = None
+    The object stores a normalized path string (via `common.normpath`) and exposes
+    convenient properties to update the filename, directory and suffix.
+    """
+    _full: Optional[str] = None
 
-        # set the filenames
+    def __init__(self, filename: Optional[Union[str, Path]] = None):
+        self._full = None
         if filename is not None:
             self.full_filename = filename
 
-    # -------------------------------------------------------------------------
-    # the full filename with the complet path
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def full_filename(self):
-        return self.__full_filename
+    def full_filename(self) -> Optional[str]:
+        return self._full
 
-    # -------------------------------------------------------------------------
-    # the full filename with the complet path
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @full_filename.setter
-    def full_filename(self, value):
+    def full_filename(self, value: Optional[Union[str, Path]]) -> None:
         if value is None:
-            self.__full_filename = None
+            self._full = None
             return
+        self._full = common.normpath(str(value))
 
-        self.__full_filename = common.set_correct_path(value)
-
-    # -------------------------------------------------------------------------
-    # the filename (only the last part of the full filename)
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def filename(self):
-        return os.path.split(self.__full_filename)[1]
+    def filename(self) -> Optional[str]:
+        if self._full is None:
+            return None
+        return Path(self._full).name
 
-    # -------------------------------------------------------------------------
-    # the filename (only the last part of the full filename)
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @filename.setter
-    def filename(self, value):
+    def filename(self, value: Optional[str]) -> None:
         if value is None:
-            self.__full_filename = None
+            self._full = None
             return
 
-        value = common.get_valid_filename(value)
+        safe_name = common.get_valid_filename(value)
 
-        if self.__full_filename is None:
-            self.__full_filename = value
+        if self._full is None:
+            self._full = common.normpath(safe_name)
         else:
-            self.__full_filename = os.path.split(self.__full_filename)[0]
-            self.__full_filename = os.path.join(self.__full_filename, value)
+            p = Path(self._full)
+            self._full = common.normpath(str(p.with_name(safe_name)))
 
-        self.__full_filename = common.set_correct_path(self.__full_filename)
-
-    # -------------------------------------------------------------------------
-    # the path to the filename (only the first part of the full filename)
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def filename_path(self):
-        if self.__full_filename is None:
+    def filename_path(self) -> Optional[str]:
+        if self._full is None:
             return None
-        return os.path.split(self.__full_filename)[0]
+        return str(Path(self._full).parent)
 
-    # -------------------------------------------------------------------------
-    # the path to the filename (only the first part of the full filename)
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @filename_path.setter
-    def filename_path(self, value):
+    def filename_path(self, value: Union[str, Path]) -> None:
         if value is None:
-            logging.error('Can not set an empty path')
-            raise Exception('Can not set an empty path')
+            raise ValueError("filename_path cannot be None")
+        if self._full is None:
+            raise ValueError("cannot set filename_path when full_filename is None")
 
-        value = common.set_correct_path(value)
-        self.__full_filename = os.path.join(value,
-                                            os.path.split(self.filename)[1])
+        base = Path(common.normpath(str(value)))
+        self._full = common.normpath(str(base / Path(self._full).name))
 
-    # -------------------------------------------------------------------------
-    # the extension of the filename
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def filename_ext(self):
-        if self.__full_filename is None:
+    def filename_ext(self) -> Optional[str]:
+        if self._full is None:
             return None
-        return os.path.splitext(self.__full_filename)[1]
+        return Path(self._full).suffix
 
-    # -------------------------------------------------------------------------
-    # the extension of the filename
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @filename_ext.setter
-    def filename_ext(self, value):
-        if value is None:
-            logging.error('Can not set an empty extension')
-            raise Exception('Can not set an empty extension')
+    def filename_ext(self, value: str) -> None:
+        if value is None or value == "":
+            raise ValueError("filename_ext cannot be empty")
+        if not value.startswith("."):
+            raise ValueError(f"filename_ext must start with '.', got: {value!r}")
+        if self._full is None:
+            raise ValueError("cannot set filename_ext when full_filename is None")
 
-        self.__full_filename = os.path.splitext(self.__full_filename)[0] + \
-            value
+        p = Path(self._full)
+        self._full = common.normpath(str(p.with_suffix(value)))
 
-    # -------------------------------------------------------------------------
-    # test if the file exist
-    # @return the result of the test
-    # -------------------------------------------------------------------------
-    def is_file(self):
-        return (self.__full_filename is not None) and \
-            (os.path.isfile(self.__full_filename))
+    def is_file(self) -> bool:
+        return self._full is not None and Path(self._full).is_file()
 
-    # -------------------------------------------------------------------------
-    # test if the filename is en directory
-    # @return the result of the test
-    # -------------------------------------------------------------------------
-    def is_dir(self):
-        return (self.__full_filename is not None) and \
-            (os.path.isdir(self.__full_filename))
+    def is_dir(self) -> bool:
+        return self._full is not None and Path(self._full).is_dir()
 
-    # -------------------------------------------------------------------------
-    # __repr__ is a built-in function used to compute the "official"
-    # string reputation of an object
-    # __repr__ goal is to be unambiguous
-    # -------------------------------------------------------------------------
-    def __repr__(self):
-        return self.__full_filename
+    def __repr__(self) -> str:
+        return f"FileName({self._full!r})"
 
-    # -------------------------------------------------------------------------
-    # __str__ is a built-in function that computes the "informal"
-    # string reputation of an object
-    # __str__ goal is to be readable
-    # -------------------------------------------------------------------------
-    def __str__(self):
-        result = ""
-        result += "          path=%s\n" % self.filename_path
-        result += "      filename=%s\n" % self.filename
-        result += "file extension=%s\n" % self.filename_ext
+    def __str__(self) -> str:
+        if self._full is None:
+            return "path=<None>\nfilename=<None>\nfile extension=<None>\n"
 
-        if self.is_dir():
-            result += "It is a directory\n"
-            return result
+        p = Path(self._full)
+        lines = [
+            f"          path={str(p.parent)}",
+            f"      filename={p.name}",
+            f"file extension={p.suffix}",
+        ]
+        if p.is_dir():
+            lines.append("It is a directory")
+        elif p.is_file():
+            lines.append("The file exists")
+        else:
+            lines.append("The file or the directory does not exist")
+        return "\n".join(lines) + "\n"
+# -----------------------------------------------------------------------------
 
-        if self.is_file():
-            result += "The file exists\n"
-            return result
-
-        result += "The file or the directory does not exist\n"
-        return result
 
 # -----------------------------------------------------------------------------
-# Object for file content.
-# Provide manipulation on file to get the content and handle the backup.
-# Can be a object base for other purpose.
-# -----------------------------------------------------------------------------
+
 class FileContent(FileName):
+    """
+    File wrapper that holds text content and supports read/write with optional backups.
 
-    # -------------------------------------------------------------------------
-    # Initialize the object from a content a filename or other
-    #
-    # @param filename the filename of the file
-    # @param content the content of the file if needed
-    # @param backup the backup option (if true each save generate a backup)
-    # @param encoding the encoding to read the file
-    # -------------------------------------------------------------------------
-    def __init__(self, filename=None,
-                 content=None,
-                 backup=True,
-                 encoding="utf-8"):
+    - If instantiated with an existing filename and `content is None`, the file is read.
+    - If `backup=True`, `write()` creates a numbered backup when overwriting an existing file.
+    - `save_needed` tracks whether in-memory content differs from the last read/write.
+    """
 
-        # init the base class
-        FileName.__init__(self, filename=filename)
+    def __init__(
+        self,
+        filename: Optional[Union[str, Path]] = None,
+        content: Optional[str] = None,
+        *,
+        backup: bool = True,
+        encoding: str = "utf-8",
+    ) -> None:
+        super().__init__(filename=filename)
 
-        # set the first value
-        self.__content = None
-        self.__backup = None
-        self.__save_needed = False
+        self._content: Optional[str] = None
+        self._backup: bool = bool(backup)
+        self._save_needed: bool = False
 
-        # fill the data
-        self.backup = backup
+        if self.is_file() and content is None:
+            self._content = common.get_file_content(self.full_filename, encoding=encoding)
+            self._save_needed = False
 
-        # read the file if needed
-        if (self.is_file()) and (content is None):
-            self.__content = common.get_file_content(self.full_filename,
-                                                     encoding=encoding)
-
-        # set the content if needed
         if content is not None:
-            self.content = content
+            self.content = content  # sets save_needed
 
-    # -------------------------------------------------------------------------
-    # Acces to the content
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def content(self):
-        return self.__content
+    def content(self) -> Optional[str]:
+        return self._content
 
-    # -------------------------------------------------------------------------
-    # Acces to the content
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @content.setter
-    def content(self, value):
-        self.__save_needed = True
-        self.__content = value
+    def content(self, value: Optional[str]) -> None:
+        self._content = value
+        self._save_needed = True
 
-    # -------------------------------------------------------------------------
-    # Acces to the backup status
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def backup(self):
-        return self.__backup
+    def backup(self) -> bool:
+        return self._backup
 
-    # -------------------------------------------------------------------------
-    # Acces to the backup status
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @backup.setter
-    def backup(self, value):
-        self.__backup = bool(value)
+    def backup(self, value: bool) -> None:
+        self._backup = bool(value)
 
-    # -------------------------------------------------------------------------
-    # Acces to the save needed status
-    # @return the value
-    # -------------------------------------------------------------------------
     @property
-    def save_needed(self):
-        return self.__save_needed
+    def save_needed(self) -> bool:
+        return self._save_needed
 
-    # -------------------------------------------------------------------------
-    # Acces to the save needed status
-    # @param value The value to set
-    # -------------------------------------------------------------------------
     @save_needed.setter
-    def save_needed(self, value):
-        self.__save_needed = bool(value)
+    def save_needed(self, value: bool) -> None:
+        self._save_needed = bool(value)
 
-    # -------------------------------------------------------------------------
-    # Read the content of the filename
-    # @param filename The filename if needed (this opion set the filename)
-    # @param encoding The encoding of the file
-    # -------------------------------------------------------------------------
-    def read(self, filename=None, encoding="utf-8"):
+    def read(self, filename: Optional[Union[str, Path]] = None, *, encoding: str = "utf-8") -> None:
         if filename is not None:
             self.full_filename = filename
 
         if self.full_filename is None:
-            logging.error('Can not read the content without filename')
-            raise Exception('Can not read the content without filename')
+            raise ValueError("cannot read content without a filename")
 
-        self.content = common.get_file_content(self.full_filename,
-                                               encoding=encoding)
-        self.__save_needed = False
+        self._content = common.get_file_content(self.full_filename, encoding=encoding)
+        self._save_needed = False
 
-    # -------------------------------------------------------------------------
-    # Write the content of the filename
-    # @param filename The filename if needed (this opion set the filename)
-    # @param encoding The encoding of the file
-    # @param backup_ext The backup extension if needed
-    # -------------------------------------------------------------------------
-    def write(self, filename=None, backup_ext=".bak", encoding="utf-8"):
-        if self.content is None:
-            logging.error('Ther is no content to save to %s', self.filename)
-            return
-
+    def write(
+        self,
+        filename: Optional[Union[str, Path]] = None,
+        *,
+        encoding: str = "utf-8",
+        backup_ext: str = ".bak",
+    ) -> None:
         if filename is not None:
             self.full_filename = filename
 
-        if os.path.isfile(self.full_filename) and self.backup:
+        if self.full_filename is None:
+            raise ValueError("cannot write content without a filename")
+
+        if self._content is None:
+            raise ValueError("cannot write: content is None")
+
+        if self.backup and Path(self.full_filename).is_file():
             common.create_backup(self.full_filename, backup_ext=backup_ext)
 
-        if self.full_filename is None:
-            logging.error('Can not save the content without filename')
-            raise Exception('Can not save the content without filename')
+        common.set_file_content(self.full_filename, self._content, encoding=encoding)
+        self._save_needed = False
 
-        common.set_file_content(self.full_filename, self.content,
-                                encoding=encoding)
-        self.__save_needed = False
+    def __repr__(self) -> str:
+        return f"FileContent(filename={self.full_filename!r}, content_len={None if self._content is None else len(self._content)})"
 
-    # -------------------------------------------------------------------------
-    # __repr__ is a built-in function used to compute the "official"
-    # string reputation of an object
-    # __repr__ goal is to be unambiguous
-    # -------------------------------------------------------------------------
-    def __repr__(self):
-        return FileName.__repr__(self) + ":" + repr(self.__content)
-
-    # -------------------------------------------------------------------------
-    # __str__ is a built-in function that computes the "informal"
-    # string reputation of an object
-    # __str__ goal is to be readable
-    # -------------------------------------------------------------------------
-    def __str__(self):
-        result = FileName.__str__(self)
-        result += "backup option=%s\n" % self.backup
-        result += "save needed=%s\n" % self.__save_needed
-
-        if self.content is None:
-            result += "Content is None"
-            return result
-
-        result += "Content char number=%6d\n" % len(self.content)
-
-        return result
-
-
+    def __str__(self) -> str:
+        base = super().__str__()
+        base += f"backup option={self.backup}\n"
+        base += f"save needed={self._save_needed}\n"
+        if self._content is None:
+            base += "Content is None\n"
+        else:
+            base += f"Content char number={len(self._content):6d}\n"
+        return base
 # -----------------------------------------------------------------------------
-# Find the filename of this file (depend on the frozen or not)
-# This function return the filename of this script.
-# The function is complex for the frozen system
-#
-# @return the filename of THIS script.
-# -----------------------------------------------------------------------------
-def __get_this_filename():
-    result = ""
-
-    if getattr(sys, 'frozen', False):
-        # frozen
-        result = sys.executable
-    else:
-        # unfrozen
-        result = __file__
-
-    return result

@@ -119,7 +119,7 @@ def get_refs_from_md_text(text, previous_refs=None):
 # -----------------------------------------------------------------------------
 def get_refs_from_md_file(filename, filename_ext=".md", previous_refs=None):
     logging.debug('Find refs in the MD the file %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     # Read the file
     text = common.get_file_content(filename, encoding="UNKNOWN")
@@ -213,7 +213,7 @@ def get_refs_around_md_file(filename, filename_ext=".md",
                             previous_refs=None,
                             depth_up=1, depth_down=-1):
     logging.debug('Discover refs around the file "%s"', filename)
-    filename = common.set_correct_path(filename)
+    filename = common.normpath(filename)
 
     current_dir = os.path.abspath(os.path.dirname(filename))
 
@@ -339,7 +339,7 @@ def include_refs_to_md_file(filename,
                             error_if_no_key=True):
 
     logging.debug('Include refs to the file %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     # Read the file
     text = common.get_file_content(filename)
@@ -592,7 +592,7 @@ def set_title_in_md_text(text, new_title):
 
 def get_vars_from_md_file(filename, filename_ext=".md", previous_vars=None):
     logging.debug('Find vars in the MD the file %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     # Read the file
     text = common.get_file_content(filename)
@@ -779,7 +779,7 @@ def include_files_to_md_text(text, include_file_re=__include_file_re__,
 
 def include_files_to_md_file(filename, backup_option=True, filename_ext=".md"):
     logging.debug('Include file to the file %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     # Read the file
     text = common.get_file_content(filename)

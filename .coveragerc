@@ -1,0 +1,24 @@
+# =============================================================================
+#                    Author: Florent TOURNOIS | License: MIT                   
+# =============================================================================
+# .coveragerc
+[run]
+branch = True
+source =
+    pymdtools
+omit =
+    */tests/*
+    */__init__.py
+    */markdownify.py
+    */mistunege.py
+
+[report]
+show_missing = True
+skip_covered = True
+precision = 2
+
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass

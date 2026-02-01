@@ -3,8 +3,9 @@
 # =============================================================================
 #                    Author: Florent TOURNOIS | License: MIT                   
 # =============================================================================
-
-""" Markdown Tools developed for Gucihet Entreprises """
+""" Markdown Tools package
+    ~~~~~~~~~~~~~~~~~~~~~~
+    A set of tools to manipulate Markdown files, convert them to PDF, etc."""
 
 from __future__ import annotations
 
@@ -26,7 +27,7 @@ __module_name__ = "pymdtools"
 # Public API (lazy-loaded)
 # ---------------------------------------------------------------------------
 __all__ = [
-    "print_conv",
+    "convert_for_stdout",
     "markdown_file_beautifier",
     "convert_md_to_pdf",
     "search_include_refs_to_md_file",
@@ -39,9 +40,9 @@ def __getattr__(name: str):
     Lazy import of public symbols to avoid importing heavy dependencies
     (dateutil, pdfkit, etc.) at package import time.
     """
-    if name == "print_conv":
-        from .common import print_conv
-        return print_conv
+    if name == "convert_for_stdout":
+        from .common import convert_for_stdout
+        return convert_for_stdout
 
     if name == "markdown_file_beautifier":
         from .normalize import md_file_beautifier as markdown_file_beautifier

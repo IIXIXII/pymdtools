@@ -1,8 +1,4 @@
 @ECHO OFF
-REM ===========================================================================
-REM                   Author: Florent TOURNOIS | License: MIT                  
-REM ===========================================================================
-
 SETLOCAL EnableExtensions
 
 SET "MAKE=%~dp0..\make.bat"

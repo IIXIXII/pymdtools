@@ -6,7 +6,7 @@
 # All dependency of the project for devs
 # -----------------------------------------------------------------------------
 -r requirements.txt
--r requirements-docs.txt
 vulture
 twine
-pytest
+pytest>=7.0
+pytest-cov

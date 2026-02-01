@@ -9,7 +9,6 @@
 # This file MUST NOT import any other module.
 # It is safe to load via exec() from setup.py.
 # ---------------------------------------------------------------------------
-
 __title__           = "pymdtools"
 __description__     = "Markdown Tools developed for Guichet Entreprises"
 

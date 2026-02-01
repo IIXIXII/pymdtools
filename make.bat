@@ -1,8 +1,4 @@
-@ECHO off
-REM ===========================================================================
-REM                   Author: Florent TOURNOIS | License: MIT                  
-REM ===========================================================================
-
+@ECHO OFF
 SETLOCAL EnableExtensions
 
 REM -----------------------------------------------------------------------------
@@ -12,7 +8,7 @@ SET "MYPATH=%~dp0"
 
 CD /D "%MYPATH%" || (ECHO ERROR: cannot cd to "%MYPATH%" & EXIT /B 1)
 
-SET "MODULE=pymdtools"
+SET "MODULE=pyoutlookmailing"
 SET "FUN=%MYPATH%scripts\common.bat"
 SET "ARGUMENT=%~1"
 
@@ -29,11 +25,8 @@ IF NOT EXIST "%FUN%" (
 REM -----------------------------------------------------------------------------
 REM Version
 REM -----------------------------------------------------------------------------
-IF EXIST "%MYPATH%%MODULE%\version.bat" (
-  CALL "%MYPATH%%MODULE%\version.bat"
-) ELSE (
-  SET "VERSION=Not found"
-)
+SET "VERSION_BAT=%MYPATH%%MODULE%\version.bat"
+IF EXIST "%VERSION_BAT%" (CALL "%VERSION_BAT%") ELSE (SET "VERSION=Not found")
 
 REM -----------------------------------------------------------------------------
 REM Main loop
@@ -43,15 +36,25 @@ CALL "%FUN%" :CONFIGURE_DISPLAY
 CALL "%FUN%" :CLEAR_SCREEN
 CALL "%FUN%" :PRINT_LINE "    VERSION=%VERSION%"
 CALL "%FUN%" :PRINT_LINE "    MYPATH=%MYPATH%"
+CALL "%FUN%" :PRINT_LINE "    ARGUMENT=%ARGUMENT%"
 CALL "%FUN%" :LINE_BREAK
 
-TITLE "[%MODULE%] MAKE %ARGUMENT%"
+TITLE [%MODULE%] MAKE %ARGUMENT%
 
 IF /I "%ARGUMENT%"=="requirements" (
   CALL "%FUN%" :INSTALL_REQUIREMENTS "requirements.txt"
   IF ERRORLEVEL 1 GOTO :FAILED
+) ELSE IF /I "%ARGUMENT%"=="requirements-dev" (
+  CALL "%FUN%" :INSTALL_REQUIREMENTS "requirements-dev.txt"
+  IF ERRORLEVEL 1 GOTO :FAILED
+) ELSE IF /I "%ARGUMENT%"=="requirements-docs" (
+  CALL "%FUN%" :INSTALL_REQUIREMENTS "requirements-docs.txt"
+  IF ERRORLEVEL 1 GOTO :FAILED
 ) ELSE IF /I "%ARGUMENT%"=="install_editable" (
   CALL "%FUN%" :INSTALL_EDITABLE
+  IF ERRORLEVEL 1 GOTO :FAILED
+) ELSE IF /I "%ARGUMENT%"=="python" (
+  CALL "%FUN%" :PYTHON_FROM_MAKE %*
   IF ERRORLEVEL 1 GOTO :FAILED
 ) ELSE (
   CALL "%FUN%" :PYTHON_SETUP "%ARGUMENT%"

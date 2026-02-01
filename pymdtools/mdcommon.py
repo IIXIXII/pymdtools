@@ -219,7 +219,7 @@ def search_link_in_md_text_json(text_md):
 def search_link_in_md_file(filename, filename_ext=".md",
                            encoding="utf-8", previous_links=None):
     logging.debug('Search link in the file %s', filename)
-    filename = common.check_is_file_and_correct_path(filename, filename_ext)
+    filename = common.check_file(filename, filename_ext)
 
     # Read the file
     text = common.get_file_content(filename, encoding=encoding)
