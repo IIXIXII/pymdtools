@@ -4,11 +4,11 @@
 #                    Author: Florent TOURNOIS | License: MIT                   
 # =============================================================================
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Package metadata for pymdtools
 # This file MUST NOT import any other module.
 # It is safe to load via exec() from setup.py.
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 __title__           = "pymdtools"
 __description__     = "Markdown Tools developed for Guichet Entreprises"
 
@@ -24,3 +24,5 @@ __status__          = "Production"
 
 # Version is intentionally NOT defined here
 # It is sourced from pymdtools/version.py
+
+# =============================================================================

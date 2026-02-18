@@ -209,7 +209,6 @@ class FileName:
 
 
 # -----------------------------------------------------------------------------
-
 class FileContent(FileName):
     """
     File wrapper that holds text content and supports read/write with optional backups.
@@ -310,3 +309,5 @@ class FileContent(FileName):
             base += f"Content char number={len(self._content):6d}\n"
         return base
 # -----------------------------------------------------------------------------
+
+# =============================================================================

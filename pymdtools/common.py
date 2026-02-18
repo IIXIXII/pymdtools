@@ -65,6 +65,7 @@ and file I/O.
 - File traversal and search:
     - `apply_to_files`
     - `find_file`
+    - `get_this_filename`
 
 Text & Encoding utilities
 -------------------------
@@ -607,6 +608,36 @@ def create_backup(path: str, backup_ext: str = ".bak", *, max_tries: int = 100) 
             return str(candidate.resolve())
 
     raise RuntimeError(f"Cannot find an available backup filename for {str(src_abs)!r}")
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+def get_this_filename() -> str:
+    """
+    Return the absolute path of the current program/module.
+
+    - If running as a frozen executable (e.g., PyInstaller), returns sys.executable.
+    - Otherwise returns the current module file path (__file__).
+    - In interactive contexts where __file__ is unavailable, falls back to sys.argv[0],
+      then to the current working directory.
+
+    Returns:
+        Absolute path as a string.
+    """
+    if getattr(sys, "frozen", False):
+        return str(Path(sys.executable).resolve())
+
+    module_file = globals().get("__file__")
+    if module_file:
+        return str(Path(module_file).resolve())
+
+    argv0 = sys.argv[0] if sys.argv else ""
+    if argv0:
+        p = Path(argv0)
+        # argv0 may be relative; resolve() will anchor to cwd
+        return str(p.resolve())
+
+    return str(Path.cwd().resolve())
 # -----------------------------------------------------------------------------
 
 
