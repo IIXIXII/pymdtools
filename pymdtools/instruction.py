@@ -22,6 +22,8 @@ from typing import (
 
 from . import common
 
+TitleStyle = Literal["preserve", "setext", "atx"]
+IncludeRenderMode = Literal["box", "raw"]
 
 # -----------------------------------------------------------------------------
 # re expression used for instruction
@@ -116,7 +118,6 @@ _ATX_H1_RE = re.compile(
     """
 )
 
-TitleStyle = Literal["preserve", "setext", "atx"]
 
 _BEGIN_VAR_RE: Final[re.Pattern[str]] = re.compile(
     r"<!--\s*begin-var\(\s*(?P<name>[A-Za-z0-9:_-]+(?:/[A-Za-z0-9:_-]+)*)\s*\)\s*-->",
@@ -1348,48 +1349,78 @@ def get_file_content_to_include(
 
 
 # -----------------------------------------------------------------------------
-# Include file to the markdown text
-# \warning All the reference must be defined
-#
-# @param text the markdown text
-# @param include_file_re the regex to match the begin
-# @param error_if_no_file boolean : throw Exception
-#                                            if the key is not found
-# @return the markdown text with the include
+def include_files_to_md_text(
+    text: str,
+    *,
+    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    error_if_no_file: bool = True,
+    render_mode: IncludeRenderMode = "box",
+    **kwargs,
+) -> str:
+    """
+    Replace include-file directives with the content of referenced files.
+
+    The directive must match `include_file_re` and provide a group 'name'
+    containing the referenced filename.
+
+    Args:
+        text: Markdown text.
+        include_file_re: Regex to match include-file directives (must capture 'name').
+        error_if_no_file: If False, keep the directive unchanged when the file is not found/readable.
+        render_mode: "box" to wrap content in an ASCII box, "raw" to insert content as-is.
+        **kwargs: Forwarded to `get_file_content_to_include` (e.g. search_folders).
+
+    Returns:
+        Updated markdown text.
+    """
+    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+
+    result_parts: list[str] = []
+    pos = 0
+
+    while True:
+        m = pattern.search(text, pos)
+        if not m:
+            result_parts.append(text[pos:])
+            break
+
+        filename = m.group("name")
+        logging.debug("Find include-file(%s)", filename)
+
+        result_parts.append(text[pos:m.start()])
+
+        try:
+            file_text = get_file_content_to_include(filename, **kwargs)
+        except Exception:
+            if error_if_no_file:
+                raise
+            # keep original directive unchanged
+            result_parts.append(text[m.start():m.end()])
+            pos = m.end()
+            continue
+
+        # Normalize newlines
+        file_text = file_text.replace("\r\n", "\n").replace("\r", "\n")
+
+        if render_mode == "raw":
+            replacement = file_text
+        else:
+            # box mode (deterministic)
+            left = "| "
+            boxed = left + file_text.replace("\n", "\n" + left)
+            top = "+" + "-" * 77 + "+"
+            replacement = (
+                f"<!-- include-file({filename})\n"
+                f"{top}\n"
+                f"{boxed}\n"
+                f"{top} -->"
+            )
+
+        result_parts.append(replacement)
+        pos = m.end()
+
+    return "".join(result_parts)
 # -----------------------------------------------------------------------------
-def include_files_to_md_text(text, include_file_re=__include_file_re__,
-                             error_if_no_file=True, **kwargs):
-    # search begin
-    match_file = re.search(include_file_re, text)
-
-    # finish if no match
-    if not match_file:
-        return text
-
-    # There is a match
-    filename = match_file.group('name')
-    logging.debug('Find the file %s', filename)
-
-    text_file = get_file_content_to_include(
-        filename, search_folder=None, **kwargs)
-    left_side = "| "
-    text_file = left_side + text_file.replace('\n', '\n' + left_side)
-
-    replace_text = """<!-- include-file(%(filename)s)
-+-----------------------------------------------------------------------------+
-%(text)s
-+--------------------------------------------------------------------------"""\
-""" -->""" % {'filename': filename,
-              'text': text_file}
-
-    result = text[:match_file.start(0)]
-    result += replace_text
-    result += include_files_to_md_text(text[match_file.end(0):],
-                                       include_file_re=include_file_re,
-                                       error_if_no_file=error_if_no_file,
-                                       **kwargs)
-
-    return result
 
 
 # -----------------------------------------------------------------------------
