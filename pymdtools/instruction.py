@@ -4,6 +4,7 @@
 #                    Author: Florent TOURNOIS | License: MIT                   
 # =============================================================================
 
+from __future__ import annotations
 
 # -----------------------------------------------------------------------------
 # @package mdtools
@@ -11,32 +12,40 @@
 #
 # -----------------------------------------------------------------------------
 import logging
-import sys
 import os
 import re
 from pathlib import Path
+
 from typing import (
-    Final, Optional, Dict, Iterable, Union, Mapping, 
-    List, Pattern, Literal, Match, Sequence
+    Final,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Match,
+    Mapping,
+    Optional,
+    Pattern,
+    Sequence,
+    Union,
 )
 
 from . import common
 
-TitleStyle = Literal["preserve", "setext", "atx"]
-IncludeRenderMode = Literal["box", "raw"]
+TitleStyle          = Literal["preserve", "setext", "atx"]
+IncludeRenderMode   = Literal["box", "raw"]
 
 # -----------------------------------------------------------------------------
 # re expression used for instruction
 # -----------------------------------------------------------------------------
-_XML_COMMENT_RE: Final[re.Pattern[str]] = re.compile(
-    r"<!--[\s\S]*?-->")
+_XML_COMMENT_RE: Final[re.Pattern[str]] = re.compile(r"<!--.*?-->", re.DOTALL)
 
 _BEGIN_REF_RE: Final[re.Pattern[str]] = re.compile(
     r"<!--\s+begin-ref\((?P<name>[a-zA-Z0-9_-]+)\)\s+-->")
 _END_REF_RE: Final[re.Pattern[str]] = re.compile(
     r"<!--\s+end-ref\s+-->")
 
-_BEGIN_INCLUDE_RE = re.compile(
+_BEGIN_INCLUDE_RE: Final[re.Pattern[str]] = re.compile(
     r"""
     <!--\s*
     begin-include
@@ -48,7 +57,7 @@ _BEGIN_INCLUDE_RE = re.compile(
     re.VERBOSE,
 )
 
-_END_INCLUDE_RE = re.compile(
+_END_INCLUDE_RE: Final[re.Pattern[str]] = re.compile(
     r"""
     <!--\s*
     end-include
@@ -84,6 +93,7 @@ _ESCAPE_MAP: Final[dict[str, str]] = {
 _VAR_NAME_RE: Final[re.Pattern[str]] = \
     re.compile(r"^[A-Za-z0-9:_-]+(?:/[A-Za-z0-9:_-]+)*$")
 
+
 _ESCAPE_OUT_MAP: Final[dict[str, str]] = {
     "\\": r"\\",
     "\n": r"\n",
@@ -105,12 +115,14 @@ _INCLUDE_FILE_RE: Final[re.Pattern[str]] = re.compile(
     re.VERBOSE,
 )
 
+
 _SETEXT_H1_RE = re.compile(
     r"""(?mx)
     ^[ \t]*(?P<title>[^\r\n]+?)[ \t]*\r?\n
     ^[ \t]*=+[ \t]*\r?\n?
     """
 )
+
 
 _ATX_H1_RE = re.compile(
     r"""(?mx)
@@ -126,18 +138,6 @@ _END_VAR_RE: Final[re.Pattern[str]] = re.compile(
     r"<!--\s*end-var\s*-->",
 )
 
-__var_re__ = \
-    r"""<!--\s+var\((?P<name>[a-zA-Z0-9:_-]+)\)\s*""" \
-    r"""=\s*(?P<quote>['\"])(?P<string>.*?)(?<!\\)(?P=quote)\s+-->"""
-
-__begin_var_re__ = \
-    r"<!--\s+begin-var\((?P<name>[a-zA-Z0-9_-]+)\)\s+-->"
-__end_var_re__ = \
-    r"<!--\s+end-var\s+-->"
-
-__include_file_re__ = \
-    r"<!--\s+include-file\((?P<name>[\.a-zA-Z0-9_-]+)\)" \
-    r"(?P<content>[\s\S]*?)-->"
 
 # -----------------------------------------------------------------------------
 def strip_xml_comment(text: str) -> str:
@@ -158,9 +158,9 @@ def strip_xml_comment(text: str) -> str:
     """
     if not isinstance(text, str):
         raise TypeError("text must be a string")
-
     return _XML_COMMENT_RE.sub("", text)
 # -----------------------------------------------------------------------------
+
 
 # -----------------------------------------------------------------------------
 def get_refs_from_md_text(
@@ -675,7 +675,10 @@ def unescape_var_value(value: str) -> str:
 
 
 # -----------------------------------------------------------------------------
-def get_vars_from_md_text(text: str, previous_vars: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+def get_vars_from_md_text(
+    text: str, 
+    previous_vars: Optional[Dict[str, str]] = None
+) -> Dict[str, str]:
     """
     Extract variable declarations from markdown text and return interpreted values.
 
@@ -848,7 +851,10 @@ def del_var_to_md_text(text: str, var_name: str) -> str:
 
 
 # -----------------------------------------------------------------------------
-def get_title_from_md_text(text: str, return_match: bool = False) -> Union[None, str, Match[str]]:
+def get_title_from_md_text(
+    text: str, 
+    return_match: bool = False
+) -> Union[None, str, Match[str]]:
     """
     Extract the first level-1 Markdown title from text.
 
@@ -891,7 +897,12 @@ def get_title_from_md_text(text: str, return_match: bool = False) -> Union[None,
 
 
 # -----------------------------------------------------------------------------
-def set_title_in_md_text(text: str, new_title: str, *, style: TitleStyle = "preserve") -> str:
+def set_title_in_md_text(
+    text: str, 
+    new_title: str, 
+    *, 
+    style: TitleStyle = "preserve"
+) -> str:
     """
     Set or insert the first level-1 Markdown title in `text`.
 
@@ -1016,6 +1027,7 @@ def get_vars_from_md_file(
     checked = common.check_file(str(filename), filename_ext)
 
     text = common.get_file_content(checked, encoding=encoding)
+    return get_vars_from_md_text(text, previous_vars=previous_vars)
 # -----------------------------------------------------------------------------
 
 
@@ -1424,124 +1436,197 @@ def include_files_to_md_text(
 
 
 # -----------------------------------------------------------------------------
-# Include file to the markdown file
-#
-# @param filename The name and path of the file to work with.
-#                 This file is supposed to be a markdown file.
-# @param backup_option This parameter is set to true by default.
-#                      If the backup option is set, then a file named
-#                           filename.bak will be created.
-# @param filename_ext This parameter the markdown extension for the filename.
-# @return the filename normalized
-# -----------------------------------------------------------------------------
-def include_files_to_md_file(filename, backup_option=True, filename_ext=".md"):
-    logging.debug('Include file to the file %s', filename)
-    filename = common.check_file(filename, filename_ext)
+def include_files_to_md_file(
+    filename: Union[str, Path],
+    *,
+    backup_option: bool = True,
+    backup_ext: str = ".bak",
+    filename_ext: str = ".md",
+    read_encoding: str = "UNKNOWN",
+    write_encoding: str = "utf-8",
+    error_if_no_file: bool = True,
+    render_mode: str = "box",
+    **kwargs,
+) -> str:
+    """
+    Apply include-file substitutions to a markdown file in-place.
 
-    # Read the file
-    text = common.get_file_content(filename)
+    Args:
+        filename: Markdown file to process.
+        backup_option: Create a backup before writing.
+        backup_ext: Backup extension.
+        filename_ext: Expected markdown extension.
+        read_encoding: Encoding to read ("UNKNOWN" may trigger auto-detection).
+        write_encoding: Encoding used to write.
+        error_if_no_file: If False, keep unresolved directives unchanged.
+        render_mode: Forwarded to include_files_to_md_text (e.g. "box" or "raw").
+        **kwargs: Forwarded to get_file_content_to_include (e.g. search_folders).
 
-    # Create Backup
+    Returns:
+        Normalized filename.
+    """
+    logging.debug("Include file to the file %s", filename)
+    checked = common.check_file(str(filename), filename_ext)
+
+    text = common.get_file_content(checked, encoding=read_encoding)
+
     if backup_option:
-        common.create_backup(filename)
+        common.create_backup(checked, backup_ext=backup_ext)
 
-    # Change inside
-    text = include_files_to_md_text(text)
+    text = include_files_to_md_text(
+        text,
+        error_if_no_file=error_if_no_file,
+        render_mode=render_mode,
+        **kwargs,
+    )
 
-    # Save the file
-    os.remove(filename)
-    common.set_file_content(filename, text, encoding="utf-8")
-    return filename
-
+    common.set_file_content(checked, text, encoding=write_encoding)
+    return checked
 # -----------------------------------------------------------------------------
-# set a var in the markdown text
-#
-# @param text the markdown text
-# @param filename the filename
-# @return the dict with the refs found key-> value
-# -----------------------------------------------------------------------------
-def set_include_file_to_md_text(text, filename):
-
-    result = ""
-    current_text = text
-    include_is_set = False
-    include_text = '<!-- include-file(%s) -->' % (filename)
-
-    # search the var
-    match_var = re.search(__include_file_re__, current_text)
-
-    while match_var is not None:
-        key = match_var.group('name')
-        logging.debug('Find the include file "%s" compare to "%s"',
-                      key, filename)
-        if key == filename:
-            include_is_set = True
-
-        result += current_text[0:match_var.end(0)]
-        current_text = current_text[match_var.end(0):]
-        match_var = re.search(__include_file_re__, current_text)
-
-    if not include_is_set:
-        if len(result) > 0:
-            result += '\n'
-        result += include_text
-        if len(current_text) > 0 and current_text[0] != '\n':
-            result += '\n\n'
-
-    result += current_text
-    return result
 
 
 # -----------------------------------------------------------------------------
-# del a var in the markdown text
-#
-# @param text the markdown text
-# @return the dict with the refs found key-> value
+def ensure_include_file_in_md_text(
+    text: str,
+    filename: str,
+    *,
+    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+) -> str:
+    """
+    Ensure that an `include-file(filename)` directive exists in the markdown text.
+
+    The directive is appended after the last existing include-file directive.
+    If no include-file directives exist, it is inserted at the beginning of the text.
+
+    Args:
+        text: Markdown text.
+        filename: Referenced file name as used in include-file(...).
+        include_file_re: Regex matching include-file directives; must capture group 'name'.
+
+    Returns:
+        Updated markdown text.
+    """
+    if not isinstance(text, str):
+        raise TypeError("text must be a string")
+    if not isinstance(filename, str) or not filename.strip():
+        raise ValueError("filename must be a non-empty string")
+
+    # Normalize newlines (optional but helps determinism)
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+
+    # If already present, return as-is
+    for m in pattern.finditer(normalized):
+        if m.group("name") == filename:
+            return normalized
+
+    directive = f"<!-- include-file({filename}) -->"
+
+    matches = list(pattern.finditer(normalized))
+    if not matches:
+        # insert at beginning
+        if normalized and not normalized.startswith("\n"):
+            return directive + "\n\n" + normalized
+        return directive + "\n\n" + normalized
+
+    # append after the last include-file directive
+    last = matches[-1]
+    insert_at = last.end()
+
+    before = normalized[:insert_at]
+    after = normalized[insert_at:]
+
+    # ensure spacing
+    if not before.endswith("\n"):
+        before += "\n"
+    if after and not after.startswith("\n"):
+        # keep a blank line between directives and content
+        insertion = directive + "\n\n"
+    else:
+        insertion = directive + "\n"
+
+    return before + insertion + after
 # -----------------------------------------------------------------------------
-def get_include_file_list(text):
-
-    result = []
-    current_text = text
-
-    # search the var
-    match_var = re.search(__include_file_re__, current_text)
-
-    while match_var is not None:
-        result.append(match_var.group('name'))
-        current_text = current_text[match_var.end(0):]
-        match_var = re.search(__include_file_re__, current_text)
-
-    return result
 
 
 # -----------------------------------------------------------------------------
-# del a var in the markdown text
-#
-# @param text the markdown text
-# @param filename the filename
-# @return the dict with the refs found key-> value
+def get_include_file_list(
+    text: str,
+    *,
+    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    unique: bool = False,
+) -> list[str]:
+    """
+    Return the list of filenames referenced by include-file(...) directives.
+
+    Args:
+        text: Markdown text.
+        include_file_re: Regex matching include-file directives; must capture group 'name'.
+        unique: If True, remove duplicates while preserving first-seen order.
+
+    Returns:
+        A list of referenced filenames, in appearance order.
+    """
+    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+
+    names = [m.group("name") for m in pattern.finditer(text)]
+
+    if not unique:
+        return names
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for n in names:
+        if n not in seen:
+            seen.add(n)
+            out.append(n)
+    return out
 # -----------------------------------------------------------------------------
-def del_include_file_to_md_text(text, filename):
 
-    result = ""
-    current_text = text
 
-    # search the var
-    match_var = re.search(__include_file_re__, current_text)
+# -----------------------------------------------------------------------------
+def del_include_file_to_md_text(
+    text: str,
+    filename: str,
+    *,
+    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    first_only: bool = False,
+) -> str:
+    """
+    Remove include-file directives referencing `filename` from markdown text.
 
-    while match_var is not None:
-        key = match_var.group('name')
-        logging.debug('Find the variable %s', key)
-        if key == filename:
-            result += current_text[0:match_var.start(0)]
-        else:
-            result += current_text[0:match_var.end(0)]
+    Args:
+        text: Markdown text.
+        filename: Target referenced filename to remove.
+        include_file_re: Regex matching include-file directives; must capture group 'name'.
+        first_only: If True, remove only the first matching directive.
 
-        current_text = current_text[match_var.end(0):]
-        match_var = re.search(__include_file_re__, current_text)
+    Returns:
+        Updated markdown text.
+    """
+    if not isinstance(text, str):
+        raise TypeError("text must be a string")
+    if not isinstance(filename, str) or not filename:
+        raise ValueError("filename must be a non-empty string")
 
-    result += current_text
-    return result
+    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+
+    out_parts: list[str] = []
+    pos = 0
+    removed = False
+
+    for m in pattern.finditer(text):
+        name = m.group("name")
+        if name == filename and (not first_only or not removed):
+            # keep everything before the match, skip the match
+            out_parts.append(text[pos:m.start()])
+            pos = m.end()
+            removed = True
+        # else: keep scanning; do not append yet (handled by pos slices)
+
+    out_parts.append(text[pos:])
+    return "".join(out_parts)
+# -----------------------------------------------------------------------------
 
 
 # =============================================================================

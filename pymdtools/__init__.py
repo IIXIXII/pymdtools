@@ -45,21 +45,36 @@ def __getattr__(name: str):
     """
     if name == "convert_for_stdout":
         from .common import convert_for_stdout
+        globals()[name] = convert_for_stdout
         return convert_for_stdout
 
     if name == "markdown_file_beautifier":
         from .normalize import md_file_beautifier as markdown_file_beautifier
+        globals()[name] = markdown_file_beautifier
         return markdown_file_beautifier
 
     if name == "convert_md_to_pdf":
         from .mdtopdf import convert_md_to_pdf
+        globals()[name] = convert_md_to_pdf
         return convert_md_to_pdf
 
     if name == "search_include_refs_to_md_file":
         from .instruction import search_include_refs_to_md_file
+        globals()[name] = search_include_refs_to_md_file
         return search_include_refs_to_md_file
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    """Return a focused list of public names for completion and tooling.
+
+    Only include dunder names and explicit `__all__` entries so IDEs and
+    tab-completion do not show internal helpers (like typing imports).
+    """
+    dunder = {k for k in globals().keys() if k.startswith("__") and k.endswith("__")}
+    public = set(__all__)
+    return sorted(dunder | public)
 
 
 # =============================================================================
