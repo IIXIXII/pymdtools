@@ -7,7 +7,7 @@ def test_check_file_returns_absolute_path(tmp_path):
     f = tmp_path / "a.md"
     f.write_text("x", encoding="utf-8")
 
-    out = check_file(str(f))
+    out = str(check_file(str(f)))
     assert out.endswith("a.md")
 
 
@@ -26,7 +26,7 @@ def test_check_file_accepts_expected_extension_case_insensitive(tmp_path):
     f = tmp_path / "a.MD"
     f.write_text("x", encoding="utf-8")
 
-    assert check_file(str(f), expected_ext=".md").endswith("a.MD")
+    assert str(check_file(str(f), expected_ext=".md")).endswith("a.MD")
 
 
 def test_check_file_raises_on_wrong_extension(tmp_path):
@@ -38,7 +38,7 @@ def test_check_file_raises_on_wrong_extension(tmp_path):
 
 
 def test_check_file_validates_expected_ext_format(tmp_path):
-    f = tmp_path / "a.md"
+    f = tmp_path / "a.mdx"
     f.write_text("x", encoding="utf-8")
 
     with pytest.raises(ValueError):

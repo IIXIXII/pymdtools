@@ -10,7 +10,7 @@
 # It is safe to load via exec() from setup.py.
 # -----------------------------------------------------------------------------
 __title__           = "pymdtools"
-__description__     = "Markdown Tools developed for Guichet Entreprises"
+__description__     = "Markdown Tools"
 
 __author__          = "Florent Tournois"
 __author_email__    = "florent.tournois@gmail.fr"

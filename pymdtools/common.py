@@ -135,6 +135,7 @@ import codecs
 import functools
 import logging
 import os
+from os import PathLike
 import re
 import shutil
 import sys
@@ -144,7 +145,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import (
     Any, Callable, Generic, Iterable, List, Optional, Sequence, 
-    Set, TypeVar, Union, Sized
+    Set, TypeVar, Union, Sized, 
 )
 from urllib.parse import quote
 
@@ -152,6 +153,114 @@ from urllib.parse import quote
 # =============================================================================
 # Core helpers (exceptions, decorators, lightweight utilities)
 # =============================================================================
+
+
+# -----------------------------------------------------------------------------
+PathInput = Union[str, PathLike[str], Path]
+def to_path(
+    p: PathInput,
+    *,
+    expand_user: bool = True,
+    resolve: bool = False,
+    strict: bool = False,
+) -> Path:
+    """
+    Convert a path-like input to a pathlib.Path instance.
+
+    This helper standardizes path handling across the module.
+    It guarantees that all internal path manipulations operate
+    on `pathlib.Path` objects.
+
+    Parameters
+    ----------
+    p : str | os.PathLike[str] | Path
+        Input path. Can be:
+        - A string path
+        - Any os.PathLike object
+        - A pathlib.Path instance
+
+    expand_user : bool, default=True
+        If True, expands '~' to the user home directory using
+        Path.expanduser().
+
+    resolve : bool, default=False
+        If True, resolves the path using Path.resolve().
+
+        This will:
+        - Normalize the path (remove '..', '.')
+        - Follow symbolic links (unless strict=False and target missing)
+
+    strict : bool, default=False
+        Only used if resolve=True.
+
+        - If True, raises FileNotFoundError if the path does not exist.
+        - If False, resolves as much as possible without requiring existence.
+
+    Returns
+    -------
+    Path
+        A pathlib.Path object.
+
+    Notes
+    -----
+    - This function does NOT implicitly resolve paths unless `resolve=True`.
+      This avoids surprising behavior with symlinks or non-existing paths.
+    - Most library-level functions should call:
+          p = to_path(path)
+      without resolve=True.
+    - Use resolve=True only when canonicalization is explicitly required.
+
+    Examples
+    --------
+    >>> to_path("~/.config")
+    PosixPath('/home/user/.config')
+
+    >>> to_path("file.txt", resolve=True)
+    PosixPath('/current/dir/file.txt')
+
+    >>> to_path("missing.txt", resolve=True, strict=True)
+    FileNotFoundError
+    """
+    if isinstance(p, Path):
+        path = p
+    else:
+        path = Path(p)
+
+    if expand_user:
+        path = path.expanduser()
+
+    if resolve:
+        path = path.resolve(strict=strict)
+
+    return path
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+def _p(p: PathInput) -> Path:
+    """
+    Internal shorthand for `to_path`.
+
+    This helper ensures that all path manipulations inside the module
+    operate on `pathlib.Path` objects.
+
+    It applies the module defaults:
+    - expand_user=True
+    - resolve=False
+    - strict=False
+
+    Parameters
+    ----------
+    p : str | os.PathLike[str] | Path
+        Input path.
+
+    Returns
+    -------
+    Path
+        A pathlib.Path instance.
+    """
+    return to_path(p)
+# -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
@@ -312,249 +421,341 @@ def static(**attributes: Any) -> Callable[[F], F]:
 
 
 # -----------------------------------------------------------------------------
-def normpath(path: str) -> str:
+def normpath(path: PathInput) -> Path:
     """
-    Return an absolute, normalized filesystem path.
+    Return a normalized absolute Path.
 
-    Resolves ".", ".." and returns an absolute path without checking
-    for existence.
+    This function:
+    - Converts the input to a pathlib.Path
+    - Expands '~'
+    - Resolves '.' and '..'
+    - Returns an absolute path
+
+    It does NOT require the path to exist.
+
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        Input path.
+
+    Returns
+    -------
+    Path
+        A normalized absolute Path object.
     """
-    return str(Path(path).resolve())
+    return to_path(path, resolve=True, strict=False)
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def check_folder(path: str) -> str:
+def check_folder(path: PathInput) -> Path:
     """
-    Validate that a path exists and is a directory.
+    Validate that `path` exists and is a directory.
 
-    Args:
-        path: Path to validate.
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        Input directory path.
 
-    Returns:
-        The normalized absolute path of the directory.
+    Returns
+    -------
+    Path
+        Normalized absolute directory path.
 
-    Raises:
-        NotADirectoryError: If the path exists but is not a directory.
-        FileNotFoundError: If the path does not exist.
+    Raises
+    ------
+    FileNotFoundError
+        If the path does not exist.
+    NotADirectoryError
+        If the path exists but is not a directory.
     """
-    p = Path(path)
+    p = normpath(path)
 
     if not p.exists():
-        raise FileNotFoundError(path)
+        raise FileNotFoundError(f"Folder does not exist: {p}")
 
     if not p.is_dir():
-        raise NotADirectoryError(path)
+        raise NotADirectoryError(f"Not a folder: {p}")
 
-    return str(p.resolve())
+    return p
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def ensure_folder(path: str) -> str:
+def ensure_folder(path: PathInput) -> Path:
     """
-    Ensure that a directory exists and return its normalized absolute path.
+    Ensure that a directory exists.
 
     If the directory does not exist, it is created (including parents).
-    If the path exists and is not a directory, an exception is raised.
+    If it already exists, nothing is done.
 
-    Args:
-        path: Directory path to create or validate.
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        Target directory path.
 
-    Returns:
-        The normalized absolute path of the directory.
+    Returns
+    -------
+    Path
+        Normalized absolute directory path.
 
-    Raises:
-        NotADirectoryError: If the path exists but is not a directory.
-        OSError: If the directory cannot be created due to filesystem errors.
+    Raises
+    ------
+    NotADirectoryError
+        If the path exists but is not a directory.
+    OSError
+        If directory creation fails.
     """
-    p = Path(path)
+    p = normpath(path)
 
-    if p.exists() and not p.is_dir():
-        raise NotADirectoryError(path)
+    if p.exists():
+        if not p.is_dir():
+            raise NotADirectoryError(f"Path exists but is not a directory: {p}")
+        return p
 
     p.mkdir(parents=True, exist_ok=True)
-    return str(p.resolve())
+    return p
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def check_file(path: str, expected_ext: Optional[str] = None) -> str:
+def check_file(
+    path: PathInput, 
+    expected_ext: str | tuple[str, ...] | None = None
+) -> Path:
     """
-    Validate that a path exists and is a file, optionally checking its extension.
+    Validate that `path` exists and is a regular file, 
+    optionally enforcing an extension.
 
-    Args:
-        path: File path to validate.
-        expected_ext: Expected file extension (e.g. ".md"). If provided, the file
-            extension must match exactly (case-insensitive).
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        Input file path.
+    expected_ext : str | tuple[str, ...] | None, default=None
+        Expected file extension(s). Examples:
+        - ".md"
+        - "md"
+        - (".md", ".markdown")
+        If None, no extension check is performed.
 
-    Returns:
+    Returns
+    -------
+    Path
         Normalized absolute file path.
 
-    Raises:
-        FileNotFoundError: If the path does not exist.
-        IsADirectoryError: If the path exists but is a directory.
-        ValueError: If the extension does not match `expected_ext`.
+    Raises
+    ------
+    FileNotFoundError
+        If the path does not exist.
+    IsADirectoryError
+        If the path exists but is not a regular file.
+    ValueError
+        If `expected_ext` is provided and 
+        the file extension does not match.
     """
-    p = Path(path)
+    p = normpath(path)
 
     if not p.exists():
-        raise FileNotFoundError(path)
+        raise FileNotFoundError(f"File does not exist: {p}")
 
     if not p.is_file():
-        # could be a directory or other special node
-        raise IsADirectoryError(path)
+        raise IsADirectoryError(f"Not a regular file: {p}")
 
     if expected_ext is not None:
-        if not expected_ext.startswith("."):
-            raise ValueError(f"expected_ext must start with '.', got: {expected_ext!r}")
-
-        actual_ext = p.suffix
-        if actual_ext.lower() != expected_ext.lower():
+        exts = (expected_ext,) if isinstance(expected_ext, str) else expected_ext
+        normalized = tuple(e.lower() if e.startswith(".") else f".{e.lower()}" for e in exts)
+        if p.suffix.lower() not in normalized:
             raise ValueError(
-                f"Unexpected file extension for {str(p)!r}: "
-                f"got {actual_ext!r}, expected {expected_ext!r}"
+                f"Unexpected file extension for {p}: got {p.suffix!r}, expected one of {normalized}"
             )
 
-    return str(p.resolve())
+    return p
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def with_suffix(path: Union[str, Path], suffix: str) -> str:
+def with_suffix(path: PathInput, suffix: str) -> Path:
     """
-    Return a filename with a new suffix (extension).
+    Return a new Path with a modified file suffix.
 
-    Args:
-        path: Input filename or path.
-        suffix: New suffix including the leading dot (e.g. ".md").
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        Input file path.
+    suffix : str
+        New file extension (with or without leading dot).
+        Examples:
+        - ".html"
+        - "html"
 
-    Returns:
-        Filename with the new suffix.
+    Returns
+    -------
+    Path
+        Path with updated suffix.
 
-    Raises:
-        ValueError: If suffix does not start with a dot.
+    Raises
+    ------
+    ValueError
+        If suffix is empty or invalid.
     """
+    if not suffix:
+        raise ValueError("Suffix must not be empty.")
+
+    p = _p(path)
+
+    # Normalize suffix format
     if not suffix.startswith("."):
-        raise ValueError(f"suffix must start with '.', got: {suffix!r}")
+        suffix = f".{suffix}"
 
-    p = Path(path)
-    return str(p.with_suffix(suffix))
+    return p.with_suffix(suffix)
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def path_depth(path: str) -> int:
+def path_depth(path: PathInput) -> int:
     """
     Return the depth of a filesystem path.
 
-    The depth is defined as the number of directory components in the path.
-    If the path points to a file, the file name is ignored.
+    The depth is defined as the number of directory components.
+    If the path appears to reference a file (has a suffix),
+    the last component is ignored.
 
-    Args:
-        path: Filesystem path (absolute or relative).
+    This function does not access the filesystem.
 
-    Returns:
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        Filesystem path (absolute or relative).
+
+    Returns
+    -------
+    int
         Number of directory levels in the path.
     """
-    p = Path(path)
+    p = _p(path)
 
-    # If it looks like a file (has a suffix), ignore the last part
+    # Ignore file name if it has a suffix
     if p.suffix:
         p = p.parent
 
-    # Remove root/anchor and count parts
-    parts = [part for part in p.parts if part not in (p.root, p.anchor)]
+    # Remove anchor (e.g. "/" or "C:\\")
+    if p.anchor:
+        parts = p.parts[1:]
+    else:
+        parts = p.parts
+
     return len(parts)
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 def copytree(
-    src: str,
-    dst: str,
+    src: PathInput,
+    dst: PathInput,
+    *,
     symlinks: bool = False,
     ignore: Optional[Callable[[str, list[str]], Iterable[str]]] = None,
-) -> None:
+) -> Path:
     """
-    Copy a directory tree from *src* to *dst*.
+    Copy a directory tree from *src* to *dst* (incremental, dirs_exist_ok=True).
 
-    This function behaves like a simplified, incremental version of
-    ``shutil.copytree`` with ``dirs_exist_ok=True``:
-    - creates destination directories as needed,
-    - recursively copies files,
-    - supports an ``ignore`` callable compatible with ``shutil.copytree``,
-    - optionally preserves symlinks (copy the link itself) when ``symlinks=True``,
-    - copies a file only if the destination file does not exist, or if the
-      source file is newer (mtime), or if sizes differ.
+    - Creates destination directories as needed
+    - Recursively copies files
+    - Supports an ``ignore`` callable compatible with shutil.copytree
+    - Optionally preserves symlinks when ``symlinks=True``
+    - Copies a file only if destination missing, sizes differ, or source is newer
 
-    Args:
-        src: Source directory path.
-        dst: Destination directory path (created if missing).
-        symlinks: If True, copy symlinks as symlinks. If False, copy the
-            content of the linked file/directory.
-        ignore: Callable with signature ``ignore(dirpath, names) -> iterable``
-            returning the names to ignore in *dirpath*. Same contract as
-            ``shutil.copytree``.
+    Parameters
+    ----------
+    src : str | os.PathLike[str] | Path
+        Source directory path.
+    dst : str | os.PathLike[str] | Path
+        Destination directory path (created if missing).
+    symlinks : bool, default=False
+        If True, copy symlinks as symlinks. If False, follow symlinks and copy
+        target content.
+    ignore : callable | None, default=None
+        Callable with signature ``ignore(dirpath, names) -> iterable`` returning
+        the names to ignore in *dirpath* (same contract as shutil.copytree).
 
-    Raises:
-        FileNotFoundError: If *src* does not exist.
-        NotADirectoryError: If *src* is not a directory.
-        OSError: For underlying filesystem errors.
+    Returns
+    -------
+    Path
+        Destination directory path.
+
+    Raises
+    ------
+    FileNotFoundError
+        If *src* does not exist.
+    NotADirectoryError
+        If *src* is not a directory.
+    OSError
+        For underlying filesystem errors.
     """
-    if not os.path.exists(src):
-        raise FileNotFoundError(src)
-    if not os.path.isdir(src):
-        raise NotADirectoryError(src)
+    src_p = _p(src)
+    dst_p = _p(dst)
 
-    os.makedirs(dst, exist_ok=True)
+    if not src_p.exists():
+        raise FileNotFoundError(f"Source folder does not exist: {src_p}")
+    if not src_p.is_dir():
+        raise NotADirectoryError(f"Source is not a directory: {src_p}")
 
-    names = os.listdir(src)
-    ignored: Set[str] = set(ignore(src, names)) if ignore else set()
+    dst_p.mkdir(parents=True, exist_ok=True)
+
+    names = [p.name for p in src_p.iterdir()]
+    ignored: Set[str] = set(ignore(str(src_p), names)) if ignore else set()
 
     for name in names:
         if name in ignored:
             continue
 
-        source = os.path.join(src, name)
-        destin = os.path.join(dst, name)
+        source = src_p / name
+        destin = dst_p / name
 
         # Symlink handling
-        if os.path.islink(source):
+        if source.is_symlink():
             if symlinks:
                 # Copy link itself
-                if os.path.lexists(destin):
-                    os.remove(destin)
-                link_target = os.readlink(source)
-                logging.info("Copy symlink %s -> %s", source, destin)
-                os.symlink(link_target, destin)
+                if destin.exists() or destin.is_symlink():
+                    if destin.is_dir() and not destin.is_symlink():
+                        shutil.rmtree(destin)
+                    else:
+                        destin.unlink()
+
+                link_target = source.readlink()
+                destin.symlink_to(link_target)
             else:
-                # Follow link: copy target content
-                if os.path.isdir(source):
+                # Follow link: copy target content (may recurse into target dir)
+                if source.is_dir():
                     copytree(source, destin, symlinks=symlinks, ignore=ignore)
                 else:
                     _copy_file_if_needed(source, destin)
             continue
 
-        if os.path.isdir(source):
+        if source.is_dir():
             copytree(source, destin, symlinks=symlinks, ignore=ignore)
         else:
             _copy_file_if_needed(source, destin)
 
-def _copy_file_if_needed(source: str, destin: str) -> None:
-    """Copy file preserving metadata if destination is missing or outdated."""
-    if not os.path.exists(destin):
-        logging.info("Copy file %s -> %s", source, destin)
-        shutil.copy2(source, destin)
-        return
+    return dst_p
 
-    src_stat = os.stat(source)
-    dst_stat = os.stat(destin)
+def _copy_file_if_needed(source: PathInput, destination: PathInput) -> Path:
+    src = _p(source)
+    dst = _p(destination)
 
-    # Copy if size differs or if source is newer (mtime strictly greater)
-    if src_stat.st_size != dst_stat.st_size or src_stat.st_mtime > dst_stat.st_mtime:
-        logging.info("Copy file %s -> %s", source, destin)
-        shutil.copy2(source, destin)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+
+    if not dst.exists():
+        shutil.copy2(src, dst)
+        return dst
+
+    s = src.stat()
+    d = dst.stat()
+
+    if s.st_size != d.st_size or s.st_mtime > d.st_mtime:
+        shutil.copy2(src, dst)
+
+    return dst
 # -----------------------------------------------------------------------------
 
 
@@ -597,7 +798,7 @@ def create_backup(path: str, backup_ext: str = ".bak", *, max_tries: int = 100) 
         raise IsADirectoryError(path)
 
     src_abs = src.resolve()
-    today = date.today().isoformat()  # "YYYY-MM-DD"
+    today = today_utc()  # "YYYY-MM-DD"
 
     # Candidate names: <filename>.<date>-NNN<ext>
     for i in range(max_tries):

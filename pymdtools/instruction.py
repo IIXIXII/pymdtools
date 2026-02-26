@@ -35,28 +35,68 @@ from . import common
 TitleStyle          = Literal["preserve", "setext", "atx"]
 IncludeRenderMode   = Literal["box", "raw"]
 
+
 # -----------------------------------------------------------------------------
-# re expression used for instruction
+# Regular expressions used by this module
+#
+# Conventions:
+# - All patterns are compiled once at import time.
+# - Patterns with named groups MUST expose:
+#     - group("name") for markers referencing a key/variable/file name
+#     - group("string") for var(...) raw string values (without quotes)
+# - re.VERBOSE is used for readability when the pattern is non-trivial.
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# 1) Generic XML/HTML comment: <!-- ... -->
+#
+# Used for: stripping comments from markdown text.
+# Notes:
+# - DOTALL to match multi-line comments.
+# - Non-greedy to stop at the first closing marker.
 # -----------------------------------------------------------------------------
 _XML_COMMENT_RE: Final[re.Pattern[str]] = re.compile(r"<!--.*?-->", re.DOTALL)
 
-_BEGIN_REF_RE: Final[re.Pattern[str]] = re.compile(
-    r"<!--\s+begin-ref\((?P<name>[a-zA-Z0-9_-]+)\)\s+-->")
-_END_REF_RE: Final[re.Pattern[str]] = re.compile(
-    r"<!--\s+end-ref\s+-->")
 
+# -----------------------------------------------------------------------------
+# 2) Reference blocks: begin-ref(NAME) ... end-ref
+#
+# Markers:
+#   <!-- begin-ref(name) -->
+#   ...content...
+#   <!-- end-ref -->
+#
+# Group(s):
+#   - name: reference key (letters/digits/_/-)
+# -----------------------------------------------------------------------------
+_BEGIN_REF_RE: Final[re.Pattern[str]] = re.compile(
+    r"<!--\s*begin-ref\(\s*(?P<name>[A-Za-z0-9_-]+)\s*\)\s*-->"
+)
+_END_REF_RE: Final[re.Pattern[str]] = re.compile(
+    r"<!--\s*end-ref\s*-->"
+)
+
+
+# -----------------------------------------------------------------------------
+# 3) Include blocks: begin-include(NAME) ... end-include
+#
+# Markers:
+#   <!-- begin-include(name) -->
+#   ...content...
+#   <!-- end-include -->
+#
+# Group(s):
+#   - name: include key (letters/digits/_/-)
+# -----------------------------------------------------------------------------
 _BEGIN_INCLUDE_RE: Final[re.Pattern[str]] = re.compile(
     r"""
     <!--\s*
     begin-include
-    \(\s*
-    (?P<name>[a-zA-Z0-9_-]+)
-    \s*\)
+    \(\s*(?P<name>[A-Za-z0-9_-]+)\s*\)
     \s*-->
     """,
     re.VERBOSE,
 )
-
 _END_INCLUDE_RE: Final[re.Pattern[str]] = re.compile(
     r"""
     <!--\s*
@@ -66,6 +106,23 @@ _END_INCLUDE_RE: Final[re.Pattern[str]] = re.compile(
     re.VERBOSE,
 )
 
+
+# -----------------------------------------------------------------------------
+# 4) Variables: <!-- var(NAME)="value" --> / <!-- var(NAME)='value' -->
+#
+# Supported NAME:
+# - segments separated by '/', to allow namespaces (e.g. "a/b/c")
+# - allowed chars per segment: [A-Za-z0-9:_-]
+#
+# Groups:
+# - name  : variable name (possibly "a/b/c")
+# - quote : opening quote (single or double)
+# - string: raw string content (escapes preserved), without surrounding quotes
+#
+# Notes:
+# - The `string` group accepts escaped characters (\\.) to allow \" or \n etc.
+# - The pattern is verbose for maintainability.
+# -----------------------------------------------------------------------------
 _VAR_RE: Final[re.Pattern[str]] = re.compile(
     r"""
     <!--\s*var\(
@@ -79,6 +136,15 @@ _VAR_RE: Final[re.Pattern[str]] = re.compile(
     re.VERBOSE,
 )
 
+
+# -----------------------------------------------------------------------------
+# 5) Escape helpers for var values
+#
+# - _ESCAPE_RE captures the escaped character after '\'
+# - _ESCAPE_MAP maps supported escapes to their interpreted value
+# - _VAR_NAME_RE validates accepted variable names (same grammar as _VAR_RE)
+# - _ESCAPE_OUT_MAP maps special chars to their escaped form when writing
+# -----------------------------------------------------------------------------
 _ESCAPE_RE: Final[re.Pattern[str]] = re.compile(r"\\(.)", re.DOTALL)
 
 _ESCAPE_MAP: Final[dict[str, str]] = {
@@ -90,9 +156,9 @@ _ESCAPE_MAP: Final[dict[str, str]] = {
     "'": "'",
 }
 
-_VAR_NAME_RE: Final[re.Pattern[str]] = \
-    re.compile(r"^[A-Za-z0-9:_-]+(?:/[A-Za-z0-9:_-]+)*$")
-
+_VAR_NAME_RE: Final[re.Pattern[str]] = re.compile(
+    r"^[A-Za-z0-9:_-]+(?:/[A-Za-z0-9:_-]+)*$"
+)
 
 _ESCAPE_OUT_MAP: Final[dict[str, str]] = {
     "\\": r"\\",
@@ -103,6 +169,20 @@ _ESCAPE_OUT_MAP: Final[dict[str, str]] = {
 }
 
 
+# -----------------------------------------------------------------------------
+# 6) include-file(...) directives
+#
+# Marker:
+#   <!-- include-file(path/to/file.ext) ... -->
+#
+# Groups:
+# - name   : referenced path (relative), optionally starting with ./ or ../
+# - content: any content between the filename closing ')' and '-->'
+#
+# Notes:
+# - The module currently supports nested paths (a/b/c.ext).
+# - Keep `content` non-greedy to stop at the first "-->".
+# -----------------------------------------------------------------------------
 _INCLUDE_FILE_RE: Final[re.Pattern[str]] = re.compile(
     r"""
     <!--\s*
@@ -116,21 +196,41 @@ _INCLUDE_FILE_RE: Final[re.Pattern[str]] = re.compile(
 )
 
 
-_SETEXT_H1_RE = re.compile(
+# -----------------------------------------------------------------------------
+# 7) Title patterns (Setext H1 / ATX H1)
+#
+# Used by title extraction and rewriting utilities.
+# - Setext:
+#       Title
+#       =====
+# - ATX:
+#       # Title
+# -----------------------------------------------------------------------------
+_SETEXT_H1_RE: Final[re.Pattern[str]] = re.compile(
     r"""(?mx)
     ^[ \t]*(?P<title>[^\r\n]+?)[ \t]*\r?\n
     ^[ \t]*=+[ \t]*\r?\n?
     """
 )
 
-
-_ATX_H1_RE = re.compile(
+_ATX_H1_RE: Final[re.Pattern[str]] = re.compile(
     r"""(?mx)
     ^[ \t]*\#[ \t]+(?P<title>[^\r\n#]+?)[ \t]*\#*[ \t]*\r?\n?
     """
 )
 
 
+# -----------------------------------------------------------------------------
+# 8) begin-var/end-var blocks (replacement blocks)
+#
+# Markers:
+#   <!-- begin-var(name) -->
+#   ...content...
+#   <!-- end-var -->
+#
+# Groups:
+# - name: var name (same grammar as _VAR_NAME_RE)
+# -----------------------------------------------------------------------------
 _BEGIN_VAR_RE: Final[re.Pattern[str]] = re.compile(
     r"<!--\s*begin-var\(\s*(?P<name>[A-Za-z0-9:_-]+(?:/[A-Za-z0-9:_-]+)*)\s*\)\s*-->",
 )

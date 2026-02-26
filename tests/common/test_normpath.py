@@ -14,17 +14,17 @@ def test_normpath_normalizes_dot_and_dotdot(tmp_path):
     base = tmp_path / "base"
     raw = str(base / "x" / ".." / "y" / "." / "z")
     out = normpath(raw)
-    expected = str((base / "y" / "z").resolve())
+    expected = (base / "y" / "z").resolve()
     assert out == expected
 
 
 def test_normpath_does_not_require_existing_path(tmp_path):
     raw = str(tmp_path / "does_not_exist" / "file.txt")
-    out = normpath(raw)
+    out = str(normpath(raw))
     assert os.path.isabs(out)
     assert out.endswith(os.path.join("does_not_exist", "file.txt"))
 
 
 def test_normpath_equivalent_to_pathlib_resolve(tmp_path):
     raw = str(tmp_path / "a" / ".." / "b" / "c.txt")
-    assert normpath(raw) == str(Path(raw).resolve())
+    assert str(normpath(raw)) == str(Path(raw).resolve())
