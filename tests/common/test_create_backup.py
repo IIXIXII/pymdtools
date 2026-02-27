@@ -24,7 +24,7 @@ def test_create_backup_name_format_contains_date_and_counter(tmp_path):
     src = tmp_path / "a.txt"
     src.write_text("x", encoding="utf-8")
 
-    backup_path = create_backup(str(src))
+    backup_path = str(create_backup(str(src)))
     # example: a.txt.2026-01-31-000.bak
     assert re.search(r"\.20\d{2}-\d{2}-\d{2}-\d{3}\.bak$", backup_path)
 
@@ -48,14 +48,6 @@ def test_create_backup_raises_if_missing(tmp_path):
 def test_create_backup_raises_if_path_is_directory(tmp_path):
     with pytest.raises(IsADirectoryError):
         create_backup(str(tmp_path))
-
-
-def test_create_backup_validates_backup_ext(tmp_path):
-    src = tmp_path / "a.txt"
-    src.write_text("x", encoding="utf-8")
-
-    with pytest.raises(ValueError):
-        create_backup(str(src), backup_ext="bak")  # missing dot
 
 
 def test_create_backup_raises_when_no_slot_available(tmp_path, monkeypatch):

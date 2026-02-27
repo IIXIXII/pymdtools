@@ -760,60 +760,84 @@ def _copy_file_if_needed(source: PathInput, destination: PathInput) -> Path:
 
 
 # -----------------------------------------------------------------------------
-def create_backup(path: str, backup_ext: str = ".bak", *, max_tries: int = 100) -> str:
+def create_backup(
+    file_path: PathInput,
+    *,
+    ext: str = ".bak",
+    max_tries: int = 100,
+    date_prefix: str | None = None,
+) -> Path:
     """
-    Create a dated backup copy of a file in the same directory.
+    Create a backup copy of a file next to it.
 
-    The backup file name follows the pattern:
-        <original>.<YYYY-MM-DD>-NNN<backup_ext>
+    The backup name is built as:
+        <original_name>.<YYYY-MM-DD>-<N><ext>
 
     Example:
-        "/tmp/a.txt" -> "/tmp/a.txt.2026-01-31-000.bak"
+        report.md -> report.md.2026-02-27-1.bak
 
-    Args:
-        path: Path to the source file.
-        backup_ext: Backup extension (default: ".bak").
-        max_tries: Maximum number of candidate names to try (default: 100).
+    Parameters
+    ----------
+    file_path : str | os.PathLike[str] | Path
+        Source file to back up.
+    ext : str, default=".bak"
+        Backup extension (with or without leading dot).
+    max_tries : int, default=100
+        Maximum number of candidate names to try before failing.
+    date_prefix : str | None, default=None
+        Optional override for the date prefix (format not enforced).
+        If None, uses today_utc() from your module.
 
-    Returns:
-        The absolute path of the created backup file.
+    Returns
+    -------
+    Path
+        Path to the created backup file.
 
-    Raises:
-        FileNotFoundError: If the source path does not exist.
-        IsADirectoryError: If the source path is not a file.
-        ValueError: If backup_ext is invalid or max_tries is not positive.
-        RuntimeError: If no available backup name can be found.
-        OSError: For underlying filesystem errors (copy, permissions, etc.).
+    Raises
+    ------
+    FileNotFoundError
+        If the source file does not exist.
+    IsADirectoryError
+        If the source path is not a regular file.
+    ValueError
+        If ext is empty or max_tries is not positive.
+    FileExistsError
+        If no available backup filename is found within max_tries.
     """
+    src = check_file(file_path)  # uses normpath + existence/type checks
+
+    if not ext:
+        raise ValueError("ext must not be empty")
     if max_tries <= 0:
-        raise ValueError(f"max_tries must be > 0, got: {max_tries}")
-    if not backup_ext.startswith("."):
-        raise ValueError(f"backup_ext must start with '.', got: {backup_ext!r}")
+        raise ValueError("max_tries must be > 0")
 
-    src = Path(path)
+    # Normalize ext format
+    if not ext.startswith("."):
+        ext = f".{ext}"
 
-    if not src.exists():
-        raise FileNotFoundError(path)
-    if not src.is_file():
-        raise IsADirectoryError(path)
+    # Date prefix: keep your existing convention
+    prefix = date_prefix if date_prefix is not None else today_utc()  # e.g. "2026-02-27"
 
-    src_abs = src.resolve()
-    today = today_utc()  # "YYYY-MM-DD"
+    # Compose candidates in the same folder
+    # Keep the original full name (including suffix) to preserve semantics
+    base = src.name  # e.g. "report.md"
+    folder = src.parent
 
-    # Candidate names: <filename>.<date>-NNN<ext>
-    for i in range(max_tries):
-        candidate = Path(f"{src_abs}.{today}-{i:03d}{backup_ext}")
-        if not candidate.exists():
-            # copy2 preserves metadata; change to copyfile if you explicitly do not want that
-            shutil.copy2(src_abs, candidate)
-            return str(candidate.resolve())
+    for i in range(1, max_tries + 1):
+        backup = folder / f"{base}.{prefix}-{i:03d}{ext}"
+        if not backup.exists():
+            shutil.copy2(src, backup)
+            return backup
 
-    raise RuntimeError(f"Cannot find an available backup filename for {str(src_abs)!r}")
+    raise FileExistsError(
+        f"Unable to find available backup filename for {src} after {max_tries} tries "
+        f"(ext={ext!r}, prefix={prefix!r})."
+    )
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def get_this_filename() -> str:
+def get_this_filename() -> Path:
     """
     Return the absolute path of the current program/module.
 
@@ -823,134 +847,163 @@ def get_this_filename() -> str:
       then to the current working directory.
 
     Returns:
-        Absolute path as a string.
+        Absolute Path.
     """
     if getattr(sys, "frozen", False):
-        return str(Path(sys.executable).resolve())
+        return Path(sys.executable).resolve()
 
     module_file = globals().get("__file__")
     if module_file:
-        return str(Path(module_file).resolve())
+        return Path(module_file).resolve()
 
     argv0 = sys.argv[0] if sys.argv else ""
     if argv0:
         p = Path(argv0)
         # argv0 may be relative; resolve() will anchor to cwd
-        return str(p.resolve())
+        return p.resolve()
 
-    return str(Path.cwd().resolve())
+    return Path.cwd().resolve()
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-#: BOMs indicating a text file, even if it contains null bytes.
-_TEXT_BOMS = (
-    codecs.BOM_UTF8,
-    codecs.BOM_UTF16_BE,
-    codecs.BOM_UTF16_LE,
-    codecs.BOM_UTF32_BE,
-    codecs.BOM_UTF32_LE,
-)
-
-def is_binary_file(path: Union[str, Path], *, sample_size: int = 8192) -> bool:
+def is_binary_file(path: PathInput, *, sample_size: int = 8192) -> bool:
     """
-    Determine whether a file should be considered binary.
+    Determine whether a file appears to be binary.
 
-    A file is considered binary if it contains at least one null byte (0x00)
-    in its initial bytes and does not start with a known text BOM.
+    A file is considered text if:
+    - It starts with a known Unicode BOM
+    - It does not contain null bytes
+    - It can be decoded as UTF-8
 
-    Args:
-        path: Path to the file to inspect.
-        sample_size: Number of bytes to read from the start of the file
-            (default: 8192).
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        File path.
+    sample_size : int, default=8192
+        Number of bytes to read for detection.
 
-    Returns:
-        True if the file is considered binary, False otherwise.
-
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        IsADirectoryError: If the path is a directory.
-        OSError: For underlying I/O errors.
+    Returns
+    -------
+    bool
+        True if the file appears binary, False otherwise.
     """
-    p = Path(path)
-
-    if not p.exists():
-        raise FileNotFoundError(path)
-    if not p.is_file():
-        raise IsADirectoryError(path)
+    p = check_file(path)
 
     with p.open("rb") as f:
-        initial_bytes = f.read(sample_size)
+        chunk = f.read(sample_size)
 
-    if not initial_bytes:
-        # Empty file → considered text
+    if not chunk:
+        # Empty file → text
         return False
 
-    # If file starts with a known text BOM, treat as text
-    for bom in _TEXT_BOMS:
-        if initial_bytes.startswith(bom):
-            return False
+    # Known BOMs (UTF text encodings)
+    BOMS = (
+        b"\xef\xbb\xbf",      # UTF-8 BOM
+        b"\xff\xfe",          # UTF-16 LE
+        b"\xfe\xff",          # UTF-16 BE
+        b"\xff\xfe\x00\x00",  # UTF-32 LE
+        b"\x00\x00\xfe\xff",  # UTF-32 BE
+    )
 
-    # Heuristic: presence of null byte indicates binary
-    return b"\x00" in initial_bytes
+    if any(chunk.startswith(bom) for bom in BOMS):
+        return False
+
+    # Null byte strongly indicates binary
+    if b"\x00" in chunk:
+        return True
+
+    # Try UTF-8 decode
+    try:
+        chunk.decode("utf-8")
+        return False
+    except UnicodeDecodeError:
+        return True
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 def detect_file_encoding(
-    path: Union[str, Path],
+    path: PathInput,
     *,
     default: str = "utf-8",
     min_confidence: float = 0.50,
     sample_size: int = 256 * 1024,
+    prefer_utf8_sig: bool = True,
 ) -> str:
     """
-    Detect the text encoding of a file using chardet.
+    Detect the text encoding of a file using chardet, with BOM handling.
 
-    The function reads up to `sample_size` bytes and returns the detected
-    encoding if the confidence is >= `min_confidence`. Otherwise, it returns
-    `default`.
+    The function reads up to `sample_size` bytes. If a known Unicode BOM is
+    present, it returns the corresponding encoding immediately. Otherwise it
+    delegates to chardet and returns the detected encoding if the confidence is
+    >= `min_confidence`. If detection is inconclusive, it returns `default`.
 
-    Args:
-        path: File path to inspect.
-        default: Encoding returned when detection fails or confidence is too low.
-        min_confidence: Minimum confidence threshold (0.0..1.0).
-        sample_size: Number of bytes read from the file (default: 256 KB).
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        File path to inspect.
+    default : str, default="utf-8"
+        Encoding returned when detection fails or confidence is too low.
+    min_confidence : float, default=0.50
+        Minimum confidence threshold (0.0..1.0).
+    sample_size : int, default=262144
+        Number of bytes read from the file (default: 256 KB).
+    prefer_utf8_sig : bool, default=True
+        If True, returns "utf-8-sig" when a UTF-8 BOM is present; otherwise "utf-8".
 
-    Returns:
+    Returns
+    -------
+    str
         A normalized encoding name (lowercase), or `default` if detection is
         inconclusive.
 
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        IsADirectoryError: If the path is not a file.
-        ValueError: If `min_confidence` is outside [0.0, 1.0] or sample_size <= 0.
-        ImportError: If chardet is not installed.
-        OSError: For underlying I/O errors.
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    IsADirectoryError
+        If the path is not a file.
+    ValueError
+        If `min_confidence` is outside [0.0, 1.0] or sample_size <= 0.
+    ImportError
+        If chardet is not installed.
+    OSError
+        For underlying I/O errors.
     """
     if not (0.0 <= min_confidence <= 1.0):
         raise ValueError(f"min_confidence must be within [0.0, 1.0], got: {min_confidence}")
     if sample_size <= 0:
         raise ValueError(f"sample_size must be > 0, got: {sample_size}")
 
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(str(path))
-    if not p.is_file():
-        raise IsADirectoryError(str(path))
+    p = check_file(path)
+
+    with p.open("rb") as f:
+        data = f.read(sample_size)
+
+    if not data:
+        return default.lower()
+
+    # BOM detection (check longer BOMs first)
+    if data.startswith(b"\xff\xfe\x00\x00"):
+        return "utf-32-le"
+    if data.startswith(b"\x00\x00\xfe\xff"):
+        return "utf-32-be"
+    if data.startswith(b"\xff\xfe"):
+        return "utf-16-le"
+    if data.startswith(b"\xfe\xff"):
+        return "utf-16-be"
+    if data.startswith(b"\xef\xbb\xbf"):
+        return "utf-8-sig" if prefer_utf8_sig else "utf-8"
 
     try:
         import chardet
     except ImportError as ex:
         raise ImportError("chardet is required to detect file encodings") from ex
 
-    data = p.read_bytes()[:sample_size]
-    if not data:
-        return default.lower()
-
     result = chardet.detect(data)
     enc: Optional[str] = result.get("encoding")
-    conf: float = float(result.get("confidence") or 0.0)
+    conf = float(result.get("confidence") or 0.0)
 
     if not enc or conf < min_confidence:
         return default.lower()
