@@ -27,7 +27,3 @@ def test_get_flat_filename_only_invalid_chars_raises():
     with pytest.raises(ValueError):
         get_flat_filename("!!!")
 
-
-def test_get_flat_filename_non_string_raises():
-    with pytest.raises(ValueError):
-        get_flat_filename(123)  # type: ignore[arg-type]

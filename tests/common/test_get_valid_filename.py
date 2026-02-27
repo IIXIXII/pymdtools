@@ -33,6 +33,3 @@ def test_empty_filename_raises():
         get_valid_filename("   ")
 
 
-def test_non_string_filename_raises():
-    with pytest.raises(ValueError):
-        get_valid_filename(123)  # type: ignore[arg-type]

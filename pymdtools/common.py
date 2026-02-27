@@ -131,9 +131,7 @@ application-level logging or user interaction.
 from __future__ import annotations
 
 # Standard library
-import codecs
 import functools
-import logging
 import os
 from os import PathLike
 import re
@@ -141,14 +139,21 @@ import shutil
 import sys
 import tempfile
 import unicodedata
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
+from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import (
-    Any, Callable, Generic, Iterable, List, Optional, Sequence, 
-    Set, TypeVar, Union, Sized, 
+    Any, Callable, Generic, Iterable, Optional, Sequence, 
+    Set, TypeVar, Union, Sized, TextIO, ParamSpec, Mapping,
 )
 from urllib.parse import quote
 
+T = TypeVar("T")
+F = TypeVar("F", bound=Callable[..., Any])
+T_sized = TypeVar("T_sized", bound=Sized)
+P = ParamSpec("P")
+R = TypeVar("R")
 
 # =============================================================================
 # Core helpers (exceptions, decorators, lightweight utilities)
@@ -264,56 +269,96 @@ def _p(p: PathInput) -> Path:
 
 
 # -----------------------------------------------------------------------------
-def handle_exception(action_desc: str, **kwargs_print_name: str) -> Callable:
+def handle_exception(
+    action_desc: str, 
+    **kwargs_print_name: str
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator used to enrich exceptions with contextual information.
 
     This decorator catches any exception raised by the decorated function,
-    enriches the error message with a functional description and selected
-    keyword arguments, then re-raises a new exception while preserving the
-    original traceback using exception chaining.
+    enriches the error message with:
+      - a functional description (`action_desc`),
+      - the decorated function name,
+      - selected keyword argument values (as provided via `kwargs_print_name`),
+    and then re-raises a `RuntimeError` while preserving the original exception
+    using exception chaining (`raise ... from ex`).
 
-    The original exception is accessible through the ``__cause__`` attribute.
+    The original exception is accessible through the `__cause__` attribute.
 
-    Args:
-        action_desc: Human-readable description of the action being performed
-            (e.g. "Error while processing markdown file").
-        **kwargs_print_name: Mapping between keyword argument names of the
-            decorated function and their display labels to include in the
-            error message.
-            Example: filename="File", output_dir="Output directory".
+    Typing / Pylance compatibility
+    ------------------------------
+    This implementation uses `ParamSpec` and `TypeVar` so that the decorated
+    function signature is preserved for static type checkers (Pylance/Pyright,
+    mypy). That means:
+      - argument types are preserved,
+      - return type is preserved,
+      - call sites benefit from autocompletion and type checking.
 
-    Returns:
-        A decorator wrapping the target function.
+    Parameters
+    ----------
+    action_desc : str
+        Human-readable description of the action being performed.
+        Example: "Error while processing markdown file".
+    **kwargs_print_name : str
+        Mapping between keyword argument names of the decorated function and
+        their display labels to include in the error message.
 
-    Raises:
-        RuntimeError: Raised when the decorated function fails. The original
-        exception is attached as the cause.
+        Each key must match a keyword argument name used when calling the
+        decorated function. Only keyword arguments present in the actual call
+        are printed.
 
-    Example:
-        >>> @handle_exception(
-        ...     "Error while converting file",
-        ...     filename="File",
-        ...     output="Output directory"
-        ... )
-        ... def convert(filename: str, output: str):
-        ...     raise ValueError("Invalid format")
+        Example:
+            filename="File", output_dir="Output directory"
+
+    Returns
+    -------
+    Callable[[Callable[P, R]], Callable[P, R]]
+        A decorator which wraps the target function while preserving its
+        signature (Pylance-friendly).
+
+    Raises
+    ------
+    RuntimeError
+        Raised when the decorated function fails. The original exception is
+        attached as the cause and can be accessed through `__cause__`.
+
+    Notes
+    -----
+    - Only keyword arguments (`**kwargs`) are included in the enriched message.
+      If you also want positional arguments (`*args`) to be displayed, use
+      `inspect.signature(...).bind_partial(...)` to map them to parameter names.
+    - The formatting is intentionally simple and stable for logs/CLI.
+
+    Examples
+    --------
+    >>> @handle_exception(
+    ...     "Error while converting file",
+    ...     filename="File",
+    ...     output="Output directory",
+    ... )
+    ... def convert(filename: str, output: str) -> None:
+    ...     raise ValueError("Invalid format")
+    ...
+    >>> convert("doc.md", "/tmp")
+    Traceback (most recent call last):
         ...
-        >>> convert("doc.md", "/tmp")
-        RuntimeError: Invalid format
-        Error while converting file (convert)
-        File : doc.md
-        Output directory : /tmp
+    RuntimeError: Invalid format
+    Error while converting file (convert)
+    File : doc.md
+    Output directory : /tmp
     """
 
-    def decorator(func: Callable) -> Callable:
+    labels: Mapping[str, str] = kwargs_print_name
+
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return func(*args, **kwargs)
             except Exception as ex:
                 lines = [f"{action_desc} ({func.__name__})"]
-                for key, label in kwargs_print_name.items():
+                for key, label in labels.items():
                     if key in kwargs:
                         lines.append(f"{label} : {kwargs[key]}")
                 message = "\n".join(lines)
@@ -326,7 +371,6 @@ def handle_exception(action_desc: str, **kwargs_print_name: str) -> Callable:
 
 
 # -----------------------------------------------------------------------------
-T = TypeVar("T")
 class Constant(Generic[T]):
     """
     Descriptor representing an immutable constant value.
@@ -379,7 +423,6 @@ class Constant(Generic[T]):
 
 
 # -----------------------------------------------------------------------------
-F = TypeVar("F", bound=Callable[..., Any])
 def static(**attributes: Any) -> Callable[[F], F]:
     """
     Attach static attributes to a function.
@@ -1014,61 +1057,73 @@ def detect_file_encoding(
 
 # -----------------------------------------------------------------------------
 def get_file_content(
-    path: Union[str, Path],
-    encoding: str = "utf-8",
+    path: PathInput,
     *,
+    encoding: str | None = None,
     default_encoding: str = "utf-8",
     min_confidence: float = 0.50,
+    sample_size: int = 256 * 1024,
+    errors: str = "strict",
+    reject_binary: bool = True,
+    strip_bom: bool = True,
 ) -> str:
     """
-    Read a text file and return its content, removing a leading BOM if present.
+    Read a text file and return its content, with BOM protection.
 
-    Args:
-        path: File path.
-        encoding: Encoding to use. If "UNKNOWN" (case-insensitive), the encoding
-            is detected using `detect_file_encoding`.
-        default_encoding: Fallback encoding when detection is inconclusive.
-        min_confidence: Confidence threshold used for detection.
+    If `encoding` is not provided, the encoding is detected (BOM first,
+    then chardet). Optionally rejects binary files and strips leading BOM.
 
-    Returns:
-        File content as str, without a leading BOM.
+    Parameters
+    ----------
+    path : str | os.PathLike[str] | Path
+        File path.
+    encoding : str | None, default=None
+        If provided, this encoding is used directly (no detection).
+    default_encoding : str, default="utf-8"
+        Default encoding used when detection is inconclusive.
+    min_confidence : float, default=0.50
+        Minimum confidence threshold for chardet when auto-detecting.
+    sample_size : int, default=256*1024
+        Number of bytes read for encoding detection.
+    errors : str, default="strict"
+        Error handler for decoding.
+    reject_binary : bool, default=True
+        If True, raises ValueError when file appears binary.
+    strip_bom : bool, default=True
+        If True, removes leading Unicode BOM character (U+FEFF)
+        from the decoded content.
 
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        IsADirectoryError: If the path is not a file.
-        UnicodeDecodeError: If decoding fails.
-        OSError: For underlying I/O errors.
+    Returns
+    -------
+    str
+        File content as text.
     """
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(str(path))
-    if not p.is_file():
-        raise IsADirectoryError(str(path))
+    p = check_file(path)
 
-    local_encoding = encoding
-    if local_encoding.upper() == "UNKNOWN":
-        local_encoding = detect_file_encoding(
+    if reject_binary and is_binary_file(p):
+        raise ValueError(f"Binary file detected: {p}")
+
+    enc = encoding
+    if enc is None:
+        enc = detect_file_encoding(
             p,
             default=default_encoding,
             min_confidence=min_confidence,
+            sample_size=sample_size,
         )
 
-    # UTF-8 BOM: use utf-8-sig to transparently drop BOM on read
-    read_encoding = "utf-8-sig" if local_encoding.lower() == "utf-8" else local_encoding
+    text = p.read_text(encoding=enc, errors=errors)
 
-    content = p.read_text(encoding=read_encoding)
+    if strip_bom and text.startswith("\ufeff"):
+        text = text[1:]
 
-    # Defensive: remove BOM char if still present (rare mismatch cases)
-    if content.startswith("\ufeff"):
-        content = content[1:]
-
-    return content
+    return text
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 def set_file_content(
-    path: Union[str, Path],
+    path: PathInput,
     content: str,
     encoding: str = "utf-8",
     bom: bool = True,
@@ -1076,174 +1131,349 @@ def set_file_content(
     atomic: bool = True,
     newline: Optional[str] = "\n",
     create_parents: bool = True,
-) -> str:
+) -> Path:
     """
     Write text content to a file, optionally adding a UTF-8 BOM.
-
-    Args:
-        path: Target file path.
-        content: Text content to write.
-        encoding: Target encoding (default: "utf-8").
-        bom: If True and encoding is UTF-8, write a UTF-8 BOM.
-        atomic: If True, write atomically (tmp file + replace).
-        newline: Newline sequence used when writing (default: "\\n"). Use None
-            to preserve content as-is.
-        create_parents: If True, create parent directories.
-
-    Returns:
-        Absolute normalized path of the written file.
-
-    Raises:
-        ValueError: If content is not a str.
-        OSError: For underlying filesystem errors.
     """
-    if not isinstance(content, str):
-        raise ValueError("content must be a str")
+    # Option A: remove runtime check (preferred with strict typing)
+    # If you keep it, prefer TypeError (you already do)
+    # if not isinstance(content, str):
+    #     raise TypeError("content must be a str")
 
-    p = Path(path)
+    p = _p(path)
     if create_parents:
         p.parent.mkdir(parents=True, exist_ok=True)
 
-    write_encoding = "utf-8-sig" if (encoding.lower() == "utf-8" and bom) else encoding
-    target = p.resolve()
+    target = p.resolve(strict=False)
+
+    enc = "utf-8-sig" if (encoding.lower() == "utf-8" and bom) else encoding
 
     if not atomic:
-        target.write_text(content, encoding=write_encoding, newline=newline)
-        return str(target)
+        target.write_text(content, encoding=enc, newline=newline)
+        return target
 
-    tmp = target.with_name(target.name + ".tmp")
+    tmp_path: Path | None = None
+
     try:
-        tmp.write_text(content, encoding=write_encoding, newline=newline)
-        os.replace(str(tmp), str(target))
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{target.name}.",
+            suffix=".tmp",
+            dir=str(target.parent),
+        )
+        tmp_path = Path(tmp_name)
+
+        # Explicit fd -> text stream
+        with os.fdopen(fd, "w", encoding=enc, newline=newline) as f:
+            f.write(content)
+
+        tmp_path.replace(target)
+        return target
+
     finally:
-        if tmp.exists():
+        if tmp_path is not None and tmp_path.exists():
             try:
-                tmp.unlink()
+                tmp_path.unlink()
             except OSError:
                 pass
-
-    return str(target)
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
-def make_temp_dir(prefix: str = "pymdtools_", dir: Optional[Union[str, Path]] = None) -> str:
-    """
-    Create a new empty temporary directory and return its absolute path.
-
-    Args:
-        prefix: Prefix for the temporary directory name.
-        dir: Base directory where the temp directory is created. If None, uses
-            the system temp directory.
-
-    Returns:
-        Absolute path to the created temporary directory.
-
-    Raises:
-        OSError: For underlying filesystem errors.
-    """
-    base_dir = str(Path(dir).resolve()) if dir is not None else None
-    tmp = tempfile.mkdtemp(prefix=prefix, dir=base_dir)
-    return str(Path(tmp).resolve())
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def apply_to_files(
-    folder: Union[str, Path],
-    process: Callable[[str], None],
+def make_temp_dir(
     *,
-    ext: str = ".md",
+    prefix: str = "pymdtools_",
+    suffix: str = "",
+    dir: PathInput | None = None,
+) -> Path:
+    """
+    Create a temporary directory and return its Path.
+
+    Parameters
+    ----------
+    prefix : str, default="pymdtools_"
+        Prefix for the temporary directory name.
+    suffix : str, default=""
+        Suffix for the temporary directory name.
+    dir : str | os.PathLike[str] | Path | None, default=None
+        Parent directory in which to create the temp directory.
+        If None, the system default temp directory is used.
+
+    Returns
+    -------
+    Path
+        Path to the created temporary directory.
+
+    Notes
+    -----
+    - The directory is created immediately.
+    - Caller is responsible for cleanup (e.g. via shutil.rmtree).
+    """
+    parent = _p(dir) if dir is not None else None
+
+    tmp = tempfile.mkdtemp(
+        prefix=prefix,
+        suffix=suffix,
+        dir=str(parent) if parent else None,
+    )
+
+    return Path(tmp)
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+@dataclass(frozen=True)
+class ApplyResult:
+    """Result of a batch apply operation."""
+    processed: int
+    succeeded: int
+    failed: int
+    skipped: int
+
+
+def apply_to_files(
+    root: PathInput,
+    func: Callable[[Path], T],
+    *,
     recursive: bool = True,
-    case_sensitive: bool = False,
-    sort: bool = True,
-) -> int:
+    include_globs: Sequence[str] = ("*",),
+    exclude_globs: Sequence[str] = (),
+    expected_ext: str | tuple[str, ...] | None = None,
+    follow_symlinks: bool = False,
+    on_error: str = "raise",  # "raise" | "collect"
+) -> tuple[list[T], ApplyResult, list[tuple[Path, Exception]]]:
     """
-    Apply a function to each file in a folder matching an extension.
+    Apply a function to files under a path (file or directory).
 
-    Args:
-        folder: Folder to scan.
-        process: Callback invoked for each matching file. It receives the file path as str.
-        ext: File extension to match (e.g. ".md").
-        recursive: If True, scan subfolders.
-        case_sensitive: If False, match extension case-insensitively.
-        sort: If True, process files in a stable sorted order (useful for tests).
+    Parameters
+    ----------
+    root : str | os.PathLike[str] | Path
+        A file path or a directory path.
+    func : Callable[[Path], T]
+        Function applied to each selected file. Receives a Path and returns T.
+    recursive : bool, default=True
+        If root is a directory, walk recursively if True, else only direct children.
+    include_globs : Sequence[str], default=("*",)
+        Filename patterns to include (fnmatch patterns), applied to relative paths
+        from the root directory. Example: ("**/*.md", "*.md") is NOT supported by fnmatch;
+        use simple patterns like ("*.md",) when non-recursive. For recursive matching,
+        patterns are applied to the POSIX relative path string.
+    exclude_globs : Sequence[str], default=()
+        Patterns to exclude (same matching rules as include_globs).
+    expected_ext : str | tuple[str, ...] | None, default=None
+        Restrict to file extensions. Accepts ".md", "md", or tuple of them.
+        If None, no extension filter is applied.
+    follow_symlinks : bool, default=False
+        If True, symlinked directories may be traversed. Use with care (cycles).
+    on_error : {"raise","collect"}, default="raise"
+        - "raise": stop at first error
+        - "collect": continue and return errors list
 
-    Returns:
-        Number of processed files.
+    Returns
+    -------
+    (results, summary, errors) : (list[T], ApplyResult, list[(Path, Exception)])
+        results: return values from func for each successful file
+        summary: counts
+        errors: list of (file, exception) when on_error="collect"
 
-    Raises:
-        FileNotFoundError: If folder does not exist.
-        NotADirectoryError: If folder is not a directory.
-        ValueError: If ext is invalid.
+    Notes
+    -----
+    - This function does not perform I/O by itself except directory traversal.
+    - `func` is responsible for reading/writing file contents.
     """
-    if not ext.startswith("."):
-        raise ValueError(f"ext must start with '.', got: {ext!r}")
+    root_p = _p(root)
 
-    base = Path(folder)
-    if not base.exists():
-        raise FileNotFoundError(str(folder))
-    if not base.is_dir():
-        raise NotADirectoryError(str(folder))
+    # Normalize expected extensions (lowercase, leading dot)
+    exts: tuple[str, ...] | None
+    if expected_ext is None:
+        exts = None
+    else:
+        raw = (expected_ext,) if isinstance(expected_ext, str) else expected_ext
+        exts = tuple(e.lower() if e.startswith(".") else f".{e.lower()}" for e in raw)
 
-    matcher = (ext if case_sensitive else ext.lower())
-    pattern_iter = base.rglob("*") if recursive else base.glob("*")
+    def _match(rel_posix: str) -> bool:
+        if include_globs and not any(fnmatch(rel_posix, pat) for pat in include_globs):
+            return False
+        if exclude_globs and any(fnmatch(rel_posix, pat) for pat in exclude_globs):
+            return False
+        return True
 
-    files = [p for p in pattern_iter if p.is_file()]
-    if sort:
-        files.sort(key=lambda p: str(p))
+    def _iter_files(base: Path) -> Iterable[Path]:
+        if base.is_file():
+            yield base
+            return
 
-    count = 0
-    for p in files:
-        suffix = p.suffix if case_sensitive else p.suffix.lower()
-        if suffix == matcher:
-            process(str(p))
-            count += 1
+        if not base.exists():
+            raise FileNotFoundError(f"Path does not exist: {base}")
+        if not base.is_dir():
+            raise NotADirectoryError(f"Not a directory: {base}")
 
-    return count
+        if recursive:
+            it = base.rglob("*")
+        else:
+            it = base.glob("*")
+
+        for p in it:
+            # Skip directories
+            if p.is_dir():
+                # Optionally skip symlinked dirs (rglob/glob will still enumerate)
+                if p.is_symlink() and not follow_symlinks:
+                    continue
+                continue
+
+            # Skip non-files (specials)
+            if not p.is_file():
+                continue
+
+            yield p
+
+    results: list[T] = []
+    errors: list[tuple[Path, Exception]] = []
+
+    processed = succeeded = failed = skipped = 0
+
+    base_dir = root_p if root_p.is_dir() else root_p.parent
+
+    for f in _iter_files(root_p):
+        processed += 1
+
+        # Extension filter
+        if exts is not None and f.suffix.lower() not in exts:
+            skipped += 1
+            continue
+
+        # Pattern filters (relative path, POSIX form for stable matching)
+        try:
+            rel = f.relative_to(base_dir).as_posix()
+        except ValueError:
+            # Defensive: if relative_to fails, fall back to name
+            rel = f.name
+
+        if not _match(rel):
+            skipped += 1
+            continue
+
+        try:
+            results.append(func(f))
+            succeeded += 1
+        except Exception as exc:
+            failed += 1
+            if on_error == "raise":
+                raise
+            errors.append((f, exc))
+
+    summary = ApplyResult(
+        processed=processed,
+        succeeded=succeeded,
+        failed=failed,
+        skipped=skipped,
+    )
+    return results, summary, errors
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 def find_file(
     filename: str,
-    start_points: Sequence[Union[str, Path]],
-    relative_paths: Sequence[Union[str, Path]],
+    start_points: Sequence[PathInput],
+    relative_paths: Sequence[PathInput],
     *,
     max_up: int = 4,
-) -> str:
+) -> Path:
     """
     Find a file by searching from multiple start points, optionally walking up parent directories.
 
-    Search order:
-        for start in start_points:
-            for up in range(0, max_up + 1):
-                for rel in relative_paths:
-                    candidate = (start / (".." * up) / rel / filename)
+    The function searches for the *first* matching file according to a deterministic order.
 
-    Args:
-        filename: Target filename (no path).
-        start_points: Absolute or relative paths used as search anchors.
-        relative_paths: Relative paths to try under each anchor.
-        max_up: Maximum number of parent levels to walk up (inclusive).
+    Search order
+    ------------
+    For each `start` in `start_points` (in the given order):
+        - Let `base = start`
+        - For each `up` from 0 to `max_up` (inclusive):
+            - Let `anchor = base` moved up `up` times (anchor = anchor.parent repeated)
+            - For each `rel` in `relative_paths` (in the given order):
+                - Test candidate: anchor / rel / filename
 
-    Returns:
+    Notes
+    -----
+    - `start_points` are used as anchors; they are *not* required to exist.
+    - `relative_paths` MUST be relative paths (no absolute paths allowed). This is enforced
+      to prevent accidental bypassing of the `anchor` with an absolute path.
+    - The returned path is normalized as an absolute path via `resolve(strict=False)`.
+    - The function only returns when `candidate.is_file()` is True.
+
+    Parameters
+    ----------
+    filename : str
+        Target filename (no path). Must be a non-empty string.
+        Example: "config.yml".
+    start_points : Sequence[str | os.PathLike[str] | Path]
+        Absolute or relative paths used as search anchors.
+        Examples:
+        - Path.cwd()
+        - "/some/project/subdir"
+        - "relative/subdir"
+    relative_paths : Sequence[str | os.PathLike[str] | Path]
+        Relative paths to try under each anchor. Each element must be relative.
+        Examples:
+        - "."
+        - "docs"
+        - Path("configs") / "environments"
+    max_up : int, default=4
+        Maximum number of parent levels to walk up from each start point (inclusive).
+        `max_up=0` searches only under the start point itself.
+
+    Returns
+    -------
+    Path
         Absolute normalized path of the first file found.
 
-    Raises:
-        ValueError: If max_up < 0 or filename is empty.
-        FileNotFoundError: If no matching file is found. The exception message
-            includes the tested candidate paths.
+    Raises
+    ------
+    ValueError
+        - If `filename` is empty.
+        - If `max_up < 0`.
+        - If any item in `relative_paths` is absolute.
+    FileNotFoundError
+        If no matching file is found. The exception message includes the tested paths.
+
+    Examples
+    --------
+    Search for "config.yml" starting from the current directory and a secondary start point,
+    trying ".", "configs", and walking up to 2 parent levels:
+
+    >>> find_file(
+    ...     "config.yml",
+    ...     start_points=[Path.cwd(), "other/start"],
+    ...     relative_paths=[".", "configs"],
+    ...     max_up=2,
+    ... )
+
+    The effective candidates include (in order):
+      - <cwd> / "." / "config.yml"
+      - <cwd> / "configs" / "config.yml"
+      - <cwd.parent> / "." / "config.yml"
+      - <cwd.parent> / "configs" / "config.yml"
+      - <cwd.parent.parent> / "." / "config.yml"
+      - <cwd.parent.parent> / "configs" / "config.yml"
+      - then the same pattern for "other/start".
     """
-    if not filename or not isinstance(filename, str):
+    if not filename:
         raise ValueError("filename must be a non-empty string")
     if max_up < 0:
         raise ValueError(f"max_up must be >= 0, got: {max_up}")
 
-    tested: List[str] = []
+    # Validate relative_paths early and normalize them to Path
+    rel_paths: list[Path] = []
+    for rel in relative_paths:
+        rel_p = _p(rel)
+        if rel_p.is_absolute():
+            raise ValueError(f"relative_paths must be relative, got: {rel_p}")
+        rel_paths.append(rel_p)
+
+    tested: list[Path] = []
 
     for start in start_points:
-        base = Path(start)
+        base = _p(start)
 
         # We do not require base to exist; we simply build candidates.
         for up in range(0, max_up + 1):
@@ -1251,15 +1481,14 @@ def find_file(
             for _ in range(up):
                 anchor = anchor.parent
 
-            for rel in relative_paths:
-                candidate = (anchor / Path(rel) / filename).resolve()
-                tested.append(str(candidate))
+            for rel_p in rel_paths:
+                candidate = (anchor / rel_p / filename).resolve(strict=False)
+                tested.append(candidate)
                 if candidate.is_file():
-                    return str(candidate)
+                    return candidate
 
-    # No file found
     raise FileNotFoundError(
-        f"File not found: {filename!r}. Tested {len(tested)} paths: {tested}"
+        f"File not found: {filename!r}. Tested {len(tested)} paths: {[str(p) for p in tested]}"
     )
 # -----------------------------------------------------------------------------
 
@@ -1272,38 +1501,37 @@ def find_file(
 # -----------------------------------------------------------------------------
 def convert_for_stdout(
     text: str,
-    coding_in: str = "utf-8",
-    coding_out: Optional[str] = None,
     *,
-    encode_errors: str = "replace",
-    decode_errors: str = "ignore",
+    stream: TextIO = sys.stdout,
+    fallback_encoding: str = "utf-8",
+    errors: str = "replace",
 ) -> str:
     """
-    Convert a text string for console output.
+    Adapt a Unicode string to the encoding of the given text stream.
 
-    The function performs a round-trip conversion:
-    ``text (str) -> bytes (coding_in) -> str (coding_out)``.
-    This is mainly useful to adapt text to the terminal encoding.
+    Parameters
+    ----------
+    text : str
+        Input Unicode string.
+    stream : TextIO, default=sys.stdout
+        Target output stream. Its `.encoding` attribute is used when available.
+    fallback_encoding : str, default="utf-8"
+        Encoding used if the stream has no encoding.
+    errors : str, default="replace"
+        Error handler used for the encode/decode round-trip.
 
-    If ``coding_out`` is not provided, the function uses ``sys.stdout.encoding``
-    when available and falls back to UTF-8.
-
-    Args:
-        text: Input text (Python str).
-        coding_in: Encoding used to encode the string to bytes.
-        coding_out: Target encoding used to decode bytes back to str.
-            If None, uses stdout encoding or UTF-8.
-        encode_errors: Error handler for encoding (default: "replace").
-        decode_errors: Error handler for decoding (default: "ignore").
-
-    Returns:
-        Converted text suitable for console output.
+    Returns
+    -------
+    str
+        Text safe to print to the given stream.
     """
-    if coding_out is None:
-        coding_out = (getattr(sys.stdout, "encoding", None) or "utf-8")
+    enc: Optional[str] = getattr(stream, "encoding", None)
+    encoding = enc or fallback_encoding
 
-    data = text.encode(coding_in, errors=encode_errors)
-    return data.decode(coding_out, errors=decode_errors)
+    try:
+        return text.encode(encoding, errors=errors).decode(encoding, errors=errors)
+    except LookupError:
+        return text.encode(fallback_encoding, errors="replace").decode(fallback_encoding)
 # -----------------------------------------------------------------------------
 
 
@@ -1322,12 +1550,8 @@ def to_ascii(value: str) -> str:
         An ASCII transliteration of the input string.
 
     Raises:
-        ValueError: If value is not a string.
         ImportError: If the Unidecode package is not installed.
     """
-    if not isinstance(value, str):
-        raise ValueError("value must be a str")
-
     try:
         from unidecode import unidecode
     except ImportError as exc:
@@ -1411,9 +1635,6 @@ def get_valid_filename(
     Raises:
         ValueError: If filename is empty after sanitization.
     """
-    if not isinstance(filename, str):
-        raise ValueError("filename must be a str")
-
     name = filename
 
     if strip:
@@ -1462,9 +1683,6 @@ def get_flat_filename(filename: str, *, replacement: str = "_") -> str:
     Raises:
         ValueError: If filename is empty after sanitization.
     """
-    if not isinstance(filename, str):
-        raise ValueError("filename must be a str")
-
     # Step 1: ASCII transliteration
     text = to_ascii(filename)
 
@@ -1611,9 +1829,6 @@ def parse_timestamp(value: str) -> datetime:
         ValueError: If the timestamp cannot be parsed.
         ImportError: If python-dateutil is not installed.
     """
-    if not isinstance(value, str):
-        raise ValueError("value must be a str")
-
     try:
         from dateutil.parser import parse
     except ImportError as ex:
@@ -1629,7 +1844,6 @@ def parse_timestamp(value: str) -> datetime:
 
 
 # -----------------------------------------------------------------------------
-T_sized = TypeVar("T_sized", bound=Sized)
 def check_len(obj: T_sized, expected: int = 1, *, name: str = "object") -> T_sized:
     """
     Ensure that an object has the expected length.

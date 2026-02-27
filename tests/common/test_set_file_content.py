@@ -54,5 +54,5 @@ def test_roundtrip_with_get_file_content_bom(tmp_path):
 
 def test_set_file_content_rejects_non_str_content(tmp_path):
     f = tmp_path / "a.txt"
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         set_file_content(f, b"nope")  # type: ignore[arg-type]
