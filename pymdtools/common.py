@@ -130,30 +130,51 @@ application-level logging or user interaction.
 
 from __future__ import annotations
 
+# =============================================================================
 # Standard library
+# =============================================================================
+
 import functools
 import os
-from os import PathLike
 import re
 import shutil
 import sys
 import tempfile
 import unicodedata
-from datetime import datetime, timezone
+
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from fnmatch import fnmatch
+from os import PathLike
 from pathlib import Path
 from typing import (
-    Any, Callable, Generic, Iterable, Optional, Sequence, 
-    Set, TypeVar, Union, Sized, TextIO, ParamSpec, Mapping,
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Mapping,
+    Optional,
+    ParamSpec,
+    Sequence,
+    Set,
+    Sized,
+    TextIO,
+    TypeVar,
 )
+
 from urllib.parse import quote
+
+# =============================================================================
+# Typing variables
+# =============================================================================
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
-T_sized = TypeVar("T_sized", bound=Sized)
 P = ParamSpec("P")
 R = TypeVar("R")
+T_sized = TypeVar("T_sized", bound=Sized)
+PathInput = str | PathLike[str] | Path
+
 
 # =============================================================================
 # Core helpers (exceptions, decorators, lightweight utilities)
@@ -161,7 +182,6 @@ R = TypeVar("R")
 
 
 # -----------------------------------------------------------------------------
-PathInput = Union[str, PathLike[str], Path]
 def to_path(
     p: PathInput,
     *,
@@ -1695,7 +1715,7 @@ def get_flat_filename(filename: str, *, replacement: str = "_") -> str:
 
 
 # -----------------------------------------------------------------------------
-def path_to_url(path: Union[str, Path], *, remove_accent: bool = True) -> str:
+def path_to_url(path: str | Path, *, remove_accent: bool = True) -> str:
     """
     Convert a filesystem path to a URL-safe path.
 
