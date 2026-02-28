@@ -291,7 +291,7 @@ class FileContent(FileName):
             raise ValueError("cannot write: content is None")
 
         if self.backup and Path(self.full_filename).is_file():
-            common.create_backup(self.full_filename, backup_ext=backup_ext)
+            common.create_backup(self.full_filename, ext=backup_ext)
 
         common.set_file_content(self.full_filename, self._content, encoding=encoding)
         self._save_needed = False

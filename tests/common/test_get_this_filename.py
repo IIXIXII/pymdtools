@@ -62,3 +62,61 @@ def test_get_this_filename_frozen(monkeypatch, tmp_path):
 
     path = common.get_this_filename()
     assert Path(path) == fake_exe.resolve()
+
+def test_get_this_filename_default_returns_module_file() -> None:
+    # In normal imports, __file__ exists: function should return resolved module path.
+    got = common.get_this_filename()
+    assert isinstance(got, Path)
+    assert Path(got) == Path(common.__file__).resolve()
+
+
+def test_get_this_filename_frozen_uses_sys_executable(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    fake_exe = tmp_path / "app.exe"
+    fake_exe.write_text("x", encoding="utf-8")
+
+    monkeypatch.setattr(common.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(common.sys, "executable", str(fake_exe), raising=False)
+
+    got = common.get_this_filename()
+    assert Path(got) == fake_exe.resolve()
+
+
+def test_get_this_filename_without___file___uses_argv0(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # Simulate an interactive context: no __file__
+    monkeypatch.setitem(common.__dict__, "__file__", None)
+
+    # Provide argv0 as a relative path; resolution should be anchored to cwd.
+    monkeypatch.chdir(tmp_path)
+    rel = Path("bin") / "script.py"
+    monkeypatch.setattr(common.sys, "argv", [str(rel)], raising=False)
+
+    got = common.get_this_filename()
+    assert Path(got) == (tmp_path / rel).resolve()
+
+
+def test_get_this_filename_without___file___and_empty_argv_falls_back_to_cwd(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setitem(common.__dict__, "__file__", None)
+    monkeypatch.setattr(common.sys, "argv", [], raising=False)
+    monkeypatch.setattr(common.sys, "frozen", False, raising=False)
+
+    monkeypatch.chdir(tmp_path)
+
+    got = common.get_this_filename()
+    assert Path(got) == tmp_path.resolve()
+
+
+def test_get_this_filename_frozen_takes_precedence_over___file__(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake_exe = tmp_path / "app.exe"
+    fake_exe.write_text("x", encoding="utf-8")
+
+    # Even if __file__ is set, frozen branch must win.
+    monkeypatch.setitem(common.__dict__, "__file__", str(tmp_path / "ignored.py"))
+    monkeypatch.setattr(common.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(common.sys, "executable", str(fake_exe), raising=False)
+
+    got = common.get_this_filename()
+    assert Path(got) == fake_exe.resolve()

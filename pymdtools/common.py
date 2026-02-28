@@ -1146,7 +1146,7 @@ def set_file_content(
     path: PathInput,
     content: str,
     encoding: str = "utf-8",
-    bom: bool = True,
+    bom: bool = False,
     *,
     atomic: bool = True,
     newline: Optional[str] = "\n",
@@ -1864,7 +1864,12 @@ def parse_timestamp(value: str) -> datetime:
 
 
 # -----------------------------------------------------------------------------
-def check_len(obj: T_sized, expected: int = 1, *, name: str = "object") -> T_sized:
+def check_len(
+    obj: T_sized, 
+    expected: int = 1, 
+    *, 
+    name: str = "object"
+) -> T_sized:
     """
     Ensure that an object has the expected length.
 
