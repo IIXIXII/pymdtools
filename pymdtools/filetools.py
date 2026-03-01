@@ -8,10 +8,7 @@
 # standard object to wrap file and access easily to the filename
 # -----------------------------------------------------------------------------
 
-import logging
 import sys
-import os
-import os.path
 from pathlib import Path
 from typing import Optional, Union, List
 from dataclasses import dataclass

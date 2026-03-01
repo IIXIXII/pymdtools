@@ -1,6 +1,6 @@
 import pytest
 
-from pymdtools.common import check_len
+from pymdtools.common.core import check_len
 
 
 def test_check_len_ok_returns_same_object():

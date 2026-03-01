@@ -252,12 +252,7 @@ def strip_xml_comment(text: str) -> str:
 
     Returns:
         The input text with all XML comments removed.
-
-    Raises:
-        TypeError: If `text` is not a string.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
     return _XML_COMMENT_RE.sub("", text)
 # -----------------------------------------------------------------------------
 
@@ -284,12 +279,8 @@ def get_refs_from_md_text(
         A dict mapping ref names to their raw extracted content.
 
     Raises:
-        TypeError: If `text` is not a string.
         ValueError: If a ref name is duplicated or an end marker is missing.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
-
     refs: Dict[str, str] = dict(previous_refs) if previous_refs else {}
 
     pos = 0

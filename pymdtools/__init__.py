@@ -62,7 +62,7 @@ from typing import Final, TYPE_CHECKING
 from .version import __version__, __version_info__, __release_date__
 from ._about import __author__, __author_email__, __license__, __status__
 
-__module_name__: Final[str] = "pymdtools"
+__module_name__ = "pymdtools"
 
 # -----------------------------------------------------------------------------
 # Public API
@@ -101,6 +101,7 @@ _LAZY: Final[dict[str, tuple[str, str]]] = {
 }
 
 
+# -----------------------------------------------------------------------------
 def __getattr__(name: str):
     """
     Lazily resolve public symbols.
@@ -154,8 +155,10 @@ def __getattr__(name: str):
     # Cache into package namespace for faster subsequent access.
     globals()[name] = obj
     return obj
+# -----------------------------------------------------------------------------
 
 
+# -----------------------------------------------------------------------------
 def __dir__() -> list[str]:
     """
     Return a curated list of attributes for introspection.
@@ -166,6 +169,7 @@ def __dir__() -> list[str]:
     public = set(__all__)
     dunder = {k for k in globals() if k.startswith("__") and k.endswith("__")}
     return sorted(public | dunder)
+# -----------------------------------------------------------------------------
 
 
 # =============================================================================

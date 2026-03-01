@@ -49,17 +49,17 @@ def test_filecontent_write_creates_file(tmp_path: Path):
 
 
 def test_filecontent_write_creates_backup_when_overwriting(tmp_path: Path, monkeypatch):
+    import pymdtools.common as common
+
     p = tmp_path / "a.txt"
     p.write_text("old", encoding="utf-8")
 
     fc = FileContent(p, content="new", backup=True)
 
     # Make backup deterministic by freezing "today" if create_backup uses it.
-    import pymdtools.common as common
-    monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     fc.write(backup_ext=".bak")
 
-    backups = list(tmp_path.glob("a.txt.2026-02-01-*.bak"))
+    backups = list(tmp_path.glob("a.txt."+common.today_utc()+"-*.bak"))
     assert len(backups) == 1
     assert p.read_text(encoding="utf-8").lstrip("\ufeff") == "new"

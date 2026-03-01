@@ -1,183 +1,87 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =============================================================================
-#                    Author: Florent TOURNOIS | License: MIT                   
+#                    Author: Florent TOURNOIS | License: MIT
 # =============================================================================
 """
-pymdtools.common
-================
+pymdtools.common.fs
+===================
 
-This module provides a consolidated collection of low-level utility functions
-used throughout pymdtools. For simplicity and readability, all utilities are
-kept in a single file, but are explicitly structured into clearly delimited
-sections reflecting their functional domain.
+Filesystem & path utilities for ``pymdtools.common``.
 
-The module is intentionally free of backward-compatibility wrappers: the public
-API corresponds exactly to the functions and classes defined below.
+This module hosts all utilities that interact with the filesystem or rely on
+path semantics (``pathlib.Path``). It is designed as the *I/O layer* of the
+``pymdtools.common`` package.
 
-Design principles
------------------
-- Explicit and predictable behavior: each function has a single, well-defined
-  responsibility.
-- Preference for standard library primitives (`pathlib`, `datetime`, `tempfile`)
-  over custom implementations.
-- No implicit global state and no mandatory logging inside utility functions.
-- Use of standard Python exception types whenever possible.
-- Optional third-party dependencies are imported locally to keep module import
-  lightweight and robust.
-
-Structure of the module
------------------------
-
-Core helpers (exceptions, decorators, lightweight utilities)
--------------------------------------------------------------
-Utilities that do not belong to a specific functional domain but are reused
-across the codebase.
-
-- `handle_exception` : exception handling helper/decorator.
-- `Constant` : lightweight constant holder / descriptor.
-- `static` : decorator to attach static attributes to functions.
-
-Filesystem & Path utilities
-----------------------------
-Helpers related to filesystem access, path manipulation, file traversal,
-and file I/O.
-
-- Path normalization and validation:
-    - `normpath`
-    - `check_folder`
-    - `ensure_folder`
-    - `check_file`
-    - `path_depth`
-- Filename and suffix handling:
-    - `with_suffix`
-- Directory tree operations:
-    - `copytree`
-- Backup and file-type detection:
-    - `create_backup`
-    - `is_binary_file`
-- Encoding detection and text file I/O:
-    - `detect_file_encoding`
-    - `get_file_content`
-    - `set_file_content`
-- Temporary directories:
-    - `make_temp_dir`
-- File traversal and search:
-    - `apply_to_files`
-    - `find_file`
-    - `get_this_filename`
-
-Text & Encoding utilities
--------------------------
-Helpers for string normalization, naming, and encoding-safe transformations.
-
-- Output encoding adaptation:
-    - `convert_for_stdout`
-- Unicode and naming helpers:
-    - `to_ascii`
-    - `slugify`
-    - `get_valid_filename`
-    - `get_flat_filename`
-- URL-safe path generation:
-    - `path_to_url`
-- Controlled string truncation:
-    - `limit_str`
-
-Time & Date utilities
----------------------
-Helpers for generating and parsing timestamps, standardized on UTC.
-
-- Date and timestamp generation:
-    - `today_utc`
-    - `now_utc_timestamp`
-- Timestamp parsing:
-    - `parse_timestamp`
-
-Validation helpers
-------------------
-Small invariant checks used to enforce assumptions in calling code.
-
-- `check_len`
-
-Optional dependencies
----------------------
-The module relies primarily on the Python standard library. Some functions use
-optional third-party dependencies, imported locally:
-
-- `python-dateutil` for flexible timestamp parsing (`parse_timestamp`).
-- `chardet` for text encoding detection (`detect_file_encoding`).
-- `Unidecode` for Unicode transliteration (`to_ascii`).
-
-If these dependencies are not installed, the corresponding functions raise
-`ImportError` with an explicit message.
-
-Usage
+Scope
 -----
-Functions from this module are intended to be imported and used directly:
+Included here:
 
-    from pymdtools.common import (
-        get_file_content,
-        set_file_content,
-        slugify,
-        get_valid_filename,
-        find_file,
-    )
+- Path normalization / conversion:
+    - ``to_path``: convert any path-like input to ``Path`` with controlled behavior
+    - ``_p``: internal shorthand for ``to_path``
+    - ``normpath``: normalized absolute path
+    - ``with_suffix``: safe suffix replacement
+    - ``path_depth``: count path components
 
-This module acts as a low-level utility layer and does not implement
-application-level logging or user interaction.
+- Filesystem checks and creation:
+    - ``check_folder``: assert a directory exists
+    - ``ensure_folder``: create directory (parents=True, exist_ok=True)
+    - ``check_file``: assert a file exists
+
+- Directory tree copy:
+    - ``copytree``: incremental directory tree copy
+    - ``_copy_file_if_needed``: internal helper for copy decisions
+
+- Backup and binary detection:
+    - ``create_backup``: create a ``.bak`` copy (or configurable suffix)
+    - ``is_binary_file``: heuristic binary check
+
+- Text encoding detection and file I/O:
+    - ``detect_file_encoding``: BOM + chardet-based detection (optional dependency)
+    - ``get_file_content``: read text file
+    - ``set_file_content``: write text file
+
+- Temporary directories:
+    - ``make_temp_dir``: create and return a temp directory
+
+- Traversal / search helpers:
+    - ``ApplyResult``: summary dataclass
+    - ``apply_to_files``: traverse a file or directory and apply a function
+    - ``find_file``: search file from multiple anchors, with upward walk
+    - ``get_this_filename``: return the filename of the current module
+
+Dependencies
+------------
+This module relies on the Python standard library. ``detect_file_encoding`` uses
+``chardet`` as an optional dependency and raises ``ImportError`` with an
+explicit message if missing.
+
+Compatibility / contract
+------------------------
+The implementations in this file are intended to be copied *verbatim* from the
+historical ``common.py`` module to preserve behavior. Public symbols are
+re-exported by ``pymdtools.common`` (the package façade).
+
 """
-
 
 from __future__ import annotations
 
-# =============================================================================
-# Standard library
-# =============================================================================
-
-import functools
 import os
-import re
-import shutil
 import sys
+import shutil
 import tempfile
-import unicodedata
-
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from fnmatch import fnmatch
-from os import PathLike
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterable,
-    Mapping,
-    Optional,
-    ParamSpec,
-    Sequence,
-    Set,
-    Sized,
-    TextIO,
-    TypeVar,
-)
+from typing import Callable, Iterable, Optional, Sequence, Set
 
-from urllib.parse import quote
-
-# =============================================================================
-# Typing variables
-# =============================================================================
-
-T = TypeVar("T")
-F = TypeVar("F", bound=Callable[..., Any])
-P = ParamSpec("P")
-R = TypeVar("R")
-T_sized = TypeVar("T_sized", bound=Sized)
-PathInput = str | PathLike[str] | Path
+from .core import PathInput, T
+from .time_validate import today_utc
 
 
 # =============================================================================
-# Core helpers (exceptions, decorators, lightweight utilities)
+# Filesystem & Path utilities
 # =============================================================================
 
 
@@ -286,202 +190,6 @@ def _p(p: PathInput) -> Path:
     """
     return to_path(p)
 # -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def handle_exception(
-    action_desc: str, 
-    **kwargs_print_name: str
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """
-    Decorator used to enrich exceptions with contextual information.
-
-    This decorator catches any exception raised by the decorated function,
-    enriches the error message with:
-      - a functional description (`action_desc`),
-      - the decorated function name,
-      - selected keyword argument values (as provided via `kwargs_print_name`),
-    and then re-raises a `RuntimeError` while preserving the original exception
-    using exception chaining (`raise ... from ex`).
-
-    The original exception is accessible through the `__cause__` attribute.
-
-    Typing / Pylance compatibility
-    ------------------------------
-    This implementation uses `ParamSpec` and `TypeVar` so that the decorated
-    function signature is preserved for static type checkers (Pylance/Pyright,
-    mypy). That means:
-      - argument types are preserved,
-      - return type is preserved,
-      - call sites benefit from autocompletion and type checking.
-
-    Parameters
-    ----------
-    action_desc : str
-        Human-readable description of the action being performed.
-        Example: "Error while processing markdown file".
-    **kwargs_print_name : str
-        Mapping between keyword argument names of the decorated function and
-        their display labels to include in the error message.
-
-        Each key must match a keyword argument name used when calling the
-        decorated function. Only keyword arguments present in the actual call
-        are printed.
-
-        Example:
-            filename="File", output_dir="Output directory"
-
-    Returns
-    -------
-    Callable[[Callable[P, R]], Callable[P, R]]
-        A decorator which wraps the target function while preserving its
-        signature (Pylance-friendly).
-
-    Raises
-    ------
-    RuntimeError
-        Raised when the decorated function fails. The original exception is
-        attached as the cause and can be accessed through `__cause__`.
-
-    Notes
-    -----
-    - Only keyword arguments (`**kwargs`) are included in the enriched message.
-      If you also want positional arguments (`*args`) to be displayed, use
-      `inspect.signature(...).bind_partial(...)` to map them to parameter names.
-    - The formatting is intentionally simple and stable for logs/CLI.
-
-    Examples
-    --------
-    >>> @handle_exception(
-    ...     "Error while converting file",
-    ...     filename="File",
-    ...     output="Output directory",
-    ... )
-    ... def convert(filename: str, output: str) -> None:
-    ...     raise ValueError("Invalid format")
-    ...
-    >>> convert("doc.md", "/tmp")
-    Traceback (most recent call last):
-        ...
-    RuntimeError: Invalid format
-    Error while converting file (convert)
-    File : doc.md
-    Output directory : /tmp
-    """
-
-    labels: Mapping[str, str] = kwargs_print_name
-
-    def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            try:
-                return func(*args, **kwargs)
-            except Exception as ex:
-                lines = [f"{action_desc} ({func.__name__})"]
-                for key, label in labels.items():
-                    if key in kwargs:
-                        lines.append(f"{label} : {kwargs[key]}")
-                message = "\n".join(lines)
-                raise RuntimeError(f"{ex}\n{message}") from ex
-
-        return wrapper
-
-    return decorator
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-class Constant(Generic[T]):
-    """
-    Descriptor representing an immutable constant value.
-
-    This class is intended to be used as a *class attribute* and provides
-    read-only access to a fixed value through both the class and its instances.
-
-    The constant value cannot be modified or deleted **via an instance**.
-    Any attempt to assign or delete the attribute on an instance will raise
-    a `ValueError`.
-
-    Note:
-        Assignment at the *class level* (e.g. ``MyClass.CONST = ...``) is not
-        prevented. This is a limitation of Python descriptors and is considered
-        acceptable by design. Preventing class-level reassignment would require
-        a metaclass or custom `__setattr__` logic on the owning class.
-
-    Example:
-        class Config:
-            VERSION = Constant("1.0")
-            DEBUG = Constant(False)
-
-        Config.VERSION        # "1.0"
-        Config().VERSION      # "1.0"
-
-        Config().VERSION = "2.0"
-        # ValueError: You can't change a constant value
-
-        Config.VERSION = "2.0"
-        # Allowed: the descriptor is replaced at the class level
-    """
-
-    def __init__(self, value: Optional[T] = None):
-        self._value = value
-
-    def __get__(self, instance: Any, owner: Any) -> Optional[T]:
-        return self._value
-
-    def __set__(self, instance: Any, value: Any) -> None:
-        raise ValueError("You can't change a constant value")
-    
-    def __delete__(self, instance: Any) -> None:
-        raise ValueError("Cannot delete a constant value")
-
-    @property
-    def value(self) -> Optional[T]:
-        """Return the constant value."""
-        return self._value
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def static(**attributes: Any) -> Callable[[F], F]:
-    """
-    Attach static attributes to a function.
-
-    This decorator sets attributes on the decorated function object. It is
-    typically used to emulate "static variables" inside a function, i.e. to
-    keep state across calls without using globals.
-
-    Args:
-        **attributes: Attribute names and their initial values to attach to the
-            function.
-
-    Returns:
-        A decorator that returns the same function with attributes set.
-
-    Example:
-        >>> @static(counter=0)
-        ... def f():
-        ...     f.counter += 1
-        ...     return f.counter
-        ...
-        >>> f()
-        1
-        >>> f()
-        2
-    """
-    def decorator(func: F) -> F:
-        for key, value in attributes.items():
-            setattr(func, key, value)
-        return func
-
-    return decorator
-# -----------------------------------------------------------------------------
-
-
-# =============================================================================
-# Filesystem & Path utilities
-# =============================================================================
-
 
 # -----------------------------------------------------------------------------
 def normpath(path: PathInput) -> Path:
@@ -890,6 +598,7 @@ def create_backup(
         backup = folder / f"{base}.{prefix}-{i:03d}{ext}"
         if not backup.exists():
             shutil.copy2(src, backup)
+            print(backup)
             return backup
 
     raise FileExistsError(
@@ -1510,394 +1219,6 @@ def find_file(
     raise FileNotFoundError(
         f"File not found: {filename!r}. Tested {len(tested)} paths: {[str(p) for p in tested]}"
     )
-# -----------------------------------------------------------------------------
-
-
-# =============================================================================
-# Text & Encoding utilities
-# =============================================================================
-
-
-# -----------------------------------------------------------------------------
-def convert_for_stdout(
-    text: str,
-    *,
-    stream: TextIO = sys.stdout,
-    fallback_encoding: str = "utf-8",
-    errors: str = "replace",
-) -> str:
-    """
-    Adapt a Unicode string to the encoding of the given text stream.
-
-    Parameters
-    ----------
-    text : str
-        Input Unicode string.
-    stream : TextIO, default=sys.stdout
-        Target output stream. Its `.encoding` attribute is used when available.
-    fallback_encoding : str, default="utf-8"
-        Encoding used if the stream has no encoding.
-    errors : str, default="replace"
-        Error handler used for the encode/decode round-trip.
-
-    Returns
-    -------
-    str
-        Text safe to print to the given stream.
-    """
-    enc: Optional[str] = getattr(stream, "encoding", None)
-    encoding = enc or fallback_encoding
-
-    try:
-        return text.encode(encoding, errors=errors).decode(encoding, errors=errors)
-    except LookupError:
-        return text.encode(fallback_encoding, errors="replace").decode(fallback_encoding)
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def to_ascii(value: str) -> str:
-    """
-    Transliterate a Unicode string to an ASCII approximation.
-
-    This function uses the third-party package `Unidecode` to convert
-    non-ASCII characters to an ASCII representation.
-
-    Args:
-        value: Input Unicode string.
-
-    Returns:
-        An ASCII transliteration of the input string.
-
-    Raises:
-        ImportError: If the Unidecode package is not installed.
-    """
-    try:
-        from unidecode import unidecode
-    except ImportError as exc:
-        raise ImportError("Unidecode is required for to_ascii()") from exc
-
-    return unidecode(value)
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def slugify(value: Any, *, allow_unicode: bool = False) -> str:
-    """
-    Convert a string to a URL- and filename-safe slug.
-
-    The function:
-    - converts the input to string,
-    - optionally normalizes Unicode characters,
-    - removes characters that are not alphanumeric, underscores, spaces or hyphens,
-    - converts spaces and repeated hyphens to single hyphens,
-    - lowercases the result.
-
-    Args:
-        value: Input value to slugify.
-        allow_unicode: If True, keep Unicode characters.
-            If False, transliterate to ASCII.
-
-    Returns:
-        A slugified string (lowercase, hyphen-separated).
-    """
-    text = str(value)
-
-    if allow_unicode:
-        # Normalize Unicode (canonical composition)
-        text = unicodedata.normalize("NFKC", text)
-    else:
-        # Normalize + transliterate to ASCII
-        text = unicodedata.normalize("NFKD", text)
-        text = to_ascii(text)
-
-    # Remove invalid characters (keep alphanumerics, underscore, space, hyphen)
-    text = re.sub(r"[^\w\s-]", "", text)
-
-    # Normalize whitespace / hyphens, lowercase
-    text = re.sub(r"[-\s]+", "-", text).strip("-").lower()
-
-    return text
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-# Windows reserved filenames (case-insensitive)
-_WINDOWS_RESERVED_NAMES = {
-    "CON", "PRN", "AUX", "NUL",
-    *(f"COM{i}" for i in range(1, 10)),
-    *(f"LPT{i}" for i in range(1, 10)),
-}
-
-def get_valid_filename(
-    filename: str,
-    *,
-    replacement: str = "_",
-    strip: bool = True,
-) -> str:
-    """
-    Return a filename safe for Windows filesystems.
-
-    This function:
-    - replaces invalid Windows filename characters,
-    - trims leading/trailing whitespace,
-    - removes trailing dots and spaces,
-    - avoids Windows reserved names.
-
-    Args:
-        filename: Input filename (not a full path).
-        replacement: Character used to replace invalid characters.
-        strip: Whether to strip leading/trailing whitespace.
-
-    Returns:
-        A Windows-safe filename.
-
-    Raises:
-        ValueError: If filename is empty after sanitization.
-    """
-    name = filename
-
-    if strip:
-        name = name.strip()
-
-    # Replace invalid Windows characters
-    name = re.sub(r'[\\/*?:"<>|]', replacement, name)
-
-    # Remove control characters (0x00–0x1F)
-    name = re.sub(r"[\x00-\x1F]", replacement, name)
-
-    # Remove trailing dots and spaces (invalid on Windows)
-    name = name.rstrip(" .")
-
-    if not name:
-        raise ValueError("filename is empty after sanitization")
-
-    # Handle reserved device names (Windows)
-    stem, dot, suffix = name.partition(".")
-    if stem.upper() in _WINDOWS_RESERVED_NAMES:
-        stem = f"{stem}{replacement}"
-        name = stem + (dot + suffix if dot else "")
-
-    return name
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def get_flat_filename(filename: str, *, replacement: str = "_") -> str:
-    """
-    Return a flattened, Windows-safe filename.
-
-    This function:
-    - transliterates Unicode characters to ASCII,
-    - removes punctuation and special characters,
-    - replaces spaces and separators with a single replacement character,
-    - ensures the result is a valid Windows filename.
-
-    Args:
-        filename: Input filename (without path).
-        replacement: Character used to replace separators (default: "_").
-
-    Returns:
-        A flattened, Windows-safe filename.
-
-    Raises:
-        ValueError: If filename is empty after sanitization.
-    """
-    # Step 1: ASCII transliteration
-    text = to_ascii(filename)
-
-    # Step 2: slug-like normalization, but keep underscores instead of hyphens
-    text = slugify(text, allow_unicode=False).replace("-", replacement)
-
-    # Step 3: final Windows-safe validation
-    return get_valid_filename(text, replacement=replacement)
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def path_to_url(path: str | Path, *, remove_accent: bool = True) -> str:
-    """
-    Convert a filesystem path to a URL-safe path.
-
-    The function:
-    - normalizes path separators,
-    - lowercases the path,
-    - replaces whitespace with hyphens,
-    - optionally transliterates Unicode characters to ASCII,
-    - percent-encodes characters for safe use in URLs.
-
-    Args:
-        path: Input path (string or Path).
-        remove_accent: If True, transliterate Unicode characters to ASCII.
-
-    Returns:
-        A URL-safe path string.
-    """
-    # Convert to POSIX-style path (forward slashes)
-    p = Path(path)
-    text = p.as_posix()
-
-    # Normalize case
-    text = text.lower()
-
-    # Replace whitespace by hyphen
-    text = re.sub(r"\s+", "-", text)
-
-    # Optional transliteration
-    if remove_accent:
-        text = to_ascii(text)
-
-    # Percent-encode (keep '/' as path separator)
-    text = quote(text, safe="/")
-
-    # Cleanup accidental "/-" or "-/" sequences
-    text = text.replace("/-", "/").replace("-/", "/")
-
-    return text
-# -----------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------
-def limit_str(value: str, limit: int, sep: str, min_last_word: int = 2) -> str:
-    """
-    Limit a string by keeping whole tokens separated by `sep`, without exceeding `limit`.
-
-    The string is split on `sep`. Tokens are appended in order, re-joined with `sep`,
-    as long as the resulting string length does not exceed `limit`.
-
-    Args:
-        value: Input text.
-        limit: Maximum length of the returned string (must be >= 0).
-        sep: Token separator used to split and re-join.
-        min_last_word: Minimum token length to be considered meaningful (>= 0).
-            Tokens shorter than this value are ignored unless already included as
-            part of the kept prefix.
-
-    Returns:
-        A shortened string not exceeding `limit`.
-
-    Raises:
-        ValueError: If `limit` < 0, `min_last_word` < 0, or `sep` is empty.
-    """
-    if limit < 0:
-        raise ValueError(f"limit must be >= 0, got: {limit}")
-    if min_last_word < 0:
-        raise ValueError(f"min_last_word must be >= 0, got: {min_last_word}")
-    if not sep:
-        raise ValueError("sep must be a non-empty string")
-
-    if not value or limit == 0:
-        return ""
-
-    tokens = value.split(sep)
-    kept: list[str] = []
-
-    for token in tokens:
-        if token == "":
-            # avoid growing output with empty tokens (e.g. consecutive seps)
-            continue
-        if len(token) < min_last_word:
-            continue
-
-        candidate = token if not kept else f"{sep.join(kept)}{sep}{token}"
-        if len(candidate) <= limit:
-            kept.append(token)
-        else:
-            break
-
-    return sep.join(kept)
-# -----------------------------------------------------------------------------
-
-
-# =============================================================================
-# Time & Date utilities
-# =============================================================================
-
-
-# -----------------------------------------------------------------------------
-def today_utc() -> str:
-    """
-    Return today's date in UTC as 'YYYY-MM-DD'.
-    """
-    return datetime.now(timezone.utc).date().isoformat()
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def now_utc_timestamp() -> str:
-    """
-    Return current UTC timestamp as 'YYYY-MM-DD HH:MM:SS' (UTC).
-    """
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def parse_timestamp(value: str) -> datetime:
-    """
-    Parse a timestamp string into a datetime.
-
-    This function uses python-dateutil for flexible parsing.
-
-    Args:
-        value: Timestamp string.
-
-    Returns:
-        A datetime instance (timezone-aware if the input contains timezone
-        information, otherwise naive).
-
-    Raises:
-        ValueError: If the timestamp cannot be parsed.
-        ImportError: If python-dateutil is not installed.
-    """
-    try:
-        from dateutil.parser import parse
-    except ImportError as ex:
-        raise ImportError("python-dateutil is required for parse_timestamp()") from ex
-
-    return parse(value)
-# -----------------------------------------------------------------------------
-
-
-# =============================================================================
-# Validation helpers
-# =============================================================================
-
-
-# -----------------------------------------------------------------------------
-def check_len(
-    obj: T_sized, 
-    expected: int = 1, 
-    *, 
-    name: str = "object"
-) -> T_sized:
-    """
-    Ensure that an object has the expected length.
-
-    Args:
-        obj: Any object supporting len().
-        expected: Expected length (must be >= 0).
-        name: Logical name used in error messages.
-
-    Returns:
-        The input object (for fluent-style usage).
-
-    Raises:
-        ValueError: If the object's length does not match `expected`,
-            or if `expected` is negative.
-        TypeError: If `obj` does not support len().
-    """
-    if expected < 0:
-        raise ValueError(f"expected length must be >= 0, got: {expected}")
-
-    try:
-        actual = len(obj)
-    except TypeError as ex:
-        raise TypeError(f"{name} does not support len()") from ex
-
-    if actual != expected:
-        raise ValueError(f"{name} must have length {expected}, got {actual}")
-
-    return obj
 # -----------------------------------------------------------------------------
 
 

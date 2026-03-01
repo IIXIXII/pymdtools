@@ -6,7 +6,7 @@ import types
 
 import pytest
 
-import pymdtools.common as common
+import pymdtools.common.fs as common
 
 
 def test_get_this_filename_frozen(monkeypatch, tmp_path: Path):
