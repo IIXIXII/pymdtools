@@ -8,7 +8,6 @@
 # standard object to wrap file and access easily to the filename
 # -----------------------------------------------------------------------------
 
-import sys
 from pathlib import Path
 from typing import Optional, Union, List
 from dataclasses import dataclass
@@ -16,55 +15,115 @@ from dataclasses import dataclass
 from . import common
 
 # -----------------------------------------------------------------------------
-def _get_this_filename() -> str:
+def get_template_file(
+    filename: common.PathInput, 
+    start_folder: Path | None = None
+) -> str:
     """
-    Return the filename of the current module or executable.
+    Load and return the content of a template file located under 
+    a ``template/`` directory.
 
-    If the application is running in a frozen environment (e.g. PyInstaller),
-    the path to the executable is returned. Otherwise, the path to this module
-    file is returned.
+    This is a Path-oriented implementation:
+    - internal computation is performed with ``pathlib.Path``
+    - only the final read uses your existing helpers (currently string-based)
 
-    Returns:
-        Absolute path to the current module file or executable.
+    Resolution rules
+    ----------------
+    The base folder used to locate the ``template/`` directory is 
+    resolved as follows:
+
+    1) If ``start_folder`` is provided:
+       - It is interpreted as a filesystem path.
+       - If it points to a file, its parent directory is used as the base folder.
+       - Otherwise it is used as-is as the base folder.
+
+       Template directory:
+           ``<base>/template``
+
+    2) If ``start_folder`` is not provided:
+       - The base folder is derived from the current module/executable location
+         via ``_get_this_filename()`` (handles frozen apps such as PyInstaller).
+
+       Template directory:
+           ``<module_or_executable_parent>/template``
+
+    Security considerations
+    -----------------------
+    - ``filename`` must be a *relative* path (no absolute path).
+    - Any path traversal attempt (e.g., ``../secret.txt``) is rejected.
+    - The resolved candidate file must remain within the resolved template directory.
+
+    Parameters
+    ----------
+    filename:
+        Template filename or relative path *within* the ``template/`` directory.
+        Accepts ``str`` or ``Path``.
+        Examples:
+            - ``"email.html"``
+            - ``Path("emails/welcome.html")``
+
+    start_folder:
+        Optional base folder used to locate the ``template/`` directory.
+        If omitted, the base is derived from ``_get_this_filename()``.
+
+    Returns
+    -------
+    str
+        The template file content.
+
+    Raises
+    ------
+    ValueError
+        If ``filename`` is empty, absolute, or attempts path traversal.
+    FileNotFoundError
+        If the template directory or the template file does not exist.
+    NotADirectoryError
+        If the resolved template directory exists but is not a directory.
+    OSError
+        Propagated from the underlying file read operation.
     """
-    if getattr(sys, "frozen", False):
-        return str(Path(sys.executable).resolve())
-
-    return str(Path(__file__).resolve())
-# -----------------------------------------------------------------------------
-
-
-# -----------------------------------------------------------------------------
-def get_template_file(filename: str, start_folder: Optional[Union[str, Path]] = None) -> str:
-    """
-    Read a template file from a `template/` folder.
-
-    The template folder is resolved as:
-    - `<start_folder>/template` if `start_folder` is provided,
-    - otherwise `<module_folder>/template`.
-
-    Args:
-        filename: Template filename to read (relative to the template folder).
-        start_folder: Base folder used to locate the `template/` directory.
-
-    Returns:
-        The template file content as a string.
-
-    Raises:
-        ValueError: If `filename` is empty.
-        RuntimeError: If the template folder does not exist or is not a directory.
-        Exception/IOError: Propagated from file reading helpers.
-    """
-    if not isinstance(filename, str) or not filename.strip():
-        raise ValueError("filename must be a non-empty string")
-
-    if start_folder is None:
-        base = Path(_get_this_filename()).resolve().parent
+    if isinstance(filename, str):
+        if not filename.strip():
+            raise ValueError("filename must be a non-empty string")
+        rel = Path(filename)
     else:
-        base = Path(start_folder)
+        # Path case
+        if not str(filename).strip():
+            raise ValueError("filename must be a non-empty path")
+        rel = Path(filename)
 
-    template_dir = common.ensure_folder(str(base / "template"))
-    return common.get_file_content(str(Path(template_dir) / filename))
+
+    if rel.is_absolute():
+        raise ValueError(f"filename must be a relative path, got absolute: {rel!s}")
+
+    if any(part == ".." for part in rel.parts):
+        raise ValueError(f"filename must not contain '..' path traversal, got: {rel!s}")
+
+    # --- resolve base folder ---
+    if start_folder is None:
+        base = common.get_this_filename().parent
+    else:
+        base = Path(start_folder).expanduser()
+        # Accept passing a file path as start_folder: use its parent
+        if base.suffix:
+            base = base.parent
+        base = base.resolve()
+
+    # --- locate template directory (do not create it) ---
+    template_dir = (base / "template").resolve()
+    common.check_folder(template_dir)  # Path-oriented common.fs version supports PathInput
+
+    # --- resolve candidate path and enforce containment ---
+    candidate = (template_dir / rel).resolve()
+
+    try:
+        candidate.relative_to(template_dir)
+    except ValueError as ex:
+        raise ValueError(f"template path escapes template directory: {rel!s}") from ex
+
+    # --- read content ---
+    common.check_file(candidate)
+    return common.get_file_content(candidate)
 # -----------------------------------------------------------------------------
 
 
@@ -83,7 +142,7 @@ def get_template_files_in_folder(folder: str) -> List[str]:
     Raises:
         RuntimeError: If the template folder does not exist or is not a directory.
     """
-    template_dir = Path(_get_this_filename()).resolve().parent / "template" / folder
+    template_dir = Path(common.get_this_filename()).resolve().parent / "template" / folder
     local_template_folder = Path(common.check_folder(str(template_dir)))
 
     files: List[str] = []
