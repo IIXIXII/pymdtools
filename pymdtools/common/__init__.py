@@ -4,17 +4,16 @@
 #                    Author: Florent TOURNOIS | License: MIT
 # =============================================================================
 """
-pymdtools.common
-================
-
 Shared utility layer for the pymdtools package.
 
 This submodule provides a stable, public façade that aggregates
 low-level helpers used across the project. The internal implementation
-is split into several focused modules (core, fs, text, time_validate),
-but consumers must import exclusively from:
+is split into several focused modules (core, fs, text, datetime_utils),
+but consumers should import public helpers from this facade:
 
-    >>> from pymdtools.common import ...
+.. code-block:: python
+
+    from pymdtools.common import slugify, get_file_content
 
 The public API exposed here is considered stable. Internal submodules
 are implementation details and may evolve without notice.
@@ -27,14 +26,14 @@ Design principles
     * core          : typing aliases, decorators, utility classes
     * fs            : filesystem and path operations
     * text          : string and filename transformations
-    * time_validate : time utilities and lightweight validation helpers
+    * datetime_utils : UTC date/time helpers
 
 - Minimal dependencies:
     Optional third-party dependencies (e.g. chardet, dateutil,
     unidecode) are imported lazily in the functions that require them.
 
 - Explicit API surface:
-    The __all__ variable defines the official public contract.
+    The ``__all__`` variable defines the official public contract.
 
 ----------------------------------------------------------------------
 Typing utilities
@@ -44,20 +43,20 @@ T, F, P, R, T_sized
     Generic type variables used across the project.
 
 PathInput
-    Alias for Union[str, pathlib.Path].
+    Alias for ``str | os.PathLike[str] | pathlib.Path``.
 
 ----------------------------------------------------------------------
 Core utilities
 ----------------------------------------------------------------------
 
 handle_exception
-    Decorator for controlled exception handling and optional logging.
+    Decorator for enriching raised exceptions with contextual metadata.
 
 static
-    Explicit alias for declaring static methods.
+    Decorator for attaching static-like attributes to a function.
 
 Constant
-    Lightweight constant namespace base class.
+    Descriptor for read-only instance-level constant values.
 
 ----------------------------------------------------------------------
 Filesystem and path utilities
@@ -109,17 +108,17 @@ path_to_url
     Convert filesystem path to POSIX-style URL path.
 
 limit_str
-    Truncate string with ellipsis.
+    Truncate a string by whole separator-delimited tokens.
 
 ----------------------------------------------------------------------
 Time and validation utilities
 ----------------------------------------------------------------------
 
 today_utc
-    Current UTC date at midnight.
+    Current UTC date as ``YYYY-MM-DD``.
 
 now_utc_timestamp
-    Current UTC timestamp as integer.
+    Current UTC timestamp as ``YYYY-MM-DD HH:MM:SS``.
 
 parse_timestamp
     Flexible timestamp parsing (requires python-dateutil).
@@ -131,12 +130,12 @@ check_len
 Usage example
 ----------------------------------------------------------------------
 
+.. code-block:: python
+
     from pymdtools.common import slugify, get_file_content
 
     slug = slugify("My Title")
     content = get_file_content("README.md")
-
-----------------------------------------------------------------------
 """
 
 # ---------------------------------------------------------------------
@@ -199,7 +198,7 @@ from .text import (
 # Time and validation
 # ---------------------------------------------------------------------
 
-from .time_validate import (
+from .datetime_utils import (
     today_utc,
     now_utc_timestamp,
     parse_timestamp,

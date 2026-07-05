@@ -44,17 +44,17 @@ def test_include_vars_to_md_file_unknown_var_can_be_ignored(tmp_path: Path):
 
     out = f.read_text(encoding="utf-8").lstrip("\ufeff")
     assert "X" in out
-    assert "YY" in out
-    assert "Y" not in out
+    assert "<!-- begin-var(y) -->YY<!-- end-var -->" in out
+    assert "<!-- begin-var(y) -->Y<!-- end-var -->" not in out
 
 
 def test_include_vars_to_md_file_creates_backup(tmp_path: Path, monkeypatch):
     f = tmp_path / "doc.md"
     f.write_text("<!-- begin-var(x) -->OLD<!-- end-var -->", encoding="utf-8")
 
-    # deterministic backup naming if your common.create_backup uses get_today()
+    # deterministic backup naming
     import pymdtools.common as common
-    monkeypatch.setattr(common, "get_today", lambda: "2026-02-01")
+    monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     include_vars_to_md_file(f, {"x": "NEW"}, backup_option=True)
 

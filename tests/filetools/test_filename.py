@@ -18,6 +18,15 @@ def test_full_filename_normalization(tmp_path):
     assert Path(f.full_filename).name == "a.txt"
 
 
+def test_filename_component_getters(tmp_path):
+    p = tmp_path / "a.txt"
+    f = FileName(p)
+
+    assert f.filename == "a.txt"
+    assert f.filename_path == str(tmp_path)
+    assert f.filename_ext == ".txt"
+
+
 def test_set_filename_when_full_is_none():
     f = FileName()
     f.filename = "a.txt"
@@ -55,6 +64,56 @@ def test_set_filename_ext_validation(tmp_path):
         f.filename_ext = "md"  # missing dot
     f.filename_ext = ".md"
     assert Path(f.full_filename).name == "a.md"
+
+
+def test_full_filename_setter_accepts_none(tmp_path):
+    f = FileName(tmp_path / "a.txt")
+    f.full_filename = None
+    assert f.full_filename is None
+    assert f.filename is None
+    assert f.filename_path is None
+    assert f.filename_ext is None
+
+
+def test_filename_setter_none_resets_path(tmp_path):
+    f = FileName(tmp_path / "a.txt")
+    f.filename = None
+    assert f.full_filename is None
+
+
+def test_filename_path_none_raises(tmp_path):
+    f = FileName(tmp_path / "a.txt")
+    with pytest.raises(ValueError, match="filename_path cannot be None"):
+        f.filename_path = None
+
+
+def test_filename_ext_empty_and_missing_filename_raise(tmp_path):
+    f = FileName(tmp_path / "a.txt")
+    with pytest.raises(ValueError, match="filename_ext cannot be empty"):
+        f.filename_ext = ""
+
+    f = FileName()
+    with pytest.raises(ValueError, match="cannot set filename_ext"):
+        f.filename_ext = ".md"
+
+
+def test_filename_repr_and_str_for_missing_path():
+    f = FileName()
+    assert repr(f) == "FileName(None)"
+    assert str(f) == "path=<None>\nfilename=<None>\nfile extension=<None>\n"
+
+
+def test_filename_str_for_missing_existing_file_and_directory(tmp_path):
+    missing = FileName(tmp_path / "missing.txt")
+    assert "does not exist" in str(missing)
+
+    file_path = tmp_path / "a.txt"
+    file_path.write_text("x", encoding="utf-8")
+    assert "The file exists" in str(FileName(file_path))
+
+    directory = tmp_path / "folder"
+    directory.mkdir()
+    assert "It is a directory" in str(FileName(directory))
 
 
 def test_is_file_and_is_dir(tmp_path):

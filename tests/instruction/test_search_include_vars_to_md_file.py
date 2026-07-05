@@ -50,7 +50,7 @@ def test_search_include_vars_to_md_file_creates_backup(tmp_path: Path, monkeypat
     )
 
     import pymdtools.common as common
-    monkeypatch.setattr(common, "get_today", lambda: "2026-02-01")
+    monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     search_include_vars_to_md_file(
         target,

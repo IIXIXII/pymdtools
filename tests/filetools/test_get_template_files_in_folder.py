@@ -12,7 +12,7 @@ def test_get_template_files_in_folder_lists_files(tmp_path: Path, monkeypatch):
     fake_module = tmp_path / "filetools.py"
     fake_module.write_text("#", encoding="utf-8")
 
-    monkeypatch.setattr(filetools, "_get_this_filename", lambda: str(fake_module))
+    monkeypatch.setattr(filetools.common, "get_this_filename", lambda: fake_module)
 
     # Create template folder structure: <module_dir>/template/emails
     template_dir = tmp_path / "template" / "emails"
@@ -32,7 +32,29 @@ def test_get_template_files_in_folder_raises_if_missing(tmp_path: Path, monkeypa
     fake_module = tmp_path / "filetools.py"
     fake_module.write_text("#", encoding="utf-8")
 
-    monkeypatch.setattr(filetools, "_get_this_filename", lambda: str(fake_module))
+    monkeypatch.setattr(filetools.common, "get_this_filename", lambda: fake_module)
 
     with pytest.raises(FileNotFoundError):
         filetools.get_template_files_in_folder("emails")
+
+
+def test_get_template_files_in_folder_rejects_parent_traversal(tmp_path: Path, monkeypatch):
+    fake_module = tmp_path / "filetools.py"
+    fake_module.write_text("#", encoding="utf-8")
+    (tmp_path / "template").mkdir()
+
+    monkeypatch.setattr(filetools.common, "get_this_filename", lambda: fake_module)
+
+    with pytest.raises(ValueError, match="path traversal"):
+        filetools.get_template_files_in_folder("../secret")
+
+
+def test_get_template_files_in_folder_rejects_empty_folder(tmp_path: Path, monkeypatch):
+    fake_module = tmp_path / "filetools.py"
+    fake_module.write_text("#", encoding="utf-8")
+    (tmp_path / "template").mkdir()
+
+    monkeypatch.setattr(filetools.common, "get_this_filename", lambda: fake_module)
+
+    with pytest.raises(ValueError, match="non-empty"):
+        filetools.get_template_files_in_folder("")

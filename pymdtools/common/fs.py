@@ -77,7 +77,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence, Set
 
 from .core import PathInput, T
-from .time_validate import today_utc
+from .datetime_utils import today_utc
 
 
 # =============================================================================
@@ -104,6 +104,7 @@ def to_path(
     ----------
     p : str | os.PathLike[str] | Path
         Input path. Can be:
+
         - A string path
         - Any os.PathLike object
         - A pathlib.Path instance
@@ -116,6 +117,7 @@ def to_path(
         If True, resolves the path using Path.resolve().
 
         This will:
+
         - Normalize the path (remove '..', '.')
         - Follow symbolic links (unless strict=False and target missing)
 
@@ -134,9 +136,8 @@ def to_path(
     -----
     - This function does NOT implicitly resolve paths unless `resolve=True`.
       This avoids surprising behavior with symlinks or non-existing paths.
-    - Most library-level functions should call:
-          p = to_path(path)
-      without resolve=True.
+    - Most library-level functions should call ``p = to_path(path)`` without
+      ``resolve=True``.
     - Use resolve=True only when canonicalization is explicitly required.
 
     Examples
@@ -919,8 +920,8 @@ def make_temp_dir(
 
     Parameters
     ----------
-    prefix : str, default="pymdtools_"
-        Prefix for the temporary directory name.
+    prefix : str
+        Prefix for the temporary directory name. Defaults to ``"pymdtools_"``.
     suffix : str, default=""
         Suffix for the temporary directory name.
     dir : str | os.PathLike[str] | Path | None, default=None
@@ -983,9 +984,10 @@ def apply_to_files(
         If root is a directory, walk recursively if True, else only direct children.
     include_globs : Sequence[str], default=("*",)
         Filename patterns to include (fnmatch patterns), applied to relative paths
-        from the root directory. Example: ("**/*.md", "*.md") is NOT supported by fnmatch;
-        use simple patterns like ("*.md",) when non-recursive. For recursive matching,
-        patterns are applied to the POSIX relative path string.
+        from the root directory. Example: ``("**/*.md", "*.md")`` is NOT
+        supported by fnmatch; use simple patterns like ``("*.md",)`` when
+        non-recursive. For recursive matching, patterns are applied to the POSIX
+        relative path string.
     exclude_globs : Sequence[str], default=()
         Patterns to exclude (same matching rules as include_globs).
     expected_ext : str | tuple[str, ...] | None, default=None

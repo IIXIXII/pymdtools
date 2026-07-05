@@ -4,10 +4,10 @@
 #                    Author: Florent TOURNOIS | License: MIT
 # =============================================================================
 """
-pymdtools.common.time_validate
-==============================
+pymdtools.common.datetime_utils
+===============================
 
-Time and lightweight validation utilities for ``pymdtools.common``.
+UTC date/time utilities for ``pymdtools.common``.
 
 This module is the home of:
 - Small **UTC time helpers** used for deterministic timestamps in logs/outputs.
@@ -52,7 +52,7 @@ Dependencies
 Examples
 ----------------------------------------------------------------------
 
-    >>> from pymdtools.common import today_utc, now_utc_timestamp, parse_timestamp, check_len
+    >>> from pymdtools.common import today_utc, now_utc_timestamp, parse_timestamp
     >>> today_utc()
     '2026-03-01'
     >>> now_utc_timestamp()

@@ -120,79 +120,39 @@ def handle_exception(
     **kwargs_print_name: str
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
-    Decorator used to enrich exceptions with contextual information.
+    Enrich exceptions raised by a decorated function.
 
-    This decorator catches any exception raised by the decorated function,
-    enriches the error message with:
-      - a functional description (`action_desc`),
-      - the decorated function name,
-      - selected keyword argument values (as provided via `kwargs_print_name`),
-    and then re-raises a `RuntimeError` while preserving the original exception
-    using exception chaining (`raise ... from ex`).
+    The wrapper catches any exception, builds a message containing
+    ``action_desc``, the decorated function name, and selected keyword
+    argument values, then raises ``RuntimeError`` from the original exception.
+    The original exception remains available through ``__cause__``.
 
-    The original exception is accessible through the `__cause__` attribute.
+    ``ParamSpec`` and ``TypeVar`` are used so static type checkers keep the
+    decorated function signature.
 
-    Typing / Pylance compatibility
-    ------------------------------
-    This implementation uses `ParamSpec` and `TypeVar` so that the decorated
-    function signature is preserved for static type checkers (Pylance/Pyright,
-    mypy). That means:
-      - argument types are preserved,
-      - return type is preserved,
-      - call sites benefit from autocompletion and type checking.
+    Args:
+        action_desc: Human-readable description of the action being performed.
+        **kwargs_print_name: Mapping from keyword argument names to display
+            labels included in the enriched message.
 
-    Parameters
-    ----------
-    action_desc : str
-        Human-readable description of the action being performed.
-        Example: "Error while processing markdown file".
-    **kwargs_print_name : str
-        Mapping between keyword argument names of the decorated function and
-        their display labels to include in the error message.
+    Returns:
+        A decorator that wraps the target function while preserving its type
+        signature.
 
-        Each key must match a keyword argument name used when calling the
-        decorated function. Only keyword arguments present in the actual call
-        are printed.
+    Raises:
+        RuntimeError: Raised by the wrapper when the decorated function fails.
 
-        Example:
-            filename="File", output_dir="Output directory"
-
-    Returns
-    -------
-    Callable[[Callable[P, R]], Callable[P, R]]
-        A decorator which wraps the target function while preserving its
-        signature (Pylance-friendly).
-
-    Raises
-    ------
-    RuntimeError
-        Raised when the decorated function fails. The original exception is
-        attached as the cause and can be accessed through `__cause__`.
-
-    Notes
-    -----
-    - Only keyword arguments (`**kwargs`) are included in the enriched message.
-      If you also want positional arguments (`*args`) to be displayed, use
-      `inspect.signature(...).bind_partial(...)` to map them to parameter names.
-    - The formatting is intentionally simple and stable for logs/CLI.
-
-    Examples
-    --------
-    >>> @handle_exception(
-    ...     "Error while converting file",
-    ...     filename="File",
-    ...     output="Output directory",
-    ... )
-    ... def convert(filename: str, output: str) -> None:
-    ...     raise ValueError("Invalid format")
-    ...
-    >>> convert("doc.md", "/tmp")
-    Traceback (most recent call last):
+    Example:
+        >>> @handle_exception("Error while converting file", filename="File")
+        ... def convert(filename: str) -> None:
+        ...     raise ValueError("Invalid format")
         ...
-    RuntimeError: Invalid format
-    Error while converting file (convert)
-    File : doc.md
-    Output directory : /tmp
+        >>> convert(filename="doc.md")
+        Traceback (most recent call last):
+            ...
+        RuntimeError: Invalid format
+        Error while converting file (convert)
+        File : doc.md
     """
 
     labels: Mapping[str, str] = kwargs_print_name

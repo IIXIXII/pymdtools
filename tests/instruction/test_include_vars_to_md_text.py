@@ -27,8 +27,8 @@ def test_include_vars_unknown_var_can_be_ignored():
     )
     out = include_vars_to_md_text(text, {"y": "YY"}, error_if_var_not_found=False)
     assert "X" in out       # bloc x inchangé
-    assert "YY" in out      # bloc y remplacé
-    assert "Y" not in out   # contenu original de y supprimé
+    assert "<!-- begin-var(y) -->YY<!-- end-var -->" in out
+    assert "<!-- begin-var(y) -->Y<!-- end-var -->" not in out
 
 
 def test_include_vars_supports_slash_names():

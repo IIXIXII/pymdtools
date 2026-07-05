@@ -6,7 +6,7 @@ import sys
 import os
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 import pytest
 
@@ -113,6 +113,153 @@ def test_copytree_symlinks_false_follows_symlink_file(tmp_path: Path) -> None:
     assert out_link.read_text(encoding="utf-8") == "T"
 
 
+def test_copytree_symlinks_true_overwrites_existing_dest_dir_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    (src / "link").write_text("placeholder", encoding="utf-8")
+    (dst / "link").mkdir(parents=True)
+
+    orig_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == src / "link":
+            return True
+        if self == dst / "link":
+            return False
+        return orig_is_symlink(self)
+
+    def fake_readlink(self: Path) -> Path:
+        assert self == src / "link"
+        return Path("target.txt")
+
+    def fake_symlink_to(self: Path, target: Path, *args: Any, **kwargs: Any) -> None:
+        assert self == dst / "link"
+        self.write_text(str(target), encoding="utf-8")
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+    monkeypatch.setattr(Path, "readlink", fake_readlink)
+    monkeypatch.setattr(Path, "symlink_to", fake_symlink_to)
+
+    common.copytree(src, dst, symlinks=True)
+
+    assert (dst / "link").read_text(encoding="utf-8") == "target.txt"
+
+
+def test_copytree_symlinks_true_unlinks_existing_dest_file_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "link").write_text("placeholder", encoding="utf-8")
+    (dst / "link").write_text("old", encoding="utf-8")
+
+    orig_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == src / "link":
+            return True
+        return orig_is_symlink(self)
+
+    def fake_readlink(self: Path) -> Path:
+        assert self == src / "link"
+        return Path("target.txt")
+
+    def fake_symlink_to(self: Path, target: Path, *args: Any, **kwargs: Any) -> None:
+        assert self == dst / "link"
+        self.write_text(str(target), encoding="utf-8")
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+    monkeypatch.setattr(Path, "readlink", fake_readlink)
+    monkeypatch.setattr(Path, "symlink_to", fake_symlink_to)
+
+    common.copytree(src, dst, symlinks=True)
+
+    assert (dst / "link").read_text(encoding="utf-8") == "target.txt"
+
+
+def test_copytree_symlinks_true_creates_dest_when_missing_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "link").write_text("placeholder", encoding="utf-8")
+
+    orig_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == src / "link":
+            return True
+        return orig_is_symlink(self)
+
+    def fake_readlink(self: Path) -> Path:
+        assert self == src / "link"
+        return Path("target.txt")
+
+    def fake_symlink_to(self: Path, target: Path, *args: Any, **kwargs: Any) -> None:
+        assert self == dst / "link"
+        self.write_text(str(target), encoding="utf-8")
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+    monkeypatch.setattr(Path, "readlink", fake_readlink)
+    monkeypatch.setattr(Path, "symlink_to", fake_symlink_to)
+
+    common.copytree(src, dst, symlinks=True)
+
+    assert (dst / "link").read_text(encoding="utf-8") == "target.txt"
+
+
+def test_copytree_symlinks_false_follows_symlink_file_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    (src / "link").write_text("file content", encoding="utf-8")
+
+    orig_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == src / "link":
+            return True
+        return orig_is_symlink(self)
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+
+    common.copytree(src, dst, symlinks=False)
+
+    assert (dst / "link").read_text(encoding="utf-8") == "file content"
+
+
+def test_copytree_symlinks_false_follows_symlink_directory_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    real_dir = src / "link"
+    real_dir.mkdir(parents=True)
+    _write_text(real_dir / "nested.txt", "nested")
+
+    orig_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == real_dir:
+            return True
+        return orig_is_symlink(self)
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+
+    common.copytree(src, dst, symlinks=False)
+
+    assert (dst / "link" / "nested.txt").read_text(encoding="utf-8") == "nested"
+
+
 # -----------------------------------------------------------------------------
 # is_binary_file: UnicodeDecodeError branch (983-984)
 # -----------------------------------------------------------------------------
@@ -197,6 +344,13 @@ def test_detect_file_encoding_low_confidence_falls_back_to_default(
     assert common.detect_file_encoding(p, default="utf-8", min_confidence=0.50) == "utf-8"
 
 
+def test_detect_file_encoding_empty_file_returns_default_lowercase(tmp_path: Path) -> None:
+    p = tmp_path / "empty.txt"
+    p.write_bytes(b"")
+
+    assert common.detect_file_encoding(p, default="UTF-16") == "utf-16"
+
+
 # -----------------------------------------------------------------------------
 # get_file_content: reject_binary branch (1124) + encoding auto-detect path (1128)
 # -----------------------------------------------------------------------------
@@ -230,6 +384,14 @@ def test_set_file_content_creates_parents(tmp_path: Path) -> None:
     assert out.exists()
     assert out.parent == (tmp_path / "a" / "b").resolve()
     assert out.read_text(encoding="utf-8") == "x"
+
+
+def test_set_file_content_create_parents_false_uses_existing_parent(tmp_path: Path) -> None:
+    p = tmp_path / "out.txt"
+    out = common.set_file_content(p, "x", create_parents=False, atomic=False)
+
+    assert out == p.resolve()
+    assert p.read_text(encoding="utf-8") == "x"
 
 
 def test_set_file_content_cleanup_unlink_oserror_is_ignored(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -334,6 +496,46 @@ def test_apply_to_files_skips_symlinked_dir_when_follow_symlinks_false(tmp_path:
     assert summary.processed == 0
 
 
+def test_apply_to_files_skips_symlinked_dir_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    fake_link_dir = root / "linkdir"
+
+    orig_is_dir = Path.is_dir
+    orig_is_symlink = Path.is_symlink
+    orig_rglob = Path.rglob
+
+    def fake_rglob(self: Path, pattern: str) -> Iterable[Path]:
+        if self == root and pattern == "*":
+            return iter([fake_link_dir])
+        return orig_rglob(self, pattern)
+
+    def fake_is_dir(self: Path) -> bool:
+        if self == fake_link_dir:
+            return True
+        return orig_is_dir(self)
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == fake_link_dir:
+            return True
+        return orig_is_symlink(self)
+
+    monkeypatch.setattr(Path, "rglob", fake_rglob)
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+
+    def fn(_: Path) -> str:
+        return "OK"
+
+    results, summary, errors = common.apply_to_files(root, fn, recursive=True, follow_symlinks=False)
+
+    assert results == []
+    assert errors == []
+    assert summary.processed == 0
+
+
 def test_apply_to_files_skips_non_file_entries(tmp_path: Path) -> None:
     if not _supports_symlinks(tmp_path):
         pytest.skip("Symlinks not supported in this environment.")
@@ -353,6 +555,46 @@ def test_apply_to_files_skips_non_file_entries(tmp_path: Path) -> None:
     assert results == []
     assert errors == []
     assert summary.processed == 0  # broken symlink should not be treated as file
+
+
+def test_apply_to_files_skips_non_file_entries_without_platform_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    special = root / "special"
+
+    orig_glob = Path.glob
+    orig_is_dir = Path.is_dir
+    orig_is_file = Path.is_file
+
+    def fake_glob(self: Path, pattern: str) -> Iterable[Path]:
+        if self == root and pattern == "*":
+            return iter([special])
+        return orig_glob(self, pattern)
+
+    def fake_is_dir(self: Path) -> bool:
+        if self == special:
+            return False
+        return orig_is_dir(self)
+
+    def fake_is_file(self: Path) -> bool:
+        if self == special:
+            return False
+        return orig_is_file(self)
+
+    monkeypatch.setattr(Path, "glob", fake_glob)
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+    monkeypatch.setattr(Path, "is_file", fake_is_file)
+
+    def fn(_: Path) -> str:
+        return "OK"
+
+    results, summary, errors = common.apply_to_files(root, fn, recursive=False)
+
+    assert results == []
+    assert errors == []
+    assert summary.processed == 0
 
 
 def test_apply_to_files_relative_to_valueerror_falls_back_to_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -427,6 +669,10 @@ def test_get_valid_filename_strip_and_invalid_chars_and_reserved_name() -> None:
     assert out.upper().startswith("CON_")
     assert "<" not in out and ">" not in out and "|" not in out and ":" not in out
     assert out.endswith(".txt")
+
+
+def test_get_valid_filename_strip_false_preserves_leading_spaces() -> None:
+    assert common.get_valid_filename("  spaced", strip=False) == "  spaced"
 
 
 # -----------------------------------------------------------------------------

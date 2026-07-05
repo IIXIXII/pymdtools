@@ -33,7 +33,7 @@ def test_include_files_to_md_file_backup_created(tmp_path: Path, monkeypatch):
     f.write_text("<!-- include-file(x.md) -->", encoding="utf-8")
 
     import pymdtools.common as common
-    monkeypatch.setattr(common, "get_today", lambda: "2026-02-01")
+    monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     instruction.include_files_to_md_file(
         f,

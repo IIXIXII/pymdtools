@@ -62,5 +62,5 @@ def test_include_refs_to_md_file_unknown_key_can_be_ignored(tmp_path: Path):
 
     out = p.read_text(encoding="utf-8").lstrip("\ufeff")
     assert "X" in out   # unchanged
-    assert "YY" in out  # replaced
-    assert "Y" not in out
+    assert "<!-- begin-include(y) -->YY<!-- end-include -->" in out  # replaced
+    assert "<!-- begin-include(y) -->Y<!-- end-include -->" not in out

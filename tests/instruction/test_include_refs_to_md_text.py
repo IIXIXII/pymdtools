@@ -54,8 +54,8 @@ def test_include_unknown_key_ignored_keeps_block_and_continues():
     assert "<!-- end-include -->" in out
 
     # y block replaced
-    assert "YY" in out
-    assert "Y" not in out  # original inner content removed
+    assert "<!-- begin-include(y) -->YY<!-- end-include -->" in out
+    assert "<!-- begin-include(y) -->Y<!-- end-include -->" not in out
 
 
 def test_include_missing_end_raises():

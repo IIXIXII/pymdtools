@@ -3,6 +3,23 @@
 # =============================================================================
 #                    Author: Florent TOURNOIS | License: MIT                   
 # =============================================================================
+"""
+Markdown instruction helpers.
+
+This module implements the comment-based directives used by ``pymdtools`` to
+assemble Markdown documents:
+
+- reference blocks, declared with ``begin-ref`` / ``end-ref`` and inserted with
+  ``begin-include`` / ``end-include``;
+- variable declarations, declared with ``var(NAME)="value"`` and inserted with
+  ``begin-var`` / ``end-var``;
+- ``include-file`` directives that inline external text files;
+- level-1 Markdown title extraction and rewriting.
+
+The functions operate either on text strings or on Markdown files. File-oriented
+helpers delegate path validation, encoding detection, backup creation, and
+content writes to :mod:`pymdtools.common`.
+"""
 
 from __future__ import annotations
 
@@ -17,6 +34,7 @@ import re
 from pathlib import Path
 
 from typing import (
+    Any,
     Final,
     Dict,
     Iterable,
@@ -34,6 +52,7 @@ from . import common
 
 TitleStyle          = Literal["preserve", "setext", "atx"]
 IncludeRenderMode   = Literal["box", "raw"]
+RegexInput          = Union[str, Pattern[str]]
 
 
 # -----------------------------------------------------------------------------
@@ -129,8 +148,8 @@ _VAR_RE: Final[re.Pattern[str]] = re.compile(
         (?P<name>[A-Za-z0-9:_-]+(?:/[A-Za-z0-9:_-]+)*)
     \)\s*=\s*
         (?P<quote>['"])
-        (?P<string>(?:\\.|(?!\1).)*)
-        \1
+        (?P<string>(?:\\.|(?!(?P=quote)).)*)
+        (?P=quote)
     \s*-->
     """,
     re.VERBOSE,
@@ -215,7 +234,7 @@ _SETEXT_H1_RE: Final[re.Pattern[str]] = re.compile(
 
 _ATX_H1_RE: Final[re.Pattern[str]] = re.compile(
     r"""(?mx)
-    ^[ \t]*\#[ \t]+(?P<title>[^\r\n#]+?)[ \t]*\#*[ \t]*\r?\n?
+    ^[ \t]*\#[ \t]+(?P<title>[^\r\n#]*?[^\s#])[ \t]*\#*[ \t]*(?:\r?\n|$)
     """
 )
 
@@ -237,6 +256,62 @@ _BEGIN_VAR_RE: Final[re.Pattern[str]] = re.compile(
 _END_VAR_RE: Final[re.Pattern[str]] = re.compile(
     r"<!--\s*end-var\s*-->",
 )
+
+
+# -----------------------------------------------------------------------------
+def _normalize_read_encoding(encoding: Optional[str]) -> Optional[str]:
+    """
+    Convert the legacy ``"UNKNOWN"`` sentinel to the current common API.
+
+    ``common.get_file_content`` now uses ``encoding=None`` to request automatic
+    encoding detection.
+    """
+    if encoding is None:
+        return None
+    if encoding.upper() == "UNKNOWN":
+        return None
+    return encoding
+
+
+# -----------------------------------------------------------------------------
+def _read_md_text(path: common.PathInput, encoding: Optional[str] = None) -> str:
+    """Read text through ``common`` while accepting the legacy encoding sentinel."""
+    return common.get_file_content(path, encoding=_normalize_read_encoding(encoding))
+
+
+# -----------------------------------------------------------------------------
+def _create_backup(path: common.PathInput, backup_ext: str) -> Path:
+    """Create a backup using the current ``common.create_backup`` signature."""
+    return common.create_backup(path, ext=backup_ext, date_prefix=common.today_utc())
+
+
+# -----------------------------------------------------------------------------
+def _require_str(value: object, name: str) -> str:
+    """Return ``value`` as ``str`` or raise a stable runtime error."""
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a string")
+    return value
+
+
+# -----------------------------------------------------------------------------
+def _all_str(*values: object) -> bool:
+    """Return whether all values are strings."""
+    return all(isinstance(value, str) for value in values)
+
+
+# -----------------------------------------------------------------------------
+def _is_non_empty_str(value: object, *, strip: bool = False) -> bool:
+    """Return whether ``value`` is a non-empty string."""
+    if not isinstance(value, str):
+        return False
+    candidate = value.strip() if strip else value
+    return bool(candidate)
+
+
+# -----------------------------------------------------------------------------
+def _compile_pattern(pattern: RegexInput) -> Pattern[str]:
+    """Return a compiled regex pattern."""
+    return re.compile(pattern) if isinstance(pattern, str) else pattern
 
 
 # -----------------------------------------------------------------------------
@@ -305,7 +380,7 @@ def get_refs_from_md_text(
 
 # -----------------------------------------------------------------------------
 def get_refs_from_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     filename_ext: str = ".md",
     previous_refs: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
@@ -330,14 +405,14 @@ def get_refs_from_md_file(
         ValueError: propagated from `get_refs_from_md_text` for malformed refs.
     """
     checked = common.check_file(str(filename), filename_ext)
-    text = common.get_file_content(checked, encoding="UNKNOWN")
+    text = _read_md_text(checked)
     return get_refs_from_md_text(text, previous_refs=previous_refs)
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 def get_refs_from_md_directory(
-    folder: Union[str, Path],
+    folder: common.PathInput,
     filename_ext: str = ".md",
     previous_refs: Optional[Dict[str, str]] = None,
     depth: int = -1,
@@ -409,7 +484,7 @@ def get_refs_from_md_directory(
 
 # -----------------------------------------------------------------------------
 def get_refs_from_search_folders(
-    search_folders: Iterable[Union[str, Path]],
+    search_folders: Iterable[common.PathInput],
     *,
     refs: Optional[Dict[str, str]] = None,
     filename_ext: str = ".md",
@@ -443,7 +518,7 @@ def get_refs_from_search_folders(
 
 # -----------------------------------------------------------------------------
 def get_refs_around_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     filename_ext: str = ".md",
     previous_refs: Optional[Dict[str, str]] = None,
     depth_up: int = 1,
@@ -526,8 +601,7 @@ def refs_in_md_text(text: str) -> List[str]:
         A list of include reference names (strings).
         Example: ["header", "footer"]
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
+    text = _require_str(text, "text")
 
     return _BEGIN_INCLUDE_RE.findall(text)
 # -----------------------------------------------------------------------------
@@ -537,8 +611,8 @@ def refs_in_md_text(text: str) -> List[str]:
 def include_refs_to_md_text(
     text: str,
     refs_include: Mapping[str, str],
-    begin_include_re=_BEGIN_INCLUDE_RE,
-    end_include_re=_END_INCLUDE_RE,
+    begin_include_re: RegexInput = _BEGIN_INCLUDE_RE,
+    end_include_re: RegexInput = _END_INCLUDE_RE,
     error_if_no_key: bool = True,
 ) -> str:
     """
@@ -576,11 +650,12 @@ def include_refs_to_md_text(
         KeyError: If an include key is missing and `error_if_no_key=True`.
         ValueError: If an end marker is missing.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
+    text = _require_str(text, "text")
+    begin_pattern = _compile_pattern(begin_include_re)
+    end_pattern = _compile_pattern(end_include_re)
 
     # search begin
-    match_begin = re.search(begin_include_re, text)
+    match_begin = begin_pattern.search(text)
     if not match_begin:
         return text
 
@@ -589,7 +664,7 @@ def include_refs_to_md_text(
 
     # Find end marker in the remaining text
     last_part = text[match_begin.end(0):]
-    match_end = re.search(end_include_re, last_part)
+    match_end = end_pattern.search(last_part)
     if not match_end:
         raise ValueError(f"begin-include({key}) without end-include")
 
@@ -606,8 +681,8 @@ def include_refs_to_md_text(
             + include_refs_to_md_text(
                 last_part[match_end.end(0):],
                 refs_include,
-                begin_include_re=begin_include_re,
-                end_include_re=end_include_re,
+                begin_include_re=begin_pattern,
+                end_include_re=end_pattern,
                 error_if_no_key=error_if_no_key,
             )
         )
@@ -620,8 +695,8 @@ def include_refs_to_md_text(
     result += include_refs_to_md_text(
         last_part[match_end.end(0):],
         refs_include,
-        begin_include_re=begin_include_re,
-        end_include_re=end_include_re,
+        begin_include_re=begin_pattern,
+        end_include_re=end_pattern,
         error_if_no_key=error_if_no_key,
     )
     return result
@@ -630,16 +705,16 @@ def include_refs_to_md_text(
 
 # -----------------------------------------------------------------------------
 def include_refs_to_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     refs: Mapping[str, str],
     *,
     backup_option: bool = True,
     backup_ext: str = ".bak",
     filename_ext: str = ".md",
-    begin_include_re: Union[str, Pattern[str]] = _BEGIN_INCLUDE_RE,
-    end_include_re: Union[str, Pattern[str]] = _END_INCLUDE_RE,
+    begin_include_re: RegexInput = _BEGIN_INCLUDE_RE,
+    end_include_re: RegexInput = _END_INCLUDE_RE,
     error_if_no_key: bool = True,
-    read_encoding: str = "UNKNOWN",
+    read_encoding: Optional[str] = None,
     write_encoding: str = "utf-8",
 ) -> str:
     """
@@ -657,7 +732,7 @@ def include_refs_to_md_file(
         begin_include_re: Regex for begin marker (string or compiled, must capture 'name').
         end_include_re: Regex for end marker (string or compiled).
         error_if_no_key: Raise if an include name is unknown.
-        read_encoding: Encoding used for reading ("UNKNOWN" may trigger auto-detection in `common`).
+        read_encoding: Encoding used for reading. ``None`` triggers auto-detection.
         write_encoding: Encoding used for writing.
 
     Returns:
@@ -669,10 +744,10 @@ def include_refs_to_md_file(
     """
     checked = common.check_file(str(filename), filename_ext)
 
-    text = common.get_file_content(checked, encoding=read_encoding)
+    text = _read_md_text(checked, read_encoding)
 
     if backup_option:
-        common.create_backup(checked, backup_ext=backup_ext)
+        _create_backup(checked, backup_ext)
 
     new_text = include_refs_to_md_text(
         text,
@@ -683,13 +758,13 @@ def include_refs_to_md_file(
     )
 
     common.set_file_content(checked, new_text, encoding=write_encoding)
-    return checked
+    return str(checked)
 # -----------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------
 def search_include_refs_to_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     *,
     backup_option: bool = True,
     backup_ext: str = ".bak",
@@ -790,8 +865,7 @@ def get_vars_from_md_text(
         TypeError: If `text` is not a string.
         ValueError: If a variable name is declared twice.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
+    text = _require_str(text, "text")
 
     vars_: Dict[str, str] = dict(previous_vars) if previous_vars else {}
 
@@ -846,9 +920,8 @@ def set_var_to_md_text(text: str, var_name: str, value: str) -> str:
         TypeError: If inputs are not strings.
         ValueError: If var_name is invalid.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
-    if not isinstance(var_name, str) or not isinstance(value, str):
+    text = _require_str(text, "text")
+    if not _all_str(var_name, value):
         raise TypeError("var_name and value must be strings")
     if not _VAR_NAME_RE.match(var_name):
         raise ValueError(f"invalid var name: {var_name!r}")
@@ -913,9 +986,8 @@ def del_var_to_md_text(text: str, var_name: str) -> str:
         TypeError: If inputs are not strings.
         ValueError: If var_name is invalid.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
-    if not isinstance(var_name, str):
+    text = _require_str(text, "text")
+    if not _all_str(var_name):
         raise TypeError("var_name must be a string")
     if not _VAR_NAME_RE.match(var_name):
         raise ValueError(f"invalid var name: {var_name!r}")
@@ -949,12 +1021,8 @@ def get_title_from_md_text(
     """
     Extract the first level-1 Markdown title from text.
 
-    Supported syntaxes:
-      - Setext H1:
-            Title
-            =====
-      - ATX H1:
-            # Title
+    Supported syntaxes are Setext H1 (``Title`` followed by ``=====``) and
+    ATX H1 (``# Title``).
 
     Comments of the form <!-- ... --> are stripped before searching.
 
@@ -969,8 +1037,7 @@ def get_title_from_md_text(
     Raises:
         TypeError: If text is not a string.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
+    text = _require_str(text, "text")
 
     local_text = strip_xml_comment(text)
 
@@ -997,12 +1064,8 @@ def set_title_in_md_text(
     """
     Set or insert the first level-1 Markdown title in `text`.
 
-    Supported syntaxes:
-      - Setext H1:
-            Title
-            =====
-      - ATX H1:
-            # Title
+    Supported syntaxes are Setext H1 (``Title`` followed by ``=====``) and
+    ATX H1 (``# Title``).
 
     Behavior:
       - If an H1 title exists, it is replaced according to `style`:
@@ -1030,9 +1093,8 @@ def set_title_in_md_text(
         TypeError: If inputs are not strings.
         ValueError: If `new_title` is blank or `style` is invalid.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
-    if not isinstance(new_title, str):
+    text = _require_str(text, "text")
+    if not _all_str(new_title):
         raise TypeError("new_title must be a string")
 
     title = new_title.strip()
@@ -1089,11 +1151,11 @@ def set_title_in_md_text(
 
 # -----------------------------------------------------------------------------
 def get_vars_from_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     *,
     filename_ext: str = ".md",
     previous_vars: Optional[Dict[str, str]] = None,
-    encoding: str = "UNKNOWN",
+    encoding: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Extract var(...) directives from a markdown file.
@@ -1105,7 +1167,7 @@ def get_vars_from_md_file(
         filename: Path to the markdown file.
         filename_ext: Expected file extension.
         previous_vars: Optional existing mapping to extend.
-        encoding: Encoding to use for reading ("UNKNOWN" may trigger auto-detection).
+        encoding: Encoding to use for reading. ``None`` triggers auto-detection.
 
     Returns:
         A dict mapping variable names to interpreted values.
@@ -1117,7 +1179,7 @@ def get_vars_from_md_file(
     logging.debug("Find vars in the MD file %s", filename)
     checked = common.check_file(str(filename), filename_ext)
 
-    text = common.get_file_content(checked, encoding=encoding)
+    text = _read_md_text(checked, encoding)
     return get_vars_from_md_text(text, previous_vars=previous_vars)
 # -----------------------------------------------------------------------------
 
@@ -1127,10 +1189,31 @@ def include_vars_to_md_text(
     text: str,
     vars_include: Mapping[str, str],
     *,
-    begin_var_re: Union[str, Pattern[str]] = _BEGIN_VAR_RE,
-    end_var_re: Union[str, Pattern[str]] = _END_VAR_RE,
+    begin_var_re: RegexInput = _BEGIN_VAR_RE,
+    end_var_re: RegexInput = _END_VAR_RE,
     error_if_var_not_found: bool = True,
 ) -> str:
+    """
+    Insert variable values into begin-var/end-var blocks in markdown text.
+
+    This is a thin wrapper around :func:`include_refs_to_md_text` configured
+    with the variable block markers:
+
+    - ``<!-- begin-var(NAME) -->``
+    - ``<!-- end-var -->``
+
+    Args:
+        text: Markdown text to process.
+        vars_include: Mapping of variable names to replacement content.
+        begin_var_re: Regex matching the opening variable marker. It must expose
+            a named group ``name``.
+        end_var_re: Regex matching the closing variable marker.
+        error_if_var_not_found: If True, raise ``KeyError`` when a block refers
+            to a missing variable. If False, leave that block unchanged.
+
+    Returns:
+        Markdown text with matching variable blocks updated.
+    """
     return include_refs_to_md_text(
         text,
         vars_include,
@@ -1143,16 +1226,16 @@ def include_vars_to_md_text(
 
 # -----------------------------------------------------------------------------
 def include_vars_to_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     vars_include: Mapping[str, str],
     *,
     backup_option: bool = True,
     backup_ext: str = ".bak",
     filename_ext: str = ".md",
-    begin_var_re: Union[str, Pattern[str]] = _BEGIN_VAR_RE,
-    end_var_re: Union[str, Pattern[str]] = _END_VAR_RE,
+    begin_var_re: RegexInput = _BEGIN_VAR_RE,
+    end_var_re: RegexInput = _END_VAR_RE,
     error_if_var_not_found: bool = True,
-    read_encoding: str = "UNKNOWN",
+    read_encoding: Optional[str] = None,
     write_encoding: str = "utf-8",
 ) -> str:
     """
@@ -1169,7 +1252,7 @@ def include_vars_to_md_file(
         begin_var_re: Regex for begin-var marker (must capture group 'name').
         end_var_re: Regex for end-var marker.
         error_if_var_not_found: Raise if a referenced var is missing.
-        read_encoding: Encoding used to read the file ("UNKNOWN" may trigger auto-detection).
+        read_encoding: Encoding used to read the file. ``None`` triggers auto-detection.
         write_encoding: Encoding used to write the file.
 
     Returns:
@@ -1192,12 +1275,12 @@ def include_vars_to_md_file(
 
 # -----------------------------------------------------------------------------
 def get_vars_from_md_directory(
-    folder: Union[str, Path],
+    folder: common.PathInput,
     *,
     filename_ext: str = ".md",
     previous_vars: Optional[Dict[str, str]] = None,
     depth: int = -1,
-    encoding: str = "UNKNOWN",
+    encoding: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Find var(...) declarations in markdown files in `folder` and (optionally) its subfolders.
@@ -1212,7 +1295,7 @@ def get_vars_from_md_directory(
         filename_ext: Markdown file extension to consider.
         previous_vars: Existing mapping to extend.
         depth: Recursion depth.
-        encoding: Encoding for reading files ("UNKNOWN" may trigger auto-detection).
+        encoding: Encoding for reading files. ``None`` triggers auto-detection.
 
     Returns:
         A dict of var name -> interpreted value.
@@ -1258,13 +1341,13 @@ def get_vars_from_md_directory(
 
 # -----------------------------------------------------------------------------
 def get_vars_around_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     *,
     filename_ext: str = ".md",
     previous_vars: Optional[Dict[str, str]] = None,
     depth_up: int = 1,
     depth_down: int = -1,
-    encoding: str = "UNKNOWN",
+    encoding: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Discover var(...) declarations around a markdown file by scanning nearby directories.
@@ -1278,7 +1361,7 @@ def get_vars_around_md_file(
         previous_vars: Existing mapping to extend.
         depth_up: Number of parent levels to move up (>= 0).
         depth_down: Downward recursion depth (-1 unlimited, 0 current dir only, >0 limited).
-        encoding: Encoding used to read markdown files ("UNKNOWN" may trigger auto-detection).
+        encoding: Encoding used to read markdown files. ``None`` triggers auto-detection.
 
     Returns:
         A dict of var name -> interpreted value.
@@ -1320,14 +1403,14 @@ def get_vars_around_md_file(
 
 # -----------------------------------------------------------------------------
 def search_include_vars_to_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     *,
     backup_option: bool = True,
     backup_ext: str = ".bak",
     filename_ext: str = ".md",
     depth_up: int = 1,
     depth_down: int = -1,
-    encoding: str = "UNKNOWN",
+    encoding: Optional[str] = None,
 ) -> str:
     """
     Search vars around `filename` and apply begin-var/end-var substitutions in-place.
@@ -1354,8 +1437,8 @@ def search_include_vars_to_md_text(
     text: str,
     *,
     error_if_var_not_found: bool = True,
-    begin_var_re: Union[str, Pattern[str]] = _BEGIN_VAR_RE,
-    end_var_re: Union[str, Pattern[str]] = _END_VAR_RE,
+    begin_var_re: RegexInput = _BEGIN_VAR_RE,
+    end_var_re: RegexInput = _END_VAR_RE,
 ) -> str:
     """
     Extract var(...) declarations from `text` and apply begin-var/end-var substitutions.
@@ -1385,18 +1468,18 @@ def search_include_vars_to_md_text(
 
 # -----------------------------------------------------------------------------
 def get_file_content_to_include(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     *,
-    search_folders: Optional[Iterable[Union[str, Path]]] = None,
+    search_folders: Optional[Iterable[common.PathInput]] = None,
     include_cwd: bool = True,
     relative_paths: Sequence[str] = (".", "referenced_files"),
     nb_up_path: int = 1,
-    encoding: str = "UNKNOWN",
+    encoding: Optional[str] = None,
 ) -> str:
     """
     Retrieve the content of a referenced file to include.
 
-    The function searches `filename` using `common.search_for_file` starting from:
+    The function searches `filename` using `common.find_file` starting from:
       - the directory containing this module,
       - optionally the current working directory,
       - and any additional folders provided via `search_folders`.
@@ -1410,7 +1493,7 @@ def get_file_content_to_include(
         include_cwd: Whether to include the current working directory as a start point.
         relative_paths: Relative subpaths to probe under each start point.
         nb_up_path: Number of parent levels to traverse during the search.
-        encoding: Encoding for reading ("UNKNOWN" may trigger auto-detection).
+        encoding: Encoding for reading. ``None`` triggers auto-detection.
 
     Returns:
         File content as text.
@@ -1422,7 +1505,12 @@ def get_file_content_to_include(
 
     # Optional hardening: forbid path traversal in the requested "filename"
     # (keep it conservative: you can relax if you intentionally support subpaths)
-    if os.path.isabs(requested) or ".." in Path(requested).parts:
+    if (
+        os.path.isabs(requested)
+        or Path(requested).is_absolute()
+        or requested.startswith(("/", "\\"))
+        or ".." in Path(requested).parts
+    ):
         raise ValueError(f"invalid referenced filename: {requested!r}")
 
     module_dir = str(Path(common.get_this_filename()).resolve().parent)
@@ -1439,15 +1527,15 @@ def get_file_content_to_include(
         requested, start_points, list(relative_paths), nb_up_path
     )
 
-    found = common.search_for_file(
+    found = common.find_file(
         requested,
         start_points,
         list(relative_paths),
-        nb_up_path=nb_up_path,
+        max_up=nb_up_path,
     )
 
     logging.debug("Include-file resolved: %r -> %r", requested, found)
-    return common.get_file_content(found, encoding=encoding)
+    return _read_md_text(found, encoding)
 # -----------------------------------------------------------------------------
 
 
@@ -1455,10 +1543,10 @@ def get_file_content_to_include(
 def include_files_to_md_text(
     text: str,
     *,
-    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    include_file_re: RegexInput = _INCLUDE_FILE_RE,
     error_if_no_file: bool = True,
     render_mode: IncludeRenderMode = "box",
-    **kwargs,
+    **kwargs: Any,
 ) -> str:
     """
     Replace include-file directives with the content of referenced files.
@@ -1476,7 +1564,7 @@ def include_files_to_md_text(
     Returns:
         Updated markdown text.
     """
-    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+    pattern = _compile_pattern(include_file_re)
 
     result_parts: list[str] = []
     pos = 0
@@ -1528,16 +1616,16 @@ def include_files_to_md_text(
 
 # -----------------------------------------------------------------------------
 def include_files_to_md_file(
-    filename: Union[str, Path],
+    filename: common.PathInput,
     *,
     backup_option: bool = True,
     backup_ext: str = ".bak",
     filename_ext: str = ".md",
-    read_encoding: str = "UNKNOWN",
+    read_encoding: Optional[str] = None,
     write_encoding: str = "utf-8",
     error_if_no_file: bool = True,
-    render_mode: str = "box",
-    **kwargs,
+    render_mode: IncludeRenderMode = "box",
+    **kwargs: Any,
 ) -> str:
     """
     Apply include-file substitutions to a markdown file in-place.
@@ -1547,7 +1635,7 @@ def include_files_to_md_file(
         backup_option: Create a backup before writing.
         backup_ext: Backup extension.
         filename_ext: Expected markdown extension.
-        read_encoding: Encoding to read ("UNKNOWN" may trigger auto-detection).
+        read_encoding: Encoding to read. ``None`` triggers auto-detection.
         write_encoding: Encoding used to write.
         error_if_no_file: If False, keep unresolved directives unchanged.
         render_mode: Forwarded to include_files_to_md_text (e.g. "box" or "raw").
@@ -1559,10 +1647,10 @@ def include_files_to_md_file(
     logging.debug("Include file to the file %s", filename)
     checked = common.check_file(str(filename), filename_ext)
 
-    text = common.get_file_content(checked, encoding=read_encoding)
+    text = _read_md_text(checked, read_encoding)
 
     if backup_option:
-        common.create_backup(checked, backup_ext=backup_ext)
+        _create_backup(checked, backup_ext)
 
     text = include_files_to_md_text(
         text,
@@ -1572,7 +1660,7 @@ def include_files_to_md_file(
     )
 
     common.set_file_content(checked, text, encoding=write_encoding)
-    return checked
+    return str(checked)
 # -----------------------------------------------------------------------------
 
 
@@ -1581,7 +1669,7 @@ def ensure_include_file_in_md_text(
     text: str,
     filename: str,
     *,
-    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    include_file_re: RegexInput = _INCLUDE_FILE_RE,
 ) -> str:
     """
     Ensure that an `include-file(filename)` directive exists in the markdown text.
@@ -1597,14 +1685,13 @@ def ensure_include_file_in_md_text(
     Returns:
         Updated markdown text.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
-    if not isinstance(filename, str) or not filename.strip():
+    text = _require_str(text, "text")
+    if not _is_non_empty_str(filename, strip=True):
         raise ValueError("filename must be a non-empty string")
 
     # Normalize newlines (optional but helps determinism)
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+    pattern = _compile_pattern(include_file_re)
 
     # If already present, return as-is
     for m in pattern.finditer(normalized):
@@ -1644,7 +1731,7 @@ def ensure_include_file_in_md_text(
 def get_include_file_list(
     text: str,
     *,
-    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    include_file_re: RegexInput = _INCLUDE_FILE_RE,
     unique: bool = False,
 ) -> list[str]:
     """
@@ -1658,7 +1745,7 @@ def get_include_file_list(
     Returns:
         A list of referenced filenames, in appearance order.
     """
-    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+    pattern = _compile_pattern(include_file_re)
 
     names = [m.group("name") for m in pattern.finditer(text)]
 
@@ -1680,7 +1767,7 @@ def del_include_file_to_md_text(
     text: str,
     filename: str,
     *,
-    include_file_re: Union[str, Pattern[str]] = _INCLUDE_FILE_RE,
+    include_file_re: RegexInput = _INCLUDE_FILE_RE,
     first_only: bool = False,
 ) -> str:
     """
@@ -1695,12 +1782,11 @@ def del_include_file_to_md_text(
     Returns:
         Updated markdown text.
     """
-    if not isinstance(text, str):
-        raise TypeError("text must be a string")
-    if not isinstance(filename, str) or not filename:
+    text = _require_str(text, "text")
+    if not _is_non_empty_str(filename):
         raise ValueError("filename must be a non-empty string")
 
-    pattern = re.compile(include_file_re) if isinstance(include_file_re, str) else include_file_re
+    pattern = _compile_pattern(include_file_re)
 
     out_parts: list[str] = []
     pos = 0

@@ -1,16 +1,15 @@
 pymdtools's documentation
-=====================
+=========================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    readme_link
+   common
+   filetools
+   instruction
    license_link
-   api/library_root
-   api/class_view_hierarchy
-   api/file_view_hierarchy
-   api/unabridged_api
 
 Indices and tables
 ==================
