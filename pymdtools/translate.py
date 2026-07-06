@@ -1,266 +1,325 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =============================================================================
-#                    Author: Florent TOURNOIS | License: MIT                   
+#                    Author: Florent TOURNOIS | License: MIT
 # =============================================================================
+"""
+Translate plain text and Markdown with the MyMemory web API.
 
-"""All functions about translation.
+The module exposes two public helpers:
+
+- :func:`translate_txt` translates plain text;
+- :func:`translate_md` translates Markdown while keeping the Markdown structure.
+
+MyMemory translates short segments through its REST ``/get`` endpoint. The API
+requires a ``q`` text parameter and a ``langpair`` parameter formatted as
+``source|destination``. A contact email can be sent with the ``de`` parameter to
+raise the daily free quota.
+
+References:
+    https://mymemory.translated.net/doc/spec.php
+    https://mymemory.translated.net/doc/usagelimits.php
 """
 
+from __future__ import annotations
+
+import json
 import logging
-import sys
-import os
-import gettext
+from collections.abc import Mapping
+from typing import Any, cast
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
-# from googletrans import Translator as GTranslator
-# from goslate import Goslate as GoTranslator
-from translate import Translator
-import upref
+from mistune.core import BlockState
 
-from . import common
 from . import mistune_integration as mistune
 
 
-# -----------------------------------------------------------------------------
-# function of the module
-# -----------------------------------------------------------------------------
-__all__ = ["N_", "translate", "translate_txt", "translate_md"]
+__all__ = ["translate_md", "translate_txt"]
+
+_MYMEMORY_ENDPOINT = "https://api.mymemory.translated.net/get"
+_MYMEMORY_MAX_QUERY_BYTES = 500
+_DEFAULT_TIMEOUT = 10.0
 
 
 # -----------------------------------------------------------------------------
-# Neutral translation
-#
-# @param message the message to translate
-# @return the message
-# -----------------------------------------------------------------------------
-def N_(message):
-    return message
+def _utf8_len(text: str) -> int:
+    """
+    Return the UTF-8 byte length of a string.
 
-# -----------------------------------------------------------------------------
-# get the locale dir
-# Search for the french translation to find the folder
-#
-# @return the locale directory
-# -----------------------------------------------------------------------------
-@common.static(__folder__=None)
-def get_localedir(domain_name=None, folder=None):
-    if get_localedir.__folder__ is None:
-        search_folder = [__get_this_folder()]
-        if folder is not None:
-            search_folder.append(folder)
-        search_path = ["locale/fr/LC_MESSAGES", "fr/LC_MESSAGES"]
-        if domain_name is None:
-            logging.error('Need a domain name to find the translation')
-            raise RuntimeError('Need a domain name to find the translation')
+    Args:
+        text: Text to measure.
 
-        the_file = common.search_for_file(domain_name + '.mo',
-                                          start_points=search_folder,
-                                          relative_paths=search_path,
-                                          nb_up_path=3)
-        the_folder = os.path.split(the_file)[0]
-
-        # go two folder up
-        the_folder = os.path.split(the_folder)[0]
-        the_folder = os.path.split(the_folder)[0]
-
-        get_localedir.__folder__ = the_folder
-
-    return get_localedir.__folder__
+    Returns:
+        Number of bytes used by the UTF-8 representation.
+    """
+    return len(text.encode("utf-8"))
 
 
 # -----------------------------------------------------------------------------
-# gettext translation object for a language
-#
-# @param lang the language
-# @return the translation object
-# -----------------------------------------------------------------------------
-@common.static(__trans__=None)
-def get_translation(lang, domain_name, folder=None):
-    if get_translation.__trans__ is None:
-        get_translation.__trans__ = {}
+def _split_oversized_word(word: str, max_bytes: int) -> list[str]:
+    """
+    Split one word into chunks accepted by MyMemory.
 
-    if domain_name not in get_translation.__trans__:
-        get_translation.__trans__[domain_name] = {}
+    Args:
+        word: Word that may exceed ``max_bytes`` once UTF-8 encoded.
+        max_bytes: Maximum UTF-8 byte length per chunk.
 
-    if lang in get_translation.__trans__[domain_name]:
-        return get_translation.__trans__[domain_name][lang]
-
-    trans = gettext.translation(domain_name,
-                                languages=[lang],
-                                localedir=get_localedir(domain_name, folder))
-    get_translation.__trans__[domain_name][lang] = trans
-
-    return trans
-
-# -----------------------------------------------------------------------------
-# translation function
-#
-# @param obj the object to translate
-# @param lang the language
-# @param domain_name the domain
-# @return the object translated
-# -----------------------------------------------------------------------------
-def translate(obj, lang, domain_name):
-    if isinstance(obj, dict):
-        return translate_dict(obj, lang, domain_name)
-    if isinstance(obj, list):
-        return translate_list(obj, lang, domain_name)
-    return translate_str(obj, lang, domain_name)
+    Returns:
+        Chunks whose UTF-8 byte length is at most ``max_bytes``.
+    """
+    chunks: list[str] = []
+    current = ""
+    for char in word:
+        candidate = current + char
+        if current and _utf8_len(candidate) > max_bytes:
+            chunks.append(current)
+            current = char
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+    return chunks
 
 
 # -----------------------------------------------------------------------------
-# translation function
-#
-# @param message the message to translate
-# @param lang the language
-# @param domain_name the domain
-# @return the message translated
-# -----------------------------------------------------------------------------
-def translate_str(message, lang, domain_name):
-    lang_translation = get_translation(lang, domain_name)
-    lang_translation.install()
-    return lang_translation.gettext(message)
+def _split_text_for_mymemory(text: str, max_bytes: int = _MYMEMORY_MAX_QUERY_BYTES) -> list[str]:
+    """
+    Split text into UTF-8 chunks compatible with MyMemory.
+
+    The function keeps whitespace in the emitted chunks so joining translated
+    chunks does not silently remove source spacing.
+
+    Args:
+        text: Source text to split.
+        max_bytes: Maximum UTF-8 byte length per chunk.
+
+    Returns:
+        Ordered chunks to send to MyMemory.
+
+    Raises:
+        ValueError: If ``max_bytes`` is smaller than one byte.
+    """
+    if max_bytes < 1:
+        raise ValueError("max_bytes must be greater than zero")
+    if text == "":
+        return []
+
+    chunks: list[str] = []
+    current = ""
+
+    for word in text.split(" "):
+        part = word if current == "" else f" {word}"
+        if _utf8_len(part) > max_bytes:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.extend(_split_oversized_word(part, max_bytes))
+            continue
+
+        candidate = current + part
+        if current and _utf8_len(candidate) > max_bytes:
+            chunks.append(current)
+            current = word
+        else:
+            current = candidate
+
+    if current:
+        chunks.append(current)
+    return chunks
 
 
 # -----------------------------------------------------------------------------
-# translation function
-#
-# @param obj the object to translate
-# @param lang the language
-# @param domain_name the domain
-# @return the message translated
-# -----------------------------------------------------------------------------
-def translate_dict(obj, lang, domain_name):
-    result = {}
-    for key in obj:
-        result[key] = translate(obj[key], lang, domain_name)
-    return result
+def _build_mymemory_url(
+    text: str,
+    src: str,
+    dest: str,
+    *,
+    email: str | None,
+    api_key: str | None,
+) -> str:
+    """
+    Build a MyMemory ``/get`` request URL.
 
+    Args:
+        text: Source text segment.
+        src: Source language code.
+        dest: Destination language code.
+        email: Optional contact email sent as ``de``.
+        api_key: Optional MyMemory private key.
 
-# -----------------------------------------------------------------------------
-# translation function
-#
-# @param obj the object to translate
-# @param lang the language
-# @param domain_name the domain
-# @return the message translated
-# -----------------------------------------------------------------------------
-def translate_list(obj, lang, domain_name):
-    result = []
-    for key in obj:
-        result.append(translate(key, lang, domain_name))
-    return result
-
-# -----------------------------------------------------------------------------
-# The european language list to manage
-#
-# @return the language list
-# -----------------------------------------------------------------------------
-def eu_lang_list():
-    return [
-        'bg', 'cs', 'da', 'de', 'et', 'el', 'en', 'es', 'fr', 'ga', 'hr',
-        'it', 'lv', 'lt', 'hu', 'mt', 'nl', 'pl', 'pt', 'ro', 'sk', 'sl',
-        'fi', 'sv', 'tr', 'ru',
-    ]
-
-# -----------------------------------------------------------------------------
-# Translation parameters
-#
-# @return the parameter
-# -----------------------------------------------------------------------------
-def _translation_parameter():
-    data_conf = {
-        'provider': {
-            'label': "Provider for the translation",
-            'description': "There is two provider : microsoft or mymemory",
-            'value': 'mymemory',
-        },
-        'secret_access_key': {
-            'label': "Secret key ",
-            'description': "Secrect key to access the service",
-            'value': '',
-        },
+    Returns:
+        Fully encoded MyMemory URL.
+    """
+    parameters = {
+        "q": text,
+        "langpair": f"{src}|{dest}",
     }
-    parameter = upref.get_pref(data_conf, name="translation")
-
-    secret_key = parameter['secret_access_key']
-    if secret_key is None or len(secret_key) < 1:
-        del parameter['secret_access_key']
-
-    parameter['provider'] = parameter['provider'].lower()
-
-    return parameter
-
-# -----------------------------------------------------------------------------
-# Translate a phrase with google
-#
-# @param text the text to translate
-# @param src the source language
-# @param dest the destination language
-# -----------------------------------------------------------------------------
-def translate_txt(text, src="fr", dest="en"):
-    if text and not text.isspace():
-        # option 1
-        # trans = GTranslator()
-        # result_trans = trans.translate(text, src=src, dest=dest)
-        # return result_trans.text
-
-        # option 2
-        # trans = GoTranslator()
-        # result_trans = trans.translate(text, dest, source_language=src)
-        # return result_trans
-
-        translator = Translator(from_lang=src, to_lang=dest,
-                                **_translation_parameter())
-        try:
-            return translator.translate(text)
-        except BaseException as err:
-            logging.error("Error in translation '%s' for '%s'", text, err)
-            return ""
-
-    return text
+    if email:
+        parameters["de"] = email
+    if api_key:
+        parameters["key"] = api_key
+    return f"{_MYMEMORY_ENDPOINT}?{urlencode(parameters)}"
 
 
 # -----------------------------------------------------------------------------
-# Translate a markdown with google
-#
-# @param md_text the md text to translate
-# @param src the source language
-# @param dest the destination language
+def _extract_mymemory_translation(payload: Mapping[str, Any]) -> str:
+    """
+    Extract translated text from a MyMemory JSON payload.
+
+    Args:
+        payload: Decoded MyMemory response.
+
+    Returns:
+        Translated text.
+
+    Raises:
+        RuntimeError: If MyMemory reports an error or the response shape is
+            incomplete.
+    """
+    status = payload.get("responseStatus")
+    if isinstance(status, int) and status >= 400:
+        detail = payload.get("responseDetails", "unknown MyMemory error")
+        raise RuntimeError(str(detail))
+
+    response_data_obj = payload.get("responseData")
+    if not isinstance(response_data_obj, Mapping):
+        raise RuntimeError("Missing MyMemory responseData")
+    response_data = cast(Mapping[str, object], response_data_obj)
+
+    translated_text = response_data.get("translatedText")
+    if not isinstance(translated_text, str):
+        raise RuntimeError("Missing MyMemory translatedText")
+    return translated_text
+
+
 # -----------------------------------------------------------------------------
-def translate_md(md_text, src="fr", dest="en"):
+def _request_mymemory_translation(
+    text: str,
+    src: str,
+    dest: str,
+    *,
+    email: str | None,
+    api_key: str | None,
+    timeout: float,
+) -> str:
+    """
+    Request one translation segment from MyMemory.
+
+    Args:
+        text: Source text segment. Must fit MyMemory's request size limit.
+        src: Source language code.
+        dest: Destination language code.
+        email: Optional contact email sent as ``de``.
+        api_key: Optional MyMemory private key.
+        timeout: Network timeout in seconds.
+
+    Returns:
+        Translated text segment.
+    """
+    url = _build_mymemory_url(text, src, dest, email=email, api_key=api_key)
+    with urlopen(url, timeout=timeout) as response:  # noqa: S310 - URL is fixed to MyMemory.
+        payload = json.loads(response.read().decode("utf-8"))
+    return _extract_mymemory_translation(payload)
+
+
+# -----------------------------------------------------------------------------
+def translate_txt(
+    text: str,
+    src: str = "fr",
+    dest: str = "en",
+    *,
+    email: str | None = None,
+    api_key: str | None = None,
+    timeout: float = _DEFAULT_TIMEOUT,
+) -> str:
+    """
+    Translate plain text with MyMemory.
+
+    Blank strings are returned unchanged. Long text is split into chunks of at
+    most 500 UTF-8 bytes, which matches the MyMemory ``q`` parameter limit.
+
+    Args:
+        text: Source text.
+        src: Source language code, for example ``"fr"``.
+        dest: Destination language code, for example ``"en"``.
+        email: Optional contact email sent to MyMemory as the ``de`` parameter.
+        api_key: Optional MyMemory private key.
+        timeout: Network timeout in seconds.
+
+    Returns:
+        Translated text, unchanged blank text, or ``""`` if the API call fails.
+    """
+    if not text or text.isspace():
+        return text
+
+    try:
+        chunks = _split_text_for_mymemory(text)
+        return "".join(
+            _request_mymemory_translation(
+                chunk,
+                src,
+                dest,
+                email=email,
+                api_key=api_key,
+                timeout=timeout,
+            )
+            for chunk in chunks
+        )
+    except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, ValueError) as err:
+        logging.error("Error in MyMemory translation %r: %r", text, err)
+        return ""
+
+
+# -----------------------------------------------------------------------------
+def translate_md(
+    md_text: str,
+    src: str = "fr",
+    dest: str = "en",
+    *,
+    email: str | None = None,
+    api_key: str | None = None,
+    timeout: float = _DEFAULT_TIMEOUT,
+) -> str:
+    """
+    Translate Markdown text with MyMemory while preserving Markdown structure.
+
+    Mistune parses the Markdown and the renderer sends only plain text tokens to
+    :func:`translate_txt`. Markdown syntax such as headings, emphasis, lists and
+    links is therefore emitted by the renderer instead of being translated as raw
+    markup.
+
+    Args:
+        md_text: Source Markdown text.
+        src: Source language code, for example ``"fr"``.
+        dest: Destination language code, for example ``"en"``.
+        email: Optional contact email sent to MyMemory as the ``de`` parameter.
+        api_key: Optional MyMemory private key.
+        timeout: Network timeout in seconds.
+
+    Returns:
+        Translated Markdown text.
+    """
 
     class LocalRender(mistune.MdRenderer):
-        def text(self, token, state):
-            text = token["raw"]
-            return translate_txt(text, src=src, dest=dest)
+        """Markdown renderer translating plain text tokens with MyMemory."""
 
-    my_renderer = LocalRender()
-    markdown = mistune.create_markdown_with_close(renderer=my_renderer)
+        def text(self, token: Mapping[str, object], state: BlockState) -> str:
+            """Translate one Mistune text token."""
+            del state
+            raw_text = str(token.get("raw", ""))
+            return translate_txt(
+                raw_text,
+                src=src,
+                dest=dest,
+                email=email,
+                api_key=api_key,
+                timeout=timeout,
+            )
 
-    result = markdown(md_text)
-    return result
+    markdown = mistune.create_markdown_with_close(renderer=LocalRender())
+    return str(markdown(md_text))
 
-# def translate_md2(md_text, src="fr", dest="en"):
-#     from . import mdtopdf
-#     from . import instruction
-#     from . import markdownify
-#     md_pure_text = instruction.strip_xml_comment(md_text)
-#     html_text = mdtopdf.get_md_to_html_converter('mistune')(md_pure_text)
-#     result_html = translate_txt(html_text, src=src, dest=dest)
-#     return markdownify.markdownify(result_html)
 
-# -----------------------------------------------------------------------------
-def __get_this_folder():
-    """ Return the folder of this script with frozen compatibility
-    @return the folder of THIS script.
-    """
-    return os.path.split(os.path.abspath(os.path.realpath(
-        __get_this_filename())))[0]
-
-# -----------------------------------------------------------------------------
-def __get_this_filename():
-    """ Return the filename of this script with frozen compatibility
-    @return the filename of THIS script.
-    """
-    return __file__ if not getattr(sys, 'frozen', False) else sys.executable
+# =============================================================================

@@ -4,40 +4,170 @@
 ===============================================================================
 -->
 
-pymdtools 🐸
-============
+# pymdtools
 
-A small python module to manipulate markdown content.
-We use this library to manage a lot of content in markdown.
-
-[![Wheel Status](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
-[![Latest Version](https://img.shields.io/pypi/v/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
+[![PyPI version](https://img.shields.io/pypi/v/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
+[![Wheel](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
+[![Documentation](https://img.shields.io/readthedocs/pymdtools.svg?style=flat)](https://pymdtools.readthedocs.io/)
 [![License](https://img.shields.io/github/license/IIXIXII/pymdtools.svg?style=flat)](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md)
-[![Build Status](https://img.shields.io/travis/IIXIXII/pymdtools/master.svg?style=flat)](https://travis-ci.org/IIXIXII/pymdtools)
-[![Documentation Status](https://img.shields.io/readthedocs/pymdtools.svg?style=flat)](https://pymdtools.readthedocs.io/en/latest/?badge=latest)
 
-Features
---------
+`pymdtools` is a Python toolkit for working with Markdown documents. It provides
+small, composable helpers to read, normalize, enrich, inspect, convert, and
+translate Markdown content.
 
-* Read Markdown
-* Normalize markdown (it is more a beautifier)
-* Convert to html with multiple converter (python markdown, python mistune)
-* Convert to pdf with converter
-* manage links inside the markdown (change update links)
-* add some instructions (in html comment format):
-  + variable or data easy to find
-  + include file (like license or header)
-  + share content between md file (define some shared paragraph)
+The project is designed for practical documentation workflows: maintaining
+Markdown files, resolving reusable snippets, updating links, converting Markdown
+to HTML or PDF, and integrating with modern Markdown libraries such as Mistune
+and markdownify.
 
-License
--------
+## Features
 
-The pymdtools is licensed under the terms of the MIT license and is available for free.
+- Read and write text files with encoding-aware helpers.
+- Normalize Markdown content and Markdown files.
+- Manage reusable Markdown instructions stored in HTML comments:
+  - variables;
+  - include-file directives;
+  - shared reference blocks;
+  - generated include blocks.
+- Inspect and rewrite Markdown links.
+- Work with Markdown files through a high-level `MarkdownContent` wrapper.
+- Convert Markdown to HTML with Python-Markdown or Mistune.
+- Convert Markdown or HTML to PDF through `pdfkit` and `wkhtmltopdf`.
+- Apply PDF metadata, backgrounds, watermarks, and blank-page balancing.
+- Convert HTML fragments to Markdown through the external `markdownify` package.
+- Translate plain text and Markdown with the MyMemory API.
 
-## Links
+## Installation
 
-* [Web site](https://aimeos.org/integrations/typo3-shop-extension/)
-* [Documentation](https://aimeos.org/docs/TYPO3)
-* [Forum](https://aimeos.org/help/typo3-extension-f16/)
-* [Issue tracker](https://github.com/aimeos/aimeos-typo3/issues)
-* [Source code](https://github.com/aimeos/aimeos-typo3)
+Install the published package from PyPI:
+
+```bash
+pip install pymdtools
+```
+
+For development, clone the repository and install the project dependencies:
+
+```bash
+git clone https://github.com/IIXIXII/pymdtools.git
+cd pymdtools
+python -m pip install -r requirements-dev.txt
+python -m pip install -e .
+```
+
+`pymdtools` supports Python 3.7 and newer.
+
+## Optional System Dependency
+
+PDF generation uses `pdfkit`, which requires the external `wkhtmltopdf`
+executable. Install `wkhtmltopdf` separately if you need Markdown-to-PDF or
+HTML-to-PDF conversion.
+
+On Windows, `pymdtools` searches common installation locations such as:
+
+- `C:\Program Files\wkhtmltopdf`
+- `D:\Program Files\wkhtmltopdf`
+- local `wkhtmltopdf` / `software` / `third_party_software` folders
+
+## Quick Start
+
+Normalize Markdown text:
+
+```python
+from pymdtools.normalize import md_beautifier
+
+markdown = md_beautifier("# Title\n\nBody\n")
+```
+
+Work with a Markdown file:
+
+```python
+from pymdtools.mdfile import MarkdownContent
+
+doc = MarkdownContent("README.md")
+doc["project"] = "pymdtools"
+doc.title = "Project README"
+doc.process_tags()
+doc.write()
+```
+
+Resolve include references in a Markdown file:
+
+```python
+from pymdtools.instruction import search_include_refs_to_md_file
+
+search_include_refs_to_md_file("docs/page.md", backup_option=True)
+```
+
+Convert Markdown to PDF:
+
+```python
+from pymdtools.mdtopdf import convert_md_to_pdf
+
+pdf_path = convert_md_to_pdf("README.md")
+```
+
+Convert HTML to Markdown:
+
+```python
+from pymdtools.markdownify_integration import markdownify
+
+markdown = markdownify("<h1>Title</h1>")
+```
+
+## Main Modules
+
+- `pymdtools.common`: shared path, filesystem, text, datetime, and validation helpers.
+- `pymdtools.filetools`: file-oriented wrappers such as `FileName` and `FileContent`.
+- `pymdtools.instruction`: Markdown comment directives, variables, refs, and includes.
+- `pymdtools.mdcommon`: Markdown link discovery and rewriting helpers.
+- `pymdtools.mdfile`: high-level `MarkdownContent` wrapper for editable Markdown files.
+- `pymdtools.mdtopdf`: Markdown, HTML, and PDF conversion pipeline.
+- `pymdtools.mistune_integration`: Mistune 3 compatibility layer.
+- `pymdtools.markdownify_integration`: wrapper around the external `markdownify` package.
+- `pymdtools.normalize`: Markdown normalization helpers.
+- `pymdtools.translate`: plain-text and Markdown translation helpers.
+
+## Documentation
+
+The documentation is available on Read the Docs:
+
+<https://pymdtools.readthedocs.io/>
+
+To build it locally:
+
+```bash
+python -m pip install -r requirements-docs.txt
+python -m sphinx.cmd.build -b html docs docs/_build/html
+```
+
+## Development
+
+Run the test suite:
+
+```bash
+python -m pytest
+```
+
+Run static type checking:
+
+```bash
+python -m pyright
+```
+
+Build the documentation in strict mode:
+
+```bash
+python -m sphinx.cmd.build -b html -W --keep-going docs docs/_build/html
+```
+
+## Project Links
+
+- Documentation: <https://pymdtools.readthedocs.io/>
+- Package: <https://pypi.python.org/pypi/pymdtools/>
+- Source code: <https://github.com/IIXIXII/pymdtools>
+- Issue tracker: <https://github.com/IIXIXII/pymdtools/issues>
+
+## License
+
+`pymdtools` is distributed under the MIT license. See [LICENSE.md](LICENSE.md)
+for details.

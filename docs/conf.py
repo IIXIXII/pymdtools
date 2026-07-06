@@ -30,7 +30,9 @@ exclude_patterns = []
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               ]
-source_suffix = ['.rst']
+source_suffix = {
+    '.rst': 'restructuredtext',
+}
 
 master_doc = 'index'
 

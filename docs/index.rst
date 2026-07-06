@@ -6,10 +6,17 @@ pymdtools's documentation
    :caption: Contents:
 
    readme_link
+   package
    common
    filetools
    instruction
    mdcommon
+   mdfile
+   mdtopdf
+   mistune_integration
+   markdownify_integration
+   normalize
+   translate
    license_link
 
 Indices and tables

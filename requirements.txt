@@ -8,8 +8,6 @@ markdown
 mistune>=3.0
 pdfkit
 PyPDF2
-translate
-upref
 beautifulsoup4
 python-dateutil
 chardet
