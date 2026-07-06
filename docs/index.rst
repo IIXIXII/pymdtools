@@ -9,6 +9,7 @@ pymdtools's documentation
    common
    filetools
    instruction
+   mdcommon
    license_link
 
 Indices and tables

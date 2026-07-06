@@ -1,91 +1,126 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =============================================================================
-#                    Author: Florent TOURNOIS | License: MIT                   
+#                    Author: Florent TOURNOIS | License: MIT
 # =============================================================================
+"""
+Markdown normalization helpers.
 
-"""All functions To normalize a markdown file."""
+This module provides the small public surface used by pymdtools to make Markdown
+content consistent:
+
+- :func:`md_beautifier` normalizes an in-memory Markdown string;
+- :func:`md_file_beautifier` applies the same transformation to a Markdown file.
+
+Normalization is implemented as a Markdown-to-Markdown rendering pass through
+the Mistune 3 integration layer. File-oriented work delegates path validation,
+backup creation, encoding-aware reads, and writes to :mod:`pymdtools.common`.
+
+Examples:
+    Normalize a string:
+
+    >>> md_beautifier("# Title\\n\\nBody\\n\\n")
+    '# Title\\n\\nBody'
+
+    Normalize a file in place:
+
+    >>> md_file_beautifier("README.md", backup_option=True)
+    '...README.md'
+"""
+
+from __future__ import annotations
 
 import logging
-import os
-import os.path
+from pathlib import Path
 
 from . import common
-from . import mistunege as mistune
-from . import mdrender
+from . import mistune_integration as mistune
 
 
 # -----------------------------------------------------------------------------
-# Normalize a markdown text.
-# with a double conversion, the markdown text is normalized
-#
-# @param text The markdown text
-# @return the normalized markdown text
-# -----------------------------------------------------------------------------
-def md_beautifier(text):
-    logging.debug('Beautify a md content')
-
-    the_renderer = mdrender.MdRenderer()
-    markdown = mistune.Markdown(renderer=the_renderer)
-
-    result = markdown(text).strip()
-
-    return result
-
-# -----------------------------------------------------------------------------
-# Normalize a markdown text.
-# with a double conversion, the markdown text is normalized
-# This function take a file, load the content, create a backup (if needed)
-# and do some change in the file which is supposed to be a markdown file.
-# Then saved the new file with the same filename. The goal is to
-# beautify the markdown file.
-#
-# @param filename The name and path of the file to work with.
-#                 This file is supposed to be a markdown file.
-# @param backup_option This parameter is set to true by default.
-#                      If the backup option is set,
-#                             then a file named filename.bak will be created.
-# @param filename_ext This parameter the markdown extension for the filename.
-# @return the filename normalized
-# -----------------------------------------------------------------------------
-def md_file_beautifier(filename, backup_option=True, filename_ext=".md"):
+def md_beautifier(text: object) -> str:
     """
-    This function take a file, load the content, create a backup (if needed)
-    and do some change in the file which is supposed to be a markdown file.
-    Then saved the new file with the same filename. The goal is to beautify
-    the markdown file.
+    Normalize Markdown text.
 
-    @type filename: string
-    @param filename: The name and path of the file to work with. This file is
-                     supposed to be a markdown file.
+    The input is parsed by Mistune and rendered back to Markdown with
+    :class:`pymdtools.mistune_integration.MdRenderer`. The result is stripped of
+    leading and trailing whitespace, matching the historical behavior of this
+    function.
 
-    @type backup_option: boolean
-    @param backup_option: This parameter is set to true by default.
-                          If the backup option is set,
-                          then a file named filename.bak will be created.
+    This helper is intentionally small: it does not resolve include directives,
+    variables, or file references. Those transformations live in
+    :mod:`pymdtools.instruction`.
 
-    @type filename_ext: string
-    @param filename_ext: This parameter the markdown extension
-                         for the filename.
+    Args:
+        text: Markdown text to normalize.
 
-    @return nothing
+    Returns:
+        Normalized Markdown text.
+
+    Raises:
+        TypeError: If ``text`` is not a string.
     """
-    logging.debug('Beautify the file %s', filename)
-    filename = common.check_file(filename, filename_ext)
+    if not isinstance(text, str):
+        raise TypeError("text must be a string")
 
-    # Read the file
-    text = common.get_file_content(filename)
-    if len(text) == 0:
-        logging.error('The fielname %s seem empty', filename)
-        raise Exception('The fielname %s seem empty' % filename)
+    logging.debug("Beautify markdown content")
 
-    # Create Backup
+    renderer = mistune.MdRenderer()
+    markdown = mistune.create_markdown_with_close(renderer=renderer)
+    return str(markdown(text)).strip()
+
+
+# -----------------------------------------------------------------------------
+def md_file_beautifier(
+    filename: common.PathInput,
+    backup_option: bool = True,
+    filename_ext: str = ".md",
+    *,
+    backup_ext: str = ".bak",
+    read_encoding: str | None = None,
+    write_encoding: str = "utf-8",
+) -> str:
+    """
+    Normalize a Markdown file in place.
+
+    The file is validated, read, optionally backed up, normalized with
+    :func:`md_beautifier`, and written back with the requested encoding.
+
+    Backups are created before writing and use :func:`pymdtools.common.create_backup`.
+    The file is written through :func:`pymdtools.common.set_file_content`, so the
+    write path follows the common module's atomic-write behavior.
+
+    Args:
+        filename: Markdown file to normalize.
+        backup_option: Whether to create a backup before overwriting the file.
+        filename_ext: Expected Markdown extension, including the leading dot.
+        backup_ext: Backup extension used when ``backup_option`` is true.
+        read_encoding: Encoding used to read the file. ``None`` triggers
+            automatic detection in :mod:`pymdtools.common`.
+        write_encoding: Encoding used to write the normalized file.
+
+    Returns:
+        Normalized absolute filename as a string.
+
+    Raises:
+        FileNotFoundError: If ``filename`` does not exist.
+        IsADirectoryError: If ``filename`` is not a regular file.
+        ValueError: If the file extension is unexpected or the file is empty.
+        OSError: Propagated from filesystem helpers.
+    """
+    logging.debug("Beautify markdown file %s", filename)
+
+    checked: Path = common.check_file(filename, filename_ext)
+    text = common.get_file_content(checked, encoding=read_encoding)
+    if not text:
+        raise ValueError(f"The filename {checked} seems empty")
+
     if backup_option:
-        common.create_backup(filename)
+        common.create_backup(checked, ext=backup_ext)
 
-    # Change inside
-    text = md_beautifier(text)
+    normalized = md_beautifier(text)
+    common.set_file_content(checked, normalized, encoding=write_encoding)
+    return str(checked)
 
-    # Save the file
-    os.remove(filename)
-    common.set_file_content(filename, text, encoding="utf-8")
+
+# =============================================================================

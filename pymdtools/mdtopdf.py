@@ -24,7 +24,7 @@ import PyPDF2
 
 from . import common
 from . import instruction
-from . import mistunege as mistune
+from . import mistune_integration as mistune
 
 
 # -----------------------------------------------------------------------------
@@ -74,9 +74,8 @@ def converter_md_to_html_markdown(text):
 # @return the html fragment
 # -----------------------------------------------------------------------------
 def converter_md_to_html_mistune(text):
-    renderer = mistune.Renderer(use_xhtml=True)
-    # use this renderer instance
-    markdown = mistune.Markdown(renderer=renderer)
+    renderer = mistune.ClosingHTMLRenderer()
+    markdown = mistune.create_markdown_with_close(renderer=renderer)
     return markdown(text)
 
 

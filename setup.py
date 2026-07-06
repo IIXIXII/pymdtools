@@ -185,6 +185,7 @@ setup(
 
     install_requires=[
         "markdown",
+        "mistune>=3.0",
         "pdfkit",
         "PyPDF2",
         "python-dateutil",

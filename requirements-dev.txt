@@ -10,3 +10,4 @@ vulture
 twine
 pytest>=7.0
 pytest-cov
+pyright

@@ -5,6 +5,7 @@
 # All dependency of the project
 # -----------------------------------------------------------------------------
 markdown
+mistune>=3.0
 pdfkit
 PyPDF2
 translate

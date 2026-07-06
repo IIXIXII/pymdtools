@@ -12,6 +12,8 @@ build-backend = "setuptools.build_meta"
 [tool.pyright]
 include = ["pymdtools"]
 ignore = ["**/tests/**", "**/examples/**"]
+venvPath = "."
+venv = ".venv"
 
 typeCheckingMode = "strict"
-reportUnnecessaryIsInstance = "false"
+

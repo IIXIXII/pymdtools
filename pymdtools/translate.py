@@ -18,8 +18,7 @@ from translate import Translator
 import upref
 
 from . import common
-from . import mistunege as mistune
-from . import mdrender
+from . import mistune_integration as mistune
 
 
 # -----------------------------------------------------------------------------
@@ -231,12 +230,13 @@ def translate_txt(text, src="fr", dest="en"):
 # -----------------------------------------------------------------------------
 def translate_md(md_text, src="fr", dest="en"):
 
-    class LocalRender(mdrender.MdRenderer):
-        def text(self, text):
+    class LocalRender(mistune.MdRenderer):
+        def text(self, token, state):
+            text = token["raw"]
             return translate_txt(text, src=src, dest=dest)
 
     my_renderer = LocalRender()
-    markdown = mistune.Markdown(renderer=my_renderer)
+    markdown = mistune.create_markdown_with_close(renderer=my_renderer)
 
     result = markdown(md_text)
     return result
