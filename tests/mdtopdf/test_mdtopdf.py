@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import importlib
+import os
 from pathlib import Path
 import re
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -240,7 +241,8 @@ def test_find_wk_html_to_pdf_uses_common_find_file(monkeypatch: Any, tmp_path: P
     monkeypatch.setattr(mdtopdf.shutil, "which", lambda name: None)
 
     assert mdtopdf.find_wk_html_to_pdf() == expected
-    assert calls[0][0] == "wkhtmltopdf.exe"
+    expected_name = "wkhtmltopdf.exe" if os.name == "nt" else "wkhtmltopdf"
+    assert calls[0][0] == expected_name
     assert calls[0][3] == 0
 
 
@@ -624,10 +626,15 @@ def test_convert_md_to_pdf_preserves_existing_target_when_features_fail(
 
 def test_pdf_import_falls_back_to_pypdf2(monkeypatch: Any) -> None:
     real_import_module = importlib.import_module
+    fake_pypdf2 = ModuleType("PyPDF2")
+    fake_pypdf2.PdfReader = PdfReader  # type: ignore[attr-defined]
+    fake_pypdf2.PdfWriter = PdfWriter  # type: ignore[attr-defined]
 
     def import_without_pypdf(name: str, package: str | None = None) -> Any:
         if name == "pypdf":
             raise ModuleNotFoundError(name)
+        if name == "PyPDF2":
+            return fake_pypdf2
         return real_import_module(name, package)
 
     monkeypatch.setattr(importlib, "import_module", import_without_pypdf)

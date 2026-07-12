@@ -311,9 +311,10 @@ def path_to_url(path: str | Path, *, remove_accent: bool = True) -> str:
     Returns:
         A URL-safe path string.
     """
-    # Convert to POSIX-style path (forward slashes)
-    p = Path(path)
-    text = p.as_posix()
+    # Normalize both native and foreign path separators.  On POSIX,
+    # ``Path(r"C:\\dir")`` treats backslashes as ordinary characters, so
+    # ``Path.as_posix()`` alone cannot normalize a Windows path.
+    text = str(path).replace("\\", "/")
 
     # Normalize case
     text = text.lower()

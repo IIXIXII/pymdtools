@@ -65,7 +65,7 @@ def _block_import(monkeypatch: pytest.MonkeyPatch, blocked: str) -> None:
 # copytree: symlink branches (780-796)
 # -----------------------------------------------------------------------------
 
-def test_copytree_symlinks_true_overwrites_existing_dest_dir(tmp_path: Path) -> None:
+def test_copytree_symlinks_true_rejects_existing_dest_dir(tmp_path: Path) -> None:
     if not _supports_symlinks(tmp_path):
         pytest.skip("Symlinks not supported in this environment.")
 
@@ -80,15 +80,14 @@ def test_copytree_symlinks_true_overwrites_existing_dest_dir(tmp_path: Path) -> 
     link = src / "link"
     link.symlink_to(target)
 
-    # Destination already contains a directory with the same name -> triggers rmtree()
+    # Replacing an existing entry with a symlink must be explicit and safe.
     (dst / "link").mkdir(parents=True, exist_ok=True)
 
-    out = common.copytree(src, dst, symlinks=True)
-    assert out == dst
+    with pytest.raises(FileExistsError, match="symbolic link over an existing entry"):
+        common.copytree(src, dst, symlinks=True)
 
-    out_link = dst / "link"
-    assert out_link.is_symlink()
-    assert out_link.read_text(encoding="utf-8") == "T"
+    assert (dst / "link").is_dir()
+    assert not (dst / "link").is_symlink()
 
 
 def test_copytree_symlinks_false_follows_symlink_file(tmp_path: Path) -> None:
