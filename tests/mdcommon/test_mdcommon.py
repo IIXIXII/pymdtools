@@ -78,6 +78,52 @@ def test_search_link_in_md_text_finds_inline_and_reference_links_without_mutatin
     ]
 
 
+def test_search_link_in_md_text_ignores_markdown_images() -> None:
+    text = "![Logo](img/logo.png)\n![Logo ref][logo]\n[logo]: img/logo-ref.png\n[Doc](doc.md)"
+
+    assert mdcommon.search_link_in_md_text(text) == [
+        {"name": "Doc", "url": "doc.md", "title": None, "line": 4}
+    ]
+
+
+def test_search_link_in_md_text_ignores_code_spans_and_fences() -> None:
+    text = (
+        "`[Inline](inline.md)`\n"
+        "```markdown\n[Fenced](fenced.md)\n```\n"
+        "~~~\n[Ref][hidden]\n[hidden]: hidden.md\n~~~\n"
+        "[Real](real.md)\n"
+    )
+
+    assert mdcommon.search_link_in_md_text(text) == [
+        {"name": "Real", "url": "real.md", "title": None, "line": 9}
+    ]
+
+
+def test_markdown_code_range_edge_cases() -> None:
+    assert mdcommon.merge_ranges([(1, 1), (0, 2), (1, 3)]) == [(0, 3)]
+    assert mdcommon.markdown_code_ranges("```\nunclosed\n") == [
+        (0, len("```\nunclosed\n"))
+    ]
+    assert mdcommon.markdown_code_ranges("``code``") == [(0, 8)]
+    assert mdcommon.markdown_code_ranges("`") == []
+    assert mdcommon.markdown_code_ranges("`unclosed") == []
+    assert mdcommon.markdown_code_ranges("`a``b`") == [(0, 6)]
+    assert mdcommon.markdown_code_ranges(r"\`literal") == []
+    assert mdcommon.markdown_code_ranges(r"\\`code`") == [(2, 8)]
+
+    spanning_fence = "`open\n```\ninside\n```\n`"
+    ranges = mdcommon.markdown_code_ranges(spanning_fence)
+    assert ranges == [(0, len(spanning_fence))]
+    assert not mdcommon.position_in_ranges(0, [(2, 3)])
+
+
+def test_apply_replacements_skips_overlapping_source_ranges() -> None:
+    assert mdcommon._apply_replacements(
+        "abcd",
+        [(0, 2, "X"), (1, 3, "Y")],
+    ) == "Xcd"
+
+
 def test_search_link_in_md_text_json_is_deterministic() -> None:
     out = mdcommon.search_link_in_md_text_json("[A](a.md)")
 
@@ -112,6 +158,17 @@ def test_update_links_in_md_text_updates_single_and_multiple_inline_links() -> N
     assert out == 'A [new](new.md "New title") B [google](https://google.example)'
 
 
+def test_update_links_in_md_text_does_not_update_images() -> None:
+    text = "![old](old-image.png) [old](old-doc.md)\n![old][img]\n[img]: old-ref.png\n"
+
+    out = mdcommon.update_links_in_md_text(
+        text,
+        {"name": "new", "name_to_replace": "old", "url": "new.md"},
+    )
+
+    assert out == "![old](old-image.png) [new](new.md)\n![old][img]\n[img]: old-ref.png\n"
+
+
 def test_update_links_in_md_text_updates_reference_links_without_mutating_input() -> None:
     new_link = {"name": "Ref", "url": "new.md", "title": "new title"}
     text = "before [Ref][id1]\n[id1]: old.md\n"
@@ -120,6 +177,16 @@ def test_update_links_in_md_text_updates_reference_links_without_mutating_input(
 
     assert out == 'before [Ref][id1]\n[id1]: new.md "new title"\n'
     assert "id_link" not in new_link
+
+
+def test_update_link_in_md_text_leaves_other_reference_labels_unchanged() -> None:
+    text = "[Other][id]\n[id]: old.md\n"
+
+    assert mdcommon.update_link_in_md_text(
+        text,
+        "Missing",
+        {"name": "New", "url": "new.md"},
+    ) == text
 
 
 def test_update_link_in_md_text_returns_unchanged_when_no_reference_match() -> None:
@@ -147,6 +214,58 @@ def test_update_link_from_old_link_inline_reference_and_no_match() -> None:
     assert "id_link" not in new_link
 
 
+def test_update_link_from_old_link_does_not_update_images() -> None:
+    text = "![Old](old.md) [Old](old.md)\n![Old][img]\n[img]: old.md\n"
+
+    out = mdcommon.update_link_from_old_link(
+        text,
+        {"name": "Old", "url": "old.md"},
+        {"name": "New", "url": "new.md"},
+    )
+
+    assert out == "![Old](old.md) [New](new.md)\n![Old][img]\n[img]: old.md\n"
+
+
+def test_update_link_from_old_link_matches_exact_url_and_reference() -> None:
+    text = (
+        "[Old](old.md-extra) [Old](old.md#part) [Old](old.md)\n"
+        "[Old][a] [Old][b]\n"
+        "[a]: other.md\n"
+        "[b]: old.md\n"
+    )
+
+    out = mdcommon.update_link_from_old_link(
+        text,
+        {"name": "Old", "url": "old.md"},
+        {"name": "New", "url": "new.md"},
+    )
+
+    assert out == (
+        "[Old](old.md-extra) [Old](old.md#part) [New](new.md)\n"
+        "[Old][a] [New][b]\n"
+        "[a]: other.md\n"
+        "[b]: new.md\n"
+    )
+
+
+def test_link_updates_ignore_code_spans_and_fences() -> None:
+    text = (
+        "`[Old](old.md)` [Old](old.md)\n"
+        "```\n[Old][code]\n[code]: old.md\n```\n"
+    )
+
+    out = mdcommon.update_link_from_old_link(
+        text,
+        {"name": "Old", "url": "old.md"},
+        {"name": "New", "url": "new.md"},
+    )
+
+    assert out == (
+        "`[Old](old.md)` [New](new.md)\n"
+        "```\n[Old][code]\n[code]: old.md\n```\n"
+    )
+
+
 def test_update_links_from_old_link_applies_multiple_replacements() -> None:
     out = mdcommon.update_links_from_old_link(
         "[A](a.md) [B](b.md)",
@@ -165,6 +284,20 @@ def test_move_base_path_in_md_text_only_updates_relative_links() -> None:
     out = mdcommon.move_base_path_in_md_text(text, "base folder")
 
     assert out == "[Local](base-folder/docs/page.md) [External](https://example.com/page)"
+
+
+def test_move_base_path_preserves_anchors_queries_and_root_links() -> None:
+    text = (
+        "[Anchor](#part) [Doc](page.md#part) "
+        "[Query](page.md?mode=full#part) [Root](/root.md#part)"
+    )
+
+    out = mdcommon.move_base_path_in_md_text(text, "base")
+
+    assert out == (
+        "[Anchor](#part) [Doc](base/page.md#part) "
+        "[Query](base/page.md?mode=full#part) [Root](/root.md#part)"
+    )
 
 
 def test_sub_string_helpers() -> None:

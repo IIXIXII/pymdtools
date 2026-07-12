@@ -26,7 +26,11 @@ def test_normalize_read_encoding_accepts_legacy_unknown(monkeypatch, tmp_path: P
     monkeypatch.setattr(instruction.common, "find_file", fake_find_file)
     monkeypatch.setattr(instruction.common, "get_file_content", fake_get_file_content)
 
-    assert instruction.get_file_content_to_include("snippet.md", encoding="UNKNOWN") == "content"
+    assert instruction.get_file_content_to_include(
+        "snippet.md",
+        search_folders=[tmp_path],
+        encoding="UNKNOWN",
+    ) == "content"
     assert calls["encoding"] is None
 
 
@@ -113,12 +117,12 @@ def test_set_title_in_md_text_falls_back_when_stripped_setext_not_in_original(mo
     assert out.startswith("Title\n=====\n\nBody")
 
 
-def test_set_title_in_md_text_falls_back_when_stripped_atx_not_in_original(monkeypatch):
+def test_set_title_in_md_text_does_not_depend_on_comment_stripping_for_style(monkeypatch):
     monkeypatch.setattr(instruction, "strip_xml_comment", lambda text: "# Ghost\n")
 
     out = instruction.set_title_in_md_text("Body\n", "Title", style="preserve")
 
-    assert out.startswith("# Title\n\nBody")
+    assert out.startswith("Title\n=====\n\nBody")
 
 
 def test_get_vars_around_md_file_stops_at_filesystem_root(monkeypatch):

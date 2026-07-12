@@ -139,3 +139,26 @@ def test_process_tags_without_filename_uses_empty_ref_set() -> None:
 
     assert "Ada" in out
     assert "OLD" not in out
+
+
+def test_process_tags_resolves_include_relative_to_document(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    document_folder = tmp_path / "document"
+    other_folder = tmp_path / "other"
+    document_folder.mkdir()
+    other_folder.mkdir()
+    source = document_folder / "source.md"
+    source.write_text(
+        "Before\n<!-- include-file(snippet.txt) -->\nAfter\n",
+        encoding="utf-8",
+    )
+    (document_folder / "snippet.txt").write_text("LOCAL", encoding="utf-8")
+    (other_folder / "snippet.txt").write_text("WRONG", encoding="utf-8")
+    monkeypatch.chdir(other_folder)
+
+    content = mdfile.MarkdownContent(source, render_mode="raw")
+    out = content.process_tags()
+
+    assert out == "Before\nLOCAL\nAfter\n"

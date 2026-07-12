@@ -49,6 +49,7 @@ from typing import (
 )
 
 from . import common
+from .mdcommon import markdown_code_ranges, merge_ranges, position_in_ranges
 
 TitleStyle          = Literal["preserve", "setext", "atx"]
 IncludeRenderMode   = Literal["box", "raw"]
@@ -227,14 +228,14 @@ _INCLUDE_FILE_RE: Final[re.Pattern[str]] = re.compile(
 # -----------------------------------------------------------------------------
 _SETEXT_H1_RE: Final[re.Pattern[str]] = re.compile(
     r"""(?mx)
-    ^[ \t]*(?P<title>[^\r\n]+?)[ \t]*\r?\n
-    ^[ \t]*=+[ \t]*\r?\n?
+    ^[ ]{0,3}(?P<title>[^\r\n]+?)[ \t]*\r?\n
+    ^[ ]{0,3}=+[ \t]*\r?\n?
     """
 )
 
 _ATX_H1_RE: Final[re.Pattern[str]] = re.compile(
     r"""(?mx)
-    ^[ \t]*\#[ \t]+(?P<title>[^\r\n#]*?[^\s#])[ \t]*\#*[ \t]*(?:\r?\n|$)
+    ^[ ]{0,3}\#[ \t]+(?P<title>[^\r\n#]*?[^\s#])[ \t]*\#*[ \t]*(?:\r?\n|$)
     """
 )
 
@@ -315,6 +316,40 @@ def _compile_pattern(pattern: RegexInput) -> Pattern[str]:
 
 
 # -----------------------------------------------------------------------------
+def _finditer_outside_ranges(
+    pattern: Pattern[str],
+    text: str,
+    ranges: Sequence[tuple[int, int]],
+) -> list[Match[str]]:
+    """Return pattern matches whose opening character is not protected."""
+    return [
+        match
+        for match in pattern.finditer(text)
+        if not position_in_ranges(match.start(), ranges)
+    ]
+
+
+# -----------------------------------------------------------------------------
+def _search_outside_ranges(
+    pattern: Pattern[str],
+    text: str,
+    start: int,
+    ranges: Sequence[tuple[int, int]],
+) -> Match[str] | None:
+    """Return the first match at or after ``start`` outside protected ranges."""
+    match = pattern.search(text, start)
+    while match is not None and position_in_ranges(match.start(), ranges):
+        match = pattern.search(text, max(match.end(), match.start() + 1))
+    return match
+
+
+# -----------------------------------------------------------------------------
+def _directive_matches(pattern: Pattern[str], text: str) -> list[Match[str]]:
+    """Return directive matches that are outside Markdown code."""
+    return _finditer_outside_ranges(pattern, text, markdown_code_ranges(text))
+
+
+# -----------------------------------------------------------------------------
 def strip_xml_comment(text: str) -> str:
     """
     Remove XML / HTML comments from a text.
@@ -330,6 +365,31 @@ def strip_xml_comment(text: str) -> str:
     """
     return _XML_COMMENT_RE.sub("", text)
 # -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+def _first_title_match(text: str) -> tuple[Match[str], TitleStyle] | None:
+    """Return the first real H1 and its source style."""
+    protected_ranges = merge_ranges(
+        [
+            *markdown_code_ranges(text),
+            *(match.span() for match in _XML_COMMENT_RE.finditer(text)),
+        ]
+    )
+    candidates: list[tuple[Match[str], TitleStyle]] = []
+    candidates.extend(
+        (match, "setext")
+        for match in _finditer_outside_ranges(
+            _SETEXT_H1_RE, text, protected_ranges
+        )
+    )
+    candidates.extend(
+        (match, "atx")
+        for match in _finditer_outside_ranges(
+            _ATX_H1_RE, text, protected_ranges
+        )
+    )
+    return min(candidates, key=lambda item: item[0].start()) if candidates else None
 
 
 # -----------------------------------------------------------------------------
@@ -356,11 +416,13 @@ def get_refs_from_md_text(
     Raises:
         ValueError: If a ref name is duplicated or an end marker is missing.
     """
+    text = _require_str(text, "text")
     refs: Dict[str, str] = dict(previous_refs) if previous_refs else {}
+    code_ranges = markdown_code_ranges(text)
 
     pos = 0
     while True:
-        m_begin = _BEGIN_REF_RE.search(text, pos)
+        m_begin = _search_outside_ranges(_BEGIN_REF_RE, text, pos, code_ranges)
         if not m_begin:
             return refs
 
@@ -369,7 +431,7 @@ def get_refs_from_md_text(
             raise ValueError(f"duplicate begin-ref({key})")
 
         after_begin = m_begin.end()
-        m_end = _END_REF_RE.search(text, after_begin)
+        m_end = _search_outside_ranges(_END_REF_RE, text, after_begin, code_ranges)
         if not m_end:
             raise ValueError(f"begin-ref({key}) without end-ref")
 
@@ -603,7 +665,10 @@ def refs_in_md_text(text: str) -> List[str]:
     """
     text = _require_str(text, "text")
 
-    return _BEGIN_INCLUDE_RE.findall(text)
+    return [
+        match.group("name")
+        for match in _directive_matches(_BEGIN_INCLUDE_RE, text)
+    ]
 # -----------------------------------------------------------------------------
 
 
@@ -654,52 +719,35 @@ def include_refs_to_md_text(
     begin_pattern = _compile_pattern(begin_include_re)
     end_pattern = _compile_pattern(end_include_re)
 
-    # search begin
-    match_begin = begin_pattern.search(text)
-    if not match_begin:
-        return text
+    code_ranges = markdown_code_ranges(text)
+    parts: list[str] = []
+    cursor = 0
 
-    key = match_begin.group("name")
-    logging.debug("Find the include key %s", key)
-
-    # Find end marker in the remaining text
-    last_part = text[match_begin.end(0):]
-    match_end = end_pattern.search(last_part)
-    if not match_end:
-        raise ValueError(f"begin-include({key}) without end-include")
-
-    # If key missing
-    if key not in refs_include:
-        if error_if_no_key:
-            raise KeyError(f"begin-include({key}) references an unknown key")
-
-        # Keep this whole include block unchanged (including its original content)
-        unchanged_block = last_part[:match_end.end(0)]
-        return (
-            text[:match_begin.end(0)]
-            + unchanged_block
-            + include_refs_to_md_text(
-                last_part[match_end.end(0):],
-                refs_include,
-                begin_include_re=begin_pattern,
-                end_include_re=end_pattern,
-                error_if_no_key=error_if_no_key,
-            )
+    while True:
+        match_begin = _search_outside_ranges(
+            begin_pattern, text, cursor, code_ranges
         )
+        if match_begin is None:
+            parts.append(text[cursor:])
+            return "".join(parts)
 
-    # Key exists: insert replacement, keep end marker, and skip original inner content
-    result = text[:match_begin.end(0)] + refs_include[key]
-    result += last_part[match_end.start(0):match_end.end(0)]
+        key = match_begin.group("name")
+        logging.debug("Find the include key %s", key)
+        match_end = _search_outside_ranges(
+            end_pattern, text, match_begin.end(), code_ranges
+        )
+        if match_end is None:
+            raise ValueError(f"begin-include({key}) without end-include")
 
-    # Continue after end marker
-    result += include_refs_to_md_text(
-        last_part[match_end.end(0):],
-        refs_include,
-        begin_include_re=begin_pattern,
-        end_include_re=end_pattern,
-        error_if_no_key=error_if_no_key,
-    )
-    return result
+        parts.append(text[cursor:match_begin.end()])
+        if key not in refs_include:
+            if error_if_no_key:
+                raise KeyError(f"begin-include({key}) references an unknown key")
+            parts.append(text[match_begin.end():match_end.end()])
+        else:
+            parts.append(refs_include[key])
+            parts.append(text[match_end.start():match_end.end()])
+        cursor = match_end.end()
 # -----------------------------------------------------------------------------
 
 
@@ -869,12 +917,7 @@ def get_vars_from_md_text(
 
     vars_: Dict[str, str] = dict(previous_vars) if previous_vars else {}
 
-    pos = 0
-    while True:
-        m = _VAR_RE.search(text, pos)
-        if not m:
-            return vars_
-
+    for m in _directive_matches(_VAR_RE, text):
         key = m.group("name")
         raw_value = m.group("string")
         value = unescape_var_value(raw_value)
@@ -883,7 +926,7 @@ def get_vars_from_md_text(
             raise ValueError(f"duplicate var({key})")
 
         vars_[key] = value
-        pos = m.end()
+    return vars_
 # -----------------------------------------------------------------------------
 
 
@@ -928,45 +971,30 @@ def set_var_to_md_text(text: str, var_name: str, value: str) -> str:
 
     var_text = f'<!-- var({var_name})="{escape_var_value(value)}" -->'
 
-    parts: list[str] = []
-    current = text
-    var_is_set = False
-
-    # 1) Replace existing var declarations (sequential scan)
-    m = _VAR_RE.search(current)
-    while m is not None:
-        key = m.group("name")
-        if key == var_name:
-            parts.append(current[:m.start()])
+    var_matches = _directive_matches(_VAR_RE, text)
+    matching_vars = [
+        match for match in var_matches if match.group("name") == var_name
+    ]
+    if matching_vars:
+        parts: list[str] = []
+        cursor = 0
+        for match in matching_vars:
+            parts.append(text[cursor:match.start()])
             parts.append(var_text)
-            var_is_set = True
-        else:
-            parts.append(current[:m.end()])
+            cursor = match.end()
+        parts.append(text[cursor:])
+        return "".join(parts)
 
-        current = current[m.end():]
-        m = _VAR_RE.search(current)
-
-    # 2) Pass-through include-file directives that follow the var header area
-    m2 = _INCLUDE_FILE_RE.search(current)
-    while m2 is not None:
-        parts.append(current[:m2.end()])
-        current = current[m2.end():]
-        m2 = _INCLUDE_FILE_RE.search(current)
-
-    # 3) Insert if missing
-    if not var_is_set:
-        if parts:
-            parts.append("\n")
-        parts.append(var_text)
-
-        # keep a blank line before remaining content (similar to original intent)
-        if current and not current.startswith("\n"):
-            parts.append("\n\n")
-        else:
-            parts.append("\n")
-
-    parts.append(current)
-    return "".join(parts)
+    header_matches = [
+        *_directive_matches(_VAR_RE, text),
+        *_directive_matches(_INCLUDE_FILE_RE, text),
+    ]
+    insert_at = max((match.end() for match in header_matches), default=0)
+    before = text[:insert_at]
+    after = text[insert_at:]
+    separator_before = "\n" if before else ""
+    separator_after = "\n" if not after or after.startswith("\n") else "\n\n"
+    return before + separator_before + var_text + separator_after + after
 # -----------------------------------------------------------------------------
 
 
@@ -993,22 +1021,13 @@ def del_var_to_md_text(text: str, var_name: str) -> str:
         raise ValueError(f"invalid var name: {var_name!r}")
 
     parts: list[str] = []
-    current = text
-
-    m = _VAR_RE.search(current)
-    while m is not None:
-        key = m.group("name")
-        if key == var_name:
-            # drop the directive
-            parts.append(current[:m.start()])
-        else:
-            # keep the directive
-            parts.append(current[:m.end()])
-
-        current = current[m.end():]
-        m = _VAR_RE.search(current)
-
-    parts.append(current)
+    cursor = 0
+    for match in _directive_matches(_VAR_RE, text):
+        if match.group("name") != var_name:
+            continue
+        parts.append(text[cursor:match.start()])
+        cursor = match.end()
+    parts.append(text[cursor:])
     return "".join(parts)
 # -----------------------------------------------------------------------------
 
@@ -1024,11 +1043,11 @@ def get_title_from_md_text(
     Supported syntaxes are Setext H1 (``Title`` followed by ``=====``) and
     ATX H1 (``# Title``).
 
-    Comments of the form <!-- ... --> are stripped before searching.
+    Comments and Markdown code regions are ignored while searching.
 
     Args:
         text: Markdown text.
-        return_match: If True, return the `re.Match` object (on the comment-stripped text).
+        return_match: If True, return the `re.Match` object on the source text.
 
     Returns:
         The title string (stripped), or None if not found.
@@ -1039,13 +1058,10 @@ def get_title_from_md_text(
     """
     text = _require_str(text, "text")
 
-    local_text = strip_xml_comment(text)
-
-    m = _SETEXT_H1_RE.search(local_text)
-    if not m:
-        m = _ATX_H1_RE.search(local_text)
-        if not m:
-            return None
+    title_match = _first_title_match(text)
+    if title_match is None:
+        return None
+    m, _ = title_match
 
     if return_match:
         return m
@@ -1103,19 +1119,13 @@ def set_title_in_md_text(
     if style not in ("preserve", "setext", "atx"):
         raise ValueError(f"invalid style: {style!r}")
 
-    # Detect on comment-stripped text (ignore commented titles)
-    local_text = strip_xml_comment(text)
-
-    m_setext = _SETEXT_H1_RE.search(local_text)
-    m_atx = None if m_setext else _ATX_H1_RE.search(local_text)
+    title_match = _first_title_match(text)
 
     # Decide output style
     if style == "preserve":
         output_style: TitleStyle
-        if m_setext:
-            output_style = "setext"
-        elif m_atx:
-            output_style = "atx"
+        if title_match is not None:
+            output_style = title_match[1]
         else:
             output_style = "setext"  # default insertion format
     else:
@@ -1127,18 +1137,12 @@ def set_title_in_md_text(
     def make_atx(t: str) -> str:
         return f"# {t}\n"
 
-    # Replace existing title
-    if m_setext:
-        m2 = _SETEXT_H1_RE.search(text)
-        if m2:
-            replacement = make_setext(title) if output_style == "setext" else make_atx(title)
-            return text[:m2.start()] + replacement + text[m2.end():]
-
-    if m_atx:
-        m2 = _ATX_H1_RE.search(text)
-        if m2:
-            replacement = make_setext(title) if output_style == "setext" else make_atx(title)
-            return text[:m2.start()] + replacement + text[m2.end():]
+    if title_match is not None:
+        match, _ = title_match
+        replacement = (
+            make_setext(title) if output_style == "setext" else make_atx(title)
+        )
+        return text[:match.start()] + replacement + text[match.end():]
 
     # No title found: insert at top
     replacement = make_setext(title) if output_style == "setext" else make_atx(title)
@@ -1471,9 +1475,9 @@ def get_file_content_to_include(
     filename: common.PathInput,
     *,
     search_folders: Optional[Iterable[common.PathInput]] = None,
-    include_cwd: bool = True,
+    include_cwd: bool = False,
     relative_paths: Sequence[str] = (".", "referenced_files"),
-    nb_up_path: int = 1,
+    nb_up_path: int = 0,
     encoding: Optional[str] = None,
 ) -> str:
     """
@@ -1502,25 +1506,27 @@ def get_file_content_to_include(
         Exception: Propagated if the file cannot be found or read.
     """
     requested = str(filename)
+    requested_path = Path(requested)
 
-    # Optional hardening: forbid path traversal in the requested "filename"
-    # (keep it conservative: you can relax if you intentionally support subpaths)
     if (
         os.path.isabs(requested)
-        or Path(requested).is_absolute()
+        or requested_path.is_absolute()
+        or bool(requested_path.drive)
         or requested.startswith(("/", "\\"))
-        or ".." in Path(requested).parts
+        or ".." in requested_path.parts
     ):
         raise ValueError(f"invalid referenced filename: {requested!r}")
 
-    module_dir = str(Path(common.get_this_filename()).resolve().parent)
-
-    start_points: list[str] = [module_dir]
-    if include_cwd:
-        start_points.append(os.getcwd())
-
+    module_dir = Path(__file__).resolve().parent
+    start_paths: list[Path] = []
     if search_folders:
-        start_points.extend(str(Path(p)) for p in search_folders)
+        start_paths.extend(Path(path).resolve() for path in search_folders)
+    if include_cwd:
+        start_paths.append(Path.cwd().resolve())
+    start_paths.append(module_dir)
+
+    unique_start_paths = list(dict.fromkeys(start_paths))
+    start_points = [str(path) for path in unique_start_paths]
 
     logging.debug(
         "Include-file lookup: filename=%r start_points=%r relative_paths=%r nb_up_path=%d",
@@ -1534,8 +1540,17 @@ def get_file_content_to_include(
         max_up=nb_up_path,
     )
 
-    logging.debug("Include-file resolved: %r -> %r", requested, found)
-    return _read_md_text(found, encoding)
+    resolved_found = Path(found).resolve()
+    if not any(
+        resolved_found == root or resolved_found.is_relative_to(root)
+        for root in unique_start_paths
+    ):
+        raise ValueError(
+            f"included file resolves outside the allowed roots: {requested!r}"
+        )
+
+    logging.debug("Include-file resolved: %r -> %r", requested, resolved_found)
+    return _read_md_text(resolved_found, encoding)
 # -----------------------------------------------------------------------------
 
 
@@ -1566,11 +1581,13 @@ def include_files_to_md_text(
     """
     pattern = _compile_pattern(include_file_re)
 
+    text = _require_str(text, "text")
+    code_ranges = markdown_code_ranges(text)
     result_parts: list[str] = []
     pos = 0
 
     while True:
-        m = pattern.search(text, pos)
+        m = _search_outside_ranges(pattern, text, pos, code_ranges)
         if not m:
             result_parts.append(text[pos:])
             break
@@ -1652,6 +1669,22 @@ def include_files_to_md_file(
     if backup_option:
         _create_backup(checked, backup_ext)
 
+    configured_search_folders = kwargs.get("search_folders")
+    search_folders = (
+        [] if configured_search_folders is None else list(configured_search_folders)
+    )
+    document_folder = Path(checked).resolve().parent
+    kwargs["search_folders"] = [
+        document_folder,
+        *(
+            folder
+            for folder in search_folders
+            if Path(folder).resolve() != document_folder
+        ),
+    ]
+    kwargs.setdefault("include_cwd", False)
+    kwargs.setdefault("nb_up_path", 0)
+
     text = include_files_to_md_text(
         text,
         error_if_no_file=error_if_no_file,
@@ -1694,13 +1727,13 @@ def ensure_include_file_in_md_text(
     pattern = _compile_pattern(include_file_re)
 
     # If already present, return as-is
-    for m in pattern.finditer(normalized):
+    matches = _directive_matches(pattern, normalized)
+    for m in matches:
         if m.group("name") == filename:
             return normalized
 
     directive = f"<!-- include-file({filename}) -->"
 
-    matches = list(pattern.finditer(normalized))
     if not matches:
         # insert at beginning
         if normalized and not normalized.startswith("\n"):
@@ -1747,7 +1780,8 @@ def get_include_file_list(
     """
     pattern = _compile_pattern(include_file_re)
 
-    names = [m.group("name") for m in pattern.finditer(text)]
+    text = _require_str(text, "text")
+    names = [m.group("name") for m in _directive_matches(pattern, text)]
 
     if not unique:
         return names
@@ -1792,7 +1826,7 @@ def del_include_file_to_md_text(
     pos = 0
     removed = False
 
-    for m in pattern.finditer(text):
+    for m in _directive_matches(pattern, text):
         name = m.group("name")
         if name == filename and (not first_only or not removed):
             # keep everything before the match, skip the match

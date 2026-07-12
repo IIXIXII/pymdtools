@@ -17,11 +17,11 @@ def test_refs_in_md_text_single_include():
 
 
 def test_refs_in_md_text_multiple_includes():
-    text = """
-    <!-- begin-include(header) -->
-    Some content
-    <!-- begin-include(footer) -->
-    """
+    text = (
+        "<!-- begin-include(header) -->\n"
+        "Some content\n"
+        "<!-- begin-include(footer) -->\n"
+    )
     assert refs_in_md_text(text) == ["header", "footer"]
 
 

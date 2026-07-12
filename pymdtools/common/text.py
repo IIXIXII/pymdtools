@@ -189,6 +189,13 @@ _WINDOWS_RESERVED_NAMES = {
     *(f"LPT{i}" for i in range(1, 10)),
 }
 
+
+def _require_filename_text(value: object, *, name: str) -> str:
+    """Validate text arguments while retaining a precise public type signature."""
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a str")
+    return value
+
 def get_valid_filename(
     filename: str,
     *,
@@ -213,8 +220,19 @@ def get_valid_filename(
         A Windows-safe filename.
 
     Raises:
-        ValueError: If filename is empty after sanitization.
+        TypeError: If ``filename`` or ``replacement`` is not text.
+        ValueError: If ``replacement`` is not one safe filename character, or
+            if ``filename`` is empty after sanitization.
     """
+    filename = _require_filename_text(filename, name="filename")
+    replacement = _require_filename_text(replacement, name="replacement")
+    if (
+        len(replacement) != 1
+        or not replacement.isprintable()
+        or replacement in '\\/*?:"<>| .'
+    ):
+        raise ValueError("replacement must be one safe filename character")
+
     name = filename
 
     if strip:

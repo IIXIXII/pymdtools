@@ -132,3 +132,68 @@ def test_filecontent_repr_and_str_with_text_content(tmp_path: Path):
     assert "backup option=True" in rendered
     assert "save needed=True" in rendered
     assert "Content char number=     5" in rendered
+
+
+def test_filecontent_failed_read_preserves_path_content_and_dirty_state(tmp_path: Path) -> None:
+    original = tmp_path / "original.txt"
+    original.write_text("old", encoding="utf-8")
+    missing = tmp_path / "missing.txt"
+    fc = FileContent(original, backup=False)
+    fc.content = "edited"
+
+    with pytest.raises(FileNotFoundError):
+        fc.read(missing)
+
+    assert fc.full_filename == str(original.resolve())
+    assert fc.content == "edited"
+    assert fc.save_needed is True
+
+
+def test_filecontent_failed_read_of_current_file_preserves_buffer(tmp_path: Path) -> None:
+    path = tmp_path / "current.txt"
+    path.write_text("old", encoding="utf-8")
+    fc = FileContent(path, backup=False)
+    fc.content = "edited"
+    path.unlink()
+
+    with pytest.raises(FileNotFoundError):
+        fc.read()
+
+    assert fc.full_filename == str(path.resolve())
+    assert fc.content == "edited"
+    assert fc.save_needed is True
+
+
+def test_filecontent_failed_write_preserves_path_and_dirty_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = tmp_path / "original.txt"
+    destination = tmp_path / "destination.txt"
+    fc = FileContent(original, content="edited", backup=False)
+
+    def fail_write(*args, **kwargs):
+        raise OSError("write failed")
+
+    monkeypatch.setattr("pymdtools.filetools.common.set_file_content", fail_write)
+
+    with pytest.raises(OSError, match="write failed"):
+        fc.write(destination)
+
+    assert fc.full_filename == str(original.resolve())
+    assert fc.content == "edited"
+    assert fc.save_needed is True
+    assert not destination.exists()
+
+
+def test_filecontent_none_content_write_keeps_original_path(tmp_path: Path) -> None:
+    original = tmp_path / "original.txt"
+    destination = tmp_path / "destination.txt"
+    fc = FileContent(original, backup=False)
+    fc.content = None
+
+    with pytest.raises(ValueError, match="content is None"):
+        fc.write(destination)
+
+    assert fc.full_filename == str(original.resolve())
+    assert not destination.exists()

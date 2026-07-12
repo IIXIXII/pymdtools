@@ -21,7 +21,7 @@ The module is intentionally text-oriented. Binary detection, encoding detection,
 atomic writes, backups, and path validation are delegated to ``pymdtools.common``.
 """
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Optional, List
 
 from . import common
@@ -41,10 +41,11 @@ def _relative_template_path(path: common.PathInput, *, name: str) -> Path:
             raise ValueError(f"{name} must be a non-empty path")
         rel = Path(path)
 
-    if rel.is_absolute():
+    windows_rel = PureWindowsPath(str(rel))
+    if windows_rel.anchor:
         raise ValueError(f"{name} must be a relative path, got absolute: {rel!s}")
 
-    if any(part == ".." for part in rel.parts):
+    if ".." in windows_rel.parts:
         raise ValueError(f"{name} must not contain '..' path traversal, got: {rel!s}")
 
     return rel
@@ -57,7 +58,11 @@ def _template_base(start_folder: common.PathInput | None = None) -> Path:
     Return the base directory used to locate the local ``template`` folder.
     """
     if start_folder is None:
-        return common.get_this_filename().parent
+        # This module owns the template convention. Using
+        # common.get_this_filename() resolves to common/fs.py and therefore
+        # searches under ``pymdtools/common/template`` instead of next to
+        # ``pymdtools/filetools.py``.
+        return Path(__file__).resolve().parent
 
     base = common.to_path(start_folder)
     if base.exists():
@@ -67,6 +72,16 @@ def _template_base(start_folder: common.PathInput | None = None) -> Path:
         base = base.parent
 
     return base.resolve(strict=False)
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+def _resolve_template_child(template_dir: Path, relative: Path, *, name: str) -> Path:
+    """Resolve *relative* below *template_dir* without allowing symlink escape."""
+    candidate = (template_dir / relative).resolve(strict=False)
+    if not candidate.is_relative_to(template_dir):
+        raise ValueError(f"{name} escapes template directory: {relative!s}")
+    return candidate
 # -----------------------------------------------------------------------------
 
 
@@ -82,7 +97,7 @@ def get_template_file(
     The lookup root is ``<base>/template``. When ``start_folder`` is provided,
     ``base`` is that folder, or the parent folder when ``start_folder`` points
     to a file. When it is omitted, ``base`` is derived from
-    ``common.get_this_filename()``.
+    this module's own location.
 
     ``filename`` must be relative to the template directory. Absolute paths,
     parent traversal with ``..``, and resolved paths escaping the template
@@ -104,12 +119,7 @@ def get_template_file(
     """
     rel = _relative_template_path(filename, name="filename")
     template_dir = common.check_folder(_template_base(start_folder) / "template")
-    candidate = (template_dir / rel).resolve(strict=False)
-
-    try:
-        candidate.relative_to(template_dir)
-    except ValueError as ex:
-        raise ValueError(f"template path escapes template directory: {rel!s}") from ex
+    candidate = _resolve_template_child(template_dir, rel, name="template path")
 
     # --- read content ---
     common.check_file(candidate)
@@ -118,12 +128,16 @@ def get_template_file(
 
 
 # -----------------------------------------------------------------------------
-def get_template_files_in_folder(folder: common.PathInput) -> List[str]:
+def get_template_files_in_folder(
+    folder: common.PathInput,
+    start_folder: common.PathInput | None = None,
+) -> List[str]:
     """
     List template files contained in `template/<folder>`.
 
     Args:
         folder: Subfolder name under the local `template/` directory.
+        start_folder: Optional folder or file used to locate ``template/``.
 
     Returns:
         A list of relative template paths (POSIX-style), e.g. ["emails/a.html"].
@@ -135,12 +149,19 @@ def get_template_files_in_folder(folder: common.PathInput) -> List[str]:
         NotADirectoryError: If the resolved template folder is not a directory.
     """
     rel = _relative_template_path(folder, name="folder")
-    template_dir = common.check_folder(_template_base() / "template")
-    local_template_folder = common.check_folder(template_dir / rel)
+    template_dir = common.check_folder(_template_base(start_folder) / "template")
+    local_template_folder = common.check_folder(
+        _resolve_template_child(template_dir, rel, name="template folder")
+    )
 
     files: List[str] = []
     for p in sorted(local_template_folder.iterdir(), key=lambda x: x.name):
-        if p.is_file():
+        resolved_file = _resolve_template_child(
+            template_dir,
+            p.relative_to(template_dir),
+            name="template file",
+        )
+        if resolved_file.is_file():
             files.append((rel / p.name).as_posix())
 
     return files
@@ -373,17 +394,17 @@ class FileContent(FileName):
         """
         Read text content from disk into memory.
 
-        If ``filename`` is provided, it replaces the current stored path before
-        reading. ``encoding=None`` delegates encoding detection to
-        ``common.get_file_content``.
+        If ``filename`` is provided, it replaces the current stored path only
+        after a successful read. ``encoding=None`` delegates encoding detection
+        to ``common.get_file_content``.
         """
-        if filename is not None:
-            self.full_filename = filename
-
-        if self._path is None:
+        target = common.normpath(filename) if filename is not None else self._path
+        if target is None:
             raise ValueError("cannot read content without a filename")
 
-        self._content = common.get_file_content(self._path, encoding=encoding)
+        content = common.get_file_content(target, encoding=encoding)
+        self._path = target
+        self._content = content
         self._save_needed = False
 
     def write(
@@ -396,23 +417,22 @@ class FileContent(FileName):
         """
         Write the in-memory text content to disk.
 
-        If ``filename`` is provided, it replaces the current stored path before
-        writing. When backups are enabled and the target file already exists,
-        a backup is created before writing the new content.
+        If ``filename`` is provided, it replaces the current stored path only
+        after a successful write. When backups are enabled and the target file
+        already exists, a backup is created before writing the new content.
         """
-        if filename is not None:
-            self.full_filename = filename
-
-        if self._path is None:
+        target = common.normpath(filename) if filename is not None else self._path
+        if target is None:
             raise ValueError("cannot write content without a filename")
 
         if self._content is None:
             raise ValueError("cannot write: content is None")
 
-        if self.backup and self._path.is_file():
-            common.create_backup(self._path, ext=backup_ext)
+        if self.backup and target.is_file():
+            common.create_backup(target, ext=backup_ext)
 
-        common.set_file_content(self._path, self._content, encoding=encoding)
+        common.set_file_content(target, self._content, encoding=encoding)
+        self._path = target
         self._save_needed = False
 
     def __repr__(self) -> str:

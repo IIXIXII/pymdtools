@@ -9,7 +9,7 @@ import pytest
 import pymdtools.common.fs as common
 
 
-def test_get_this_filename_frozen(monkeypatch, tmp_path: Path):
+def test_get_this_filename_frozen_from_sys_executable(monkeypatch, tmp_path: Path):
     fake_exe = tmp_path / "app.exe"
     fake_exe.write_text("x", encoding="utf-8")
 

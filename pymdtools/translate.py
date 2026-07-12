@@ -25,8 +25,9 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import Any, Final, Literal, cast
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -41,6 +42,10 @@ __all__ = ["translate_md", "translate_txt"]
 _MYMEMORY_ENDPOINT = "https://api.mymemory.translated.net/get"
 _MYMEMORY_MAX_QUERY_BYTES = 500
 _DEFAULT_TIMEOUT = 10.0
+TranslationErrorMode = Literal["keep_original", "empty", "raise"]
+_MARKDOWN_TEXT_ESCAPES: Final[frozenset[str]] = frozenset(
+    "\\`*_{}[]<>()#+-.!|=~&"
+)
 
 
 # -----------------------------------------------------------------------------
@@ -109,25 +114,35 @@ def _split_text_for_mymemory(text: str, max_bytes: int = _MYMEMORY_MAX_QUERY_BYT
     chunks: list[str] = []
     current = ""
 
-    for word in text.split(" "):
-        part = word if current == "" else f" {word}"
-        if _utf8_len(part) > max_bytes:
-            if current:
-                chunks.append(current)
-                current = ""
-            chunks.extend(_split_oversized_word(part, max_bytes))
+    for part in re.findall(r"\s+|\S+", text):
+        candidate = current + part
+        if _utf8_len(candidate) <= max_bytes:
+            current = candidate
             continue
 
-        candidate = current + part
-        if current and _utf8_len(candidate) > max_bytes:
+        if current:
             chunks.append(current)
-            current = word
-        else:
-            current = candidate
+            current = ""
 
-    if current:
-        chunks.append(current)
+        if _utf8_len(part) <= max_bytes:
+            current = part
+            continue
+
+        split_part = _split_oversized_word(part, max_bytes)
+        chunks.extend(split_part[:-1])
+        current = split_part[-1]
+
+    chunks.append(current)
     return chunks
+
+
+# -----------------------------------------------------------------------------
+def _escape_markdown_text(text: str) -> str:
+    """Escape translated plain text before reinserting it into Markdown."""
+    return "".join(
+        f"\\{char}" if char in _MARKDOWN_TEXT_ESCAPES else char
+        for char in text
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -220,8 +235,10 @@ def _request_mymemory_translation(
     """
     url = _build_mymemory_url(text, src, dest, email=email, api_key=api_key)
     with urlopen(url, timeout=timeout) as response:  # noqa: S310 - URL is fixed to MyMemory.
-        payload = json.loads(response.read().decode("utf-8"))
-    return _extract_mymemory_translation(payload)
+        payload: object = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, Mapping):
+        raise RuntimeError("Invalid MyMemory response: expected a JSON object")
+    return _extract_mymemory_translation(cast(Mapping[str, Any], payload))
 
 
 # -----------------------------------------------------------------------------
@@ -233,6 +250,7 @@ def translate_txt(
     email: str | None = None,
     api_key: str | None = None,
     timeout: float = _DEFAULT_TIMEOUT,
+    on_error: TranslationErrorMode = "keep_original",
 ) -> str:
     """
     Translate plain text with MyMemory.
@@ -247,10 +265,18 @@ def translate_txt(
         email: Optional contact email sent to MyMemory as the ``de`` parameter.
         api_key: Optional MyMemory private key.
         timeout: Network timeout in seconds.
+        on_error: Behavior when the API call fails:
+            ``"keep_original"`` returns the source text, ``"empty"`` returns
+            ``""`` for backward compatibility, and ``"raise"`` propagates the
+            exception.
 
     Returns:
-        Translated text, unchanged blank text, or ``""`` if the API call fails.
+        Translated text, unchanged blank text, or the configured fallback when
+        the API call fails.
     """
+    if on_error not in ("keep_original", "empty", "raise"):
+        raise ValueError(f"invalid on_error mode: {on_error!r}")
+
     if not text or text.isspace():
         return text
 
@@ -268,8 +294,12 @@ def translate_txt(
             for chunk in chunks
         )
     except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, ValueError) as err:
-        logging.error("Error in MyMemory translation %r: %r", text, err)
-        return ""
+        logging.error("MyMemory translation failed: %s", type(err).__name__)
+        if on_error == "raise":
+            raise
+        if on_error == "empty":
+            return ""
+        return text
 
 
 # -----------------------------------------------------------------------------
@@ -281,6 +311,7 @@ def translate_md(
     email: str | None = None,
     api_key: str | None = None,
     timeout: float = _DEFAULT_TIMEOUT,
+    on_error: TranslationErrorMode = "keep_original",
 ) -> str:
     """
     Translate Markdown text with MyMemory while preserving Markdown structure.
@@ -297,6 +328,7 @@ def translate_md(
         email: Optional contact email sent to MyMemory as the ``de`` parameter.
         api_key: Optional MyMemory private key.
         timeout: Network timeout in seconds.
+        on_error: Forwarded to :func:`translate_txt`.
 
     Returns:
         Translated Markdown text.
@@ -309,14 +341,16 @@ def translate_md(
             """Translate one Mistune text token."""
             del state
             raw_text = str(token.get("raw", ""))
-            return translate_txt(
+            translated = translate_txt(
                 raw_text,
                 src=src,
                 dest=dest,
                 email=email,
                 api_key=api_key,
                 timeout=timeout,
+                on_error=on_error,
             )
+            return _escape_markdown_text(translated)
 
     markdown = mistune.create_markdown_with_close(renderer=LocalRender())
     return str(markdown(md_text))

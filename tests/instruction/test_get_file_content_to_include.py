@@ -33,9 +33,9 @@ def test_get_file_content_to_include_calls_search_and_reads(monkeypatch, tmp_pat
 
     assert out == "OK"
     assert calls["file_wanted"] == "snippet.md"
-    assert calls["max_up"] == 1
+    assert calls["max_up"] == 0
     assert calls["encoding"] == "utf-8"
-    assert calls["read_filename"].endswith("found.md")
+    assert Path(calls["read_filename"]).name == "found.md"
 
 
 def test_get_file_content_to_include_rejects_absolute_path():
@@ -46,3 +46,8 @@ def test_get_file_content_to_include_rejects_absolute_path():
 def test_get_file_content_to_include_rejects_parent_traversal():
     with pytest.raises(ValueError):
         instruction.get_file_content_to_include("../secret.md", include_cwd=False)
+
+
+def test_get_file_content_to_include_rejects_drive_relative_path():
+    with pytest.raises(ValueError):
+        instruction.get_file_content_to_include("C:secret.md", include_cwd=False)

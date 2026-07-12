@@ -113,7 +113,7 @@ def test_copytree_symlinks_false_follows_symlink_file(tmp_path: Path) -> None:
     assert out_link.read_text(encoding="utf-8") == "T"
 
 
-def test_copytree_symlinks_true_overwrites_existing_dest_dir_without_platform_symlink(
+def test_copytree_symlinks_true_rejects_existing_dest_dir_without_platform_symlink(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     src = tmp_path / "src"
@@ -143,12 +143,13 @@ def test_copytree_symlinks_true_overwrites_existing_dest_dir_without_platform_sy
     monkeypatch.setattr(Path, "readlink", fake_readlink)
     monkeypatch.setattr(Path, "symlink_to", fake_symlink_to)
 
-    common.copytree(src, dst, symlinks=True)
+    with pytest.raises(FileExistsError, match="symbolic link over an existing"):
+        common.copytree(src, dst, symlinks=True)
 
-    assert (dst / "link").read_text(encoding="utf-8") == "target.txt"
+    assert (dst / "link").is_dir()
 
 
-def test_copytree_symlinks_true_unlinks_existing_dest_file_without_platform_symlink(
+def test_copytree_symlinks_true_rejects_existing_dest_file_without_platform_symlink(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     src = tmp_path / "src"
@@ -177,9 +178,10 @@ def test_copytree_symlinks_true_unlinks_existing_dest_file_without_platform_syml
     monkeypatch.setattr(Path, "readlink", fake_readlink)
     monkeypatch.setattr(Path, "symlink_to", fake_symlink_to)
 
-    common.copytree(src, dst, symlinks=True)
+    with pytest.raises(FileExistsError, match="symbolic link over an existing"):
+        common.copytree(src, dst, symlinks=True)
 
-    assert (dst / "link").read_text(encoding="utf-8") == "target.txt"
+    assert (dst / "link").read_text(encoding="utf-8") == "old"
 
 
 def test_copytree_symlinks_true_creates_dest_when_missing_without_platform_symlink(

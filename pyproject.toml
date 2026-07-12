@@ -4,16 +4,14 @@
 
 [build-system]
 requires = [
-  "setuptools>=64",
-  "wheel"
+  "setuptools>=77",
+  "wheel>=0.45"
 ]
 build-backend = "setuptools.build_meta"
 
 [tool.pyright]
-include = ["pymdtools"]
-ignore = ["**/tests/**", "**/examples/**"]
-venvPath = "."
-venv = ".venv"
+include = ["pymdtools", "scripts/release.py"]
+exclude = ["tests", "examples", "build", "dist", "docs/_build"]
 
 typeCheckingMode = "strict"
 

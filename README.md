@@ -6,9 +6,10 @@
 
 # pymdtools
 
-[![PyPI version](https://img.shields.io/pypi/v/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
-[![Wheel](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.python.org/pypi/pymdtools/)
+[![PyPI version](https://img.shields.io/pypi/v/pymdtools.svg?style=flat)](https://pypi.org/project/pymdtools/)
+[![Wheel](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.org/project/pymdtools/)
 [![Documentation](https://img.shields.io/readthedocs/pymdtools.svg?style=flat)](https://pymdtools.readthedocs.io/)
+[![CI](https://github.com/IIXIXII/pymdtools/actions/workflows/ci.yml/badge.svg)](https://github.com/IIXIXII/pymdtools/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/IIXIXII/pymdtools.svg?style=flat)](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md)
 
 `pymdtools` is a Python toolkit for working with Markdown documents. It provides
@@ -50,17 +51,17 @@ For development, clone the repository and install the project dependencies:
 ```bash
 git clone https://github.com/IIXIXII/pymdtools.git
 cd pymdtools
-python -m pip install -r requirements-dev.txt
-python -m pip install -e .
+python -m pip install -e ".[dev,docs]"
 ```
 
-`pymdtools` supports Python 3.7 and newer.
+`pymdtools` supports Python 3.10 through Python 3.14.
 
 ## Optional System Dependency
 
 PDF generation uses `pdfkit`, which requires the external `wkhtmltopdf`
 executable. Install `wkhtmltopdf` separately if you need Markdown-to-PDF or
-HTML-to-PDF conversion.
+HTML-to-PDF conversion. The executable is first resolved from `PATH` on every
+platform, with additional legacy installation folders checked on Windows.
 
 On Windows, `pymdtools` searches common installation locations such as:
 
@@ -160,14 +161,52 @@ Build the documentation in strict mode:
 python -m sphinx.cmd.build -b html -W --keep-going docs docs/_build/html
 ```
 
+Build and validate both distributions without publishing them:
+
+```bash
+python scripts/release.py build --allow-dirty
+```
+
+### Security boundaries
+
+- HTML generation uses the escaping Mistune renderer by default. Selecting
+  `converter="markdown"` explicitly enables raw HTML and is only appropriate for
+  trusted Markdown.
+- Include directives can read local files from their configured search roots.
+  Do not process untrusted directives, and provide explicit search folders for
+  server-side workflows.
+- Translation sends document text to the external MyMemory service. Do not use
+  it for secrets or regulated content without an appropriate data policy.
+
+### Release workflow
+
+Versioning and publication are intentionally separated:
+
+```bash
+python scripts/release.py bump patch
+git add pymdtools/version.py pymdtools/version.bat
+git commit -m "Release 1.0.x"
+python scripts/release.py tag
+git push origin v1.0.x
+```
+
+The helpers refuse dirty trees, create only an annotated local tag, and never
+upload or push automatically. Creating a GitHub release from the verified tag
+triggers a build job without publishing credentials; a separate protected job
+then publishes those validated artifacts through PyPI trusted publishing.
+Historical tag mismatches can be reported, without changing them, with
+`python scripts/release.py audit-tags`.
+
 ## Project Links
 
 - Documentation: <https://pymdtools.readthedocs.io/>
-- Package: <https://pypi.python.org/pypi/pymdtools/>
+- Package: <https://pypi.org/project/pymdtools/>
 - Source code: <https://github.com/IIXIXII/pymdtools>
 - Issue tracker: <https://github.com/IIXIXII/pymdtools/issues>
 
 ## License
 
-`pymdtools` is distributed under the MIT license. See [LICENSE.md](LICENSE.md)
-for details.
+`pymdtools` is distributed under the MIT license. See
+[LICENSE.md](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md) for
+details. Bundled layout resources and their license texts are inventoried in
+[LICENSES-3rd-party.md](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-3rd-party.md).

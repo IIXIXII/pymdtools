@@ -81,6 +81,7 @@ Usage example
 """
 
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
+from pathlib import Path
 from typing import Any, cast
 
 import markdown
@@ -179,11 +180,32 @@ class MarkdownContent(filetools.FileContent):
         by :func:`pymdtools.instruction.include_files_to_md_text`, so it is
         removed from the forwarded options.
         """
-        return {
+        options = {
             key: value
             for key, value in self.__kwargs.items()
             if key not in ("refs_depth",)
         }
+        if self.full_filename is None:
+            return options
+
+        configured = options.get("search_folders")
+        if configured is None:
+            search_folders: list[common.PathInput] = []
+        else:
+            search_folders = list(configured)
+
+        document_folder = Path(self.full_filename).resolve().parent
+        options["search_folders"] = [
+            document_folder,
+            *(
+                folder
+                for folder in search_folders
+                if Path(folder).resolve() != document_folder
+            ),
+        ]
+        options.setdefault("include_cwd", False)
+        options.setdefault("nb_up_path", 0)
+        return options
 
     def __update_dict(self) -> None:
         """

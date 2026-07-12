@@ -315,35 +315,6 @@ pre {
 }
 
 /* ============================================================ */
-/* Icons */
-/* ============================================================ */
-.icon {
-  background: url(../images/sprite-28-76-2x.png) no-repeat;
-  background-size: 14px 38px;
-  display: block;
-  height: 38px;
-  width: 14px;
-}
-
-.icon-menu {
-  background-position: 0 0;
-  height: 14px;
-  width: 14px;
-}
-
-.icon-up {
-  background-position: 0 -15px;
-  height: 8px;
-  width: 14px;
-}
-
-.icon-rss {
-  background-position: 0 -24px;
-  height: 14px;
-  width: 14px;
-}
-
-/* ============================================================ */
 /* Footer */
 /* ============================================================ */
 .footer {

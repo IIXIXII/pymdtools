@@ -15,36 +15,6 @@ https://github.com/AndrewBelt/WiTeX
 */
 
 
-/* Latin Modern (LaTeX default) font */
-
-@font-face {
-	font-family: 'Latin Modern Roman';
-	font-weight: normal;
-	font-style: normal;
-	src: url('../fonts/lmroman10-regular.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Latin Modern Roman';
-	font-weight: bold;
-	font-style: normal;
-	src: url('../fonts/lmroman10-bold.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Latin Modern Roman';
-	font-weight: normal;
-	font-style: italic;
-	src: url('../fonts/lmroman10-italic.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Latin Modern Roman';
-	font-weight: bold;
-	font-style: italic;
-	src: url('../fonts/lmroman10-bolditalic.woff') format('woff');
-}
-
 /* Page Layout */
 
 body {
@@ -53,7 +23,7 @@ body {
 }
 
 body {
-	font-family: 'Latin Modern Roman', serif;
+	font-family: Georgia, 'Times New Roman', serif;
 }
 
 h1, h2, h3, h4, h5, h6 {

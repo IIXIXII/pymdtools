@@ -11,7 +11,7 @@ import pymdtools.translate as translate
 
 
 class FakeResponse:
-    def __init__(self, payload: dict[str, object]) -> None:
+    def __init__(self, payload: object) -> None:
         self.payload = payload
 
     def __enter__(self) -> FakeResponse:
@@ -111,6 +111,26 @@ def test_request_mymemory_translation_reads_json_response(monkeypatch: pytest.Mo
     assert query["key"] == ["secret"]
 
 
+def test_request_mymemory_translation_rejects_non_mapping_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        translate,
+        "urlopen",
+        lambda *args, **kwargs: FakeResponse(["unexpected"]),
+    )
+
+    with pytest.raises(RuntimeError, match="JSON object"):
+        translate._request_mymemory_translation(
+            "Bonjour",
+            "fr",
+            "en",
+            email=None,
+            api_key=None,
+            timeout=2.0,
+        )
+
+
 def test_split_text_for_mymemory_returns_no_chunks_for_empty_text() -> None:
     assert translate._split_text_for_mymemory("") == []
 
@@ -123,8 +143,9 @@ def test_split_text_for_mymemory_rejects_invalid_max_bytes() -> None:
 def test_split_text_for_mymemory_keeps_chunks_under_limit() -> None:
     chunks = translate._split_text_for_mymemory("alpha beta gamma", max_bytes=10)
 
-    assert chunks == ["alpha beta", "gamma"]
+    assert chunks == ["alpha beta", " gamma"]
     assert all(len(chunk.encode("utf-8")) <= 10 for chunk in chunks)
+    assert "".join(chunks) == "alpha beta gamma"
 
 
 def test_split_text_for_mymemory_splits_oversized_words() -> None:
@@ -140,7 +161,19 @@ def test_split_oversized_word_returns_no_chunk_for_empty_word() -> None:
 def test_split_text_for_mymemory_flushes_current_before_oversized_word() -> None:
     chunks = translate._split_text_for_mymemory("abc defghijk", max_bytes=4)
 
-    assert chunks == ["abc", " def", "ghij", "k"]
+    assert chunks == ["abc ", "defg", "hijk"]
+    assert "".join(chunks) == "abc defghijk"
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["  leading", "trailing  ", "a   b", "line one\n\nline two\t"],
+)
+def test_split_text_for_mymemory_preserves_all_whitespace(text: str) -> None:
+    chunks = translate._split_text_for_mymemory(text, max_bytes=5)
+
+    assert "".join(chunks) == text
+    assert all(len(chunk.encode("utf-8")) <= 5 for chunk in chunks)
 
 
 def test_translate_txt_returns_blank_without_api_call(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -183,21 +216,66 @@ def test_translate_txt_translates_each_chunk(monkeypatch: pytest.MonkeyPatch) ->
         timeout=3.0,
     )
 
-    assert out == f"[{'a' * 500}][b]"
+    assert out == f"[{'a' * 500}][ b]"
     assert calls == [
         ("a" * 500, "fr", "en", "me@example.com", "secret", 3.0),
-        ("b", "fr", "en", "me@example.com", "secret", 3.0),
+        (" b", "fr", "en", "me@example.com", "secret", 3.0),
     ]
 
 
-def test_translate_txt_returns_empty_string_when_api_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_translate_txt_keeps_original_text_when_api_fails_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def fake_request(*args: Any, **kwargs: Any) -> str:
         del args, kwargs
         raise URLError("offline")
 
     monkeypatch.setattr(translate, "_request_mymemory_translation", fake_request)
 
-    assert translate.translate_txt("Bonjour") == ""
+    assert translate.translate_txt("Bonjour") == "Bonjour"
+
+
+def test_translate_txt_does_not_log_source_text(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    secret = "private customer text"
+    monkeypatch.setattr(
+        translate,
+        "_request_mymemory_translation",
+        lambda *args, **kwargs: (_ for _ in ()).throw(URLError("offline")),
+    )
+
+    assert translate.translate_txt(secret) == secret
+    assert secret not in caplog.text
+
+
+def test_translate_txt_can_return_empty_string_when_api_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_request(*args: Any, **kwargs: Any) -> str:
+        del args, kwargs
+        raise URLError("offline")
+
+    monkeypatch.setattr(translate, "_request_mymemory_translation", fake_request)
+
+    assert translate.translate_txt("Bonjour", on_error="empty") == ""
+
+
+def test_translate_txt_can_raise_when_api_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_request(*args: Any, **kwargs: Any) -> str:
+        del args, kwargs
+        raise URLError("offline")
+
+    monkeypatch.setattr(translate, "_request_mymemory_translation", fake_request)
+
+    with pytest.raises(URLError):
+        translate.translate_txt("Bonjour", on_error="raise")
+
+
+def test_translate_txt_rejects_unknown_error_mode() -> None:
+    with pytest.raises(ValueError, match="invalid on_error"):
+        translate.translate_txt("Bonjour", on_error="missing")  # type: ignore[arg-type]
 
 
 def test_translate_md_translates_text_tokens_and_preserves_markdown(
@@ -238,7 +316,21 @@ def test_translate_md_translates_text_tokens_and_preserves_markdown(
     ]
 
 
-def test_translate_md_returns_empty_text_for_failed_tokens(
+def test_translate_md_escapes_markdown_returned_by_remote_service(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        translate,
+        "_request_mymemory_translation",
+        lambda *args, **kwargs: "[click](javascript:alert(1)) <script>",
+    )
+
+    out = translate.translate_md("Bonjour")
+
+    assert r"\[click\]\(javascript:alert\(1\)\) \<script\>" in out
+
+
+def test_translate_md_keeps_original_text_for_failed_tokens_by_default(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(*args: Any, **kwargs: Any) -> str:
@@ -247,4 +339,16 @@ def test_translate_md_returns_empty_text_for_failed_tokens(
 
     monkeypatch.setattr(translate, "_request_mymemory_translation", fake_request)
 
-    assert translate.translate_md("Bonjour").strip() == ""
+    assert translate.translate_md("Bonjour").strip() == "Bonjour"
+
+
+def test_translate_md_can_return_empty_text_for_failed_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_request(*args: Any, **kwargs: Any) -> str:
+        del args, kwargs
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(translate, "_request_mymemory_translation", fake_request)
+
+    assert translate.translate_md("Bonjour", on_error="empty").strip() == ""

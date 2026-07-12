@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v7.0.0
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install project and test tools
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Run test suite
+        run: python -m pytest
+
+  quality:
+    name: Types, documentation and distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install development and documentation tools
+        run: python -m pip install --disable-pip-version-check -e ".[dev,docs]"
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Check version files
+        run: python scripts/release.py check
+      - name: Run strict type checking
+        run: python -m pyright
+      - name: Build documentation with warnings as errors
+        run: python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
+      - name: Build and validate distributions
+        run: python scripts/release.py build
+      - name: Install wheel in an isolated environment and smoke-test resources
+        shell: bash
+        run: |
+          smoke_dir="$RUNNER_TEMP/pymdtools-wheel-smoke"
+          python -m venv "$smoke_dir"
+          "$smoke_dir/bin/python" -m pip install --disable-pip-version-check --no-deps dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$smoke_dir/bin/python" -c "from pathlib import Path; import pymdtools; package = Path(pymdtools.__file__).resolve().parent; assert (package / 'layouts/github/page.html').is_file(); assert (package / 'referenced_files/license.txt').is_file(); print(pymdtools.__version__)"
+      - name: Preserve validated distributions
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: distributions-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

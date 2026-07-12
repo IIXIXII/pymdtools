@@ -188,3 +188,130 @@ def test_apply_to_files_root_not_dir_not_file_raises(tmp_path: Path) -> None:
     assert summary.succeeded == 0
     assert summary.failed == 0
     assert summary.skipped == 0
+
+
+def test_apply_to_files_rejects_unknown_on_error(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="on_error must be either"):
+        apply_to_files(tmp_path, lambda path: path, on_error="ignore")
+
+
+def test_apply_to_files_follow_symlinks_controls_directory_traversal_without_links(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "root"
+    linked_directory = root / "linked"
+    _write(linked_directory / "inside.txt")
+    original_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == linked_directory:
+            return True
+        return original_is_symlink(self)
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+
+    without_following, without_summary, _ = apply_to_files(
+        root,
+        lambda path: path.name,
+        follow_symlinks=False,
+    )
+    with_following, with_summary, _ = apply_to_files(
+        root,
+        lambda path: path.name,
+        follow_symlinks=True,
+    )
+
+    assert without_following == []
+    assert without_summary.processed == 0
+    assert with_following == ["inside.txt"]
+    assert with_summary.processed == 1
+
+
+def test_apply_to_files_stops_revisiting_directory_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "root"
+    repeated = root / "repeated"
+    _write(repeated / "inside.txt")
+    original_stat = Path.stat
+    original_resolve = Path.resolve
+
+    def fake_stat(self: Path, *args, **kwargs):
+        if self == repeated:
+            return original_stat(root)
+        return original_stat(self, *args, **kwargs)
+
+    def fake_resolve(self: Path, *args, **kwargs):
+        if self == repeated:
+            return original_resolve(root, *args, **kwargs)
+        return original_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", fake_stat)
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
+
+    results, summary, errors = apply_to_files(
+        root,
+        lambda path: path.name,
+        follow_symlinks=True,
+    )
+
+    assert results == []
+    assert errors == []
+    assert summary.processed == 0
+
+
+def test_apply_to_files_globs_are_case_sensitive_on_every_platform(
+    tmp_path: Path,
+) -> None:
+    _write(tmp_path / "README.MD")
+
+    results, summary, errors = apply_to_files(
+        tmp_path,
+        lambda path: path.name,
+        include_globs=("*.md",),
+    )
+
+    assert results == []
+    assert errors == []
+    assert summary.processed == 1
+    assert summary.skipped == 1
+
+
+def test_apply_to_files_skips_special_entry_and_continues_iteration(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    special = root / "a-special"
+    regular = _write(root / "z.txt")
+    original_iterdir = Path.iterdir
+    original_is_dir = Path.is_dir
+    original_is_file = Path.is_file
+
+    def fake_iterdir(self: Path):
+        if self == root:
+            return iter([special, regular])
+        return original_iterdir(self)
+
+    def fake_is_dir(self: Path) -> bool:
+        if self == special:
+            return False
+        return original_is_dir(self)
+
+    def fake_is_file(self: Path) -> bool:
+        if self == special:
+            return False
+        return original_is_file(self)
+
+    monkeypatch.setattr(Path, "iterdir", fake_iterdir)
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+    monkeypatch.setattr(Path, "is_file", fake_is_file)
+
+    results, summary, errors = apply_to_files(root, lambda path: path.name)
+
+    assert results == ["z.txt"]
+    assert errors == []
+    assert summary.processed == 1

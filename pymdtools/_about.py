@@ -15,7 +15,7 @@ __description__     = "Markdown Tools"
 __author__          = "Florent Tournois"
 __author_email__    = "florent.tournois@gmail.fr"
 
-__license__         = "License :: OSI Approved :: MIT License"
+__license__         = "MIT"
 __copyright__       = "Copyright 2018, Florent Tournois"
 __credits__         = ["Arnaud Boidard"]
 

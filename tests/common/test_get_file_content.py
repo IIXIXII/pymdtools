@@ -42,3 +42,28 @@ def test_get_file_content_raises_unicode_decode_error(tmp_path):
 
     with pytest.raises(UnicodeDecodeError):
         get_file_content(f, encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("encoding", "text"),
+    [
+        ("cp1252", "Café — 10 €"),
+        ("latin-1", "Déjà vu"),
+    ],
+)
+def test_get_file_content_reads_explicit_single_byte_text(
+    tmp_path: Path,
+    encoding: str,
+    text: str,
+) -> None:
+    path = tmp_path / f"{encoding}.txt"
+    path.write_bytes(text.encode(encoding))
+
+    assert get_file_content(path, encoding=encoding) == text
+
+
+def test_get_file_content_reads_utf16_without_bom_when_explicit(tmp_path: Path) -> None:
+    path = tmp_path / "utf16.txt"
+    path.write_bytes("hello".encode("utf-16-le"))
+
+    assert get_file_content(path, encoding="utf-16-le") == "hello"

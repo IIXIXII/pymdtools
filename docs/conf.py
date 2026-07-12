@@ -5,10 +5,11 @@
 # =============================================================================
 # pylint: skip-file
 
-import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath('..'))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 import pymdtools as mymodule
 from pymdtools import _about as about
@@ -26,12 +27,15 @@ language = 'en'
 
 html_static_path = ['layout']
 templates_path = ['_templates']
-exclude_patterns = []
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.napoleon',
-              ]
+exclude_patterns = ['_build']
+extensions = [
+    'myst_parser',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+]
 source_suffix = {
     '.rst': 'restructuredtext',
+    '.md': 'markdown',
 }
 
 master_doc = 'index'
@@ -45,12 +49,4 @@ highlight_language = 'python'
 # -- Options for HTML output -------------------------------------------------
 pygments_style = 'friendly'
 
-# -- Options for HTML output -------------------------------------------------
-# on_rtd is whether we are on readthedocs.org,
-# this line of code grabbed from docs.readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    html_theme = 'sphinx_rtd_theme'
-else:
-    html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'

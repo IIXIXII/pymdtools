@@ -1,13 +1,11 @@
-@import url(//fonts.googleapis.com/css?family=PT+Sans);
-
 body {
   margin: 0px;
 
-  font-family: 'PT Sans', Helvetica, 'Helvetica Neuve', Arial, Tahoma, sans-serif;
+  font-family: Helvetica, "Helvetica Neue", Arial, Tahoma, sans-serif;
   font-size: 17px;
 
   color: #333;
-}}
+}
 
 h1, h2, h3, h4, h5, h6 {
   color:#222;

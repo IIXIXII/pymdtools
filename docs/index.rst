@@ -5,7 +5,7 @@ pymdtools's documentation
    :maxdepth: 2
    :caption: Contents:
 
-   readme_link
+   readme
    package
    common
    filetools
@@ -17,6 +17,7 @@ pymdtools's documentation
    markdownify_integration
    normalize
    translate
+   release
    license_link
 
 Indices and tables

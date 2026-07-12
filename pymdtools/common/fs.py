@@ -67,13 +67,15 @@ re-exported by ``pymdtools.common`` (the package façade).
 
 from __future__ import annotations
 
+import codecs
 import os
+import stat
 import sys
 import shutil
 import tempfile
 from dataclasses import dataclass
-from fnmatch import fnmatch
-from pathlib import Path
+from fnmatch import fnmatchcase
+from pathlib import Path, PureWindowsPath
 from typing import Callable, Iterable, Optional, Sequence, Set
 
 from .core import PathInput, T
@@ -190,6 +192,15 @@ def _p(p: PathInput) -> Path:
         A pathlib.Path instance.
     """
     return to_path(p)
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+def _require_str(value: object, *, name: str) -> str:
+    """Return *value* as text, with a clear runtime error for dynamic callers."""
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a str")
+    return value
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
@@ -461,6 +472,12 @@ def copytree(
         If *src* does not exist.
     NotADirectoryError
         If *src* is not a directory.
+    ValueError
+        If *dst* is *src*, is contained in *src*, or a followed directory
+        symlink introduces a traversal cycle.
+    FileExistsError
+        If source and destination entries have incompatible types, or copying
+        a symbolic link would replace an existing entry.
     OSError
         For underlying filesystem errors.
     """
@@ -472,42 +489,89 @@ def copytree(
     if not src_p.is_dir():
         raise NotADirectoryError(f"Source is not a directory: {src_p}")
 
-    dst_p.mkdir(parents=True, exist_ok=True)
+    def _resolved(path: Path, *, role: str) -> Path:
+        try:
+            return path.resolve(strict=False)
+        except RuntimeError as ex:
+            raise ValueError(f"Directory cycle detected while resolving {role}: {path}") from ex
 
-    names = [p.name for p in src_p.iterdir()]
-    ignored: Set[str] = set(ignore(str(src_p), names)) if ignore else set()
+    def _validate_destination(source_dir: Path, destination_dir: Path) -> Path:
+        source_resolved = _resolved(source_dir, role="source")
+        destination_resolved = _resolved(destination_dir, role="destination")
+        # Validate both a possible link target and the physical location where
+        # a destination entry would be created.
+        destination_location = (
+            _resolved(destination_dir.parent, role="destination parent")
+            / destination_dir.name
+        )
+        for candidate in (destination_resolved, destination_location):
+            if candidate == source_resolved or candidate.is_relative_to(source_resolved):
+                raise ValueError(
+                    "Destination directory must not be the source directory or one of "
+                    f"its descendants: source={source_dir}, destination={destination_dir}"
+                )
+        return source_resolved
 
-    for name in names:
-        if name in ignored:
-            continue
+    def _ensure_destination_directory(path: Path) -> None:
+        if path.is_symlink() or (path.exists() and not path.is_dir()):
+            raise FileExistsError(
+                f"Cannot copy a directory over a non-directory entry: {path}"
+            )
+        path.mkdir(parents=True, exist_ok=True)
 
-        source = src_p / name
-        destin = dst_p / name
+    active_directories: Set[tuple[int, int, Path]] = set()
 
-        # Symlink handling
-        if source.is_symlink():
-            if symlinks:
-                # Copy link itself
-                if destin.exists() or destin.is_symlink():
-                    if destin.is_dir() and not destin.is_symlink():
-                        shutil.rmtree(destin)
+    def _copy_directory(source_dir: Path, destination_dir: Path) -> None:
+        source_resolved = _validate_destination(source_dir, destination_dir)
+
+        source_stat = source_dir.stat()
+        identity = (source_stat.st_dev, source_stat.st_ino, source_resolved)
+        if identity in active_directories:
+            raise ValueError(f"Directory cycle detected while copying: {source_dir}")
+
+        active_directories.add(identity)
+        try:
+            _ensure_destination_directory(destination_dir)
+
+            names = [entry.name for entry in source_dir.iterdir()]
+            ignored: Set[str] = (
+                set(ignore(str(source_dir), names)) if ignore else set()
+            )
+
+            for name in names:
+                if name in ignored:
+                    continue
+
+                source = source_dir / name
+                destination = destination_dir / name
+
+                if source.is_symlink():
+                    if symlinks:
+                        target_is_directory = source.is_dir()
+                        if destination.exists() or destination.is_symlink():
+                            raise FileExistsError(
+                                f"Cannot copy a symbolic link over an existing entry: "
+                                f"{destination}"
+                            )
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        destination.symlink_to(
+                            source.readlink(),
+                            target_is_directory=target_is_directory,
+                        )
+                    elif source.is_dir():
+                        _copy_directory(source, destination)
                     else:
-                        destin.unlink()
+                        _copy_file_if_needed(source, destination)
+                    continue
 
-                link_target = source.readlink()
-                destin.symlink_to(link_target)
-            else:
-                # Follow link: copy target content (may recurse into target dir)
                 if source.is_dir():
-                    copytree(source, destin, symlinks=symlinks, ignore=ignore)
+                    _copy_directory(source, destination)
                 else:
-                    _copy_file_if_needed(source, destin)
-            continue
+                    _copy_file_if_needed(source, destination)
+        finally:
+            active_directories.remove(identity)
 
-        if source.is_dir():
-            copytree(source, destin, symlinks=symlinks, ignore=ignore)
-        else:
-            _copy_file_if_needed(source, destin)
+    _copy_directory(src_p, dst_p)
 
     return dst_p
 
@@ -516,6 +580,11 @@ def _copy_file_if_needed(source: PathInput, destination: PathInput) -> Path:
     dst = _p(destination)
 
     dst.parent.mkdir(parents=True, exist_ok=True)
+
+    if dst.is_symlink() or dst.is_dir():
+        raise FileExistsError(
+            f"Cannot copy a file over a directory or symbolic link: {dst}"
+        )
 
     if not dst.exists():
         shutil.copy2(src, dst)
@@ -599,7 +668,6 @@ def create_backup(
         backup = folder / f"{base}.{prefix}-{i:03d}{ext}"
         if not backup.exists():
             shutil.copy2(src, backup)
-            print(backup)
             return backup
 
     raise FileExistsError(
@@ -640,14 +708,23 @@ def get_this_filename() -> Path:
 
 
 # -----------------------------------------------------------------------------
-def is_binary_file(path: PathInput, *, sample_size: int = 8192) -> bool:
+def is_binary_file(
+    path: PathInput,
+    *,
+    sample_size: int = 8192,
+    encoding: str | None = None,
+) -> bool:
     """
     Determine whether a file appears to be binary.
 
     A file is considered text if:
     - It starts with a known Unicode BOM
     - It does not contain null bytes
-    - It can be decoded as UTF-8
+    - It can be decoded as UTF-8 or as common Windows single-byte text
+
+    When *encoding* is provided, that codec is used for the text probe. This
+    avoids classifying valid CP1252 or Latin-1 text as binary before it can be
+    decoded by :func:`get_file_content`.
 
     Parameters
     ----------
@@ -655,12 +732,17 @@ def is_binary_file(path: PathInput, *, sample_size: int = 8192) -> bool:
         File path.
     sample_size : int, default=8192
         Number of bytes to read for detection.
+    encoding : str | None, default=None
+        Optional expected text encoding.
 
     Returns
     -------
     bool
         True if the file appears binary, False otherwise.
     """
+    if sample_size <= 0:
+        raise ValueError(f"sample_size must be > 0, got: {sample_size}")
+
     p = check_file(path)
 
     with p.open("rb") as f:
@@ -682,16 +764,39 @@ def is_binary_file(path: PathInput, *, sample_size: int = 8192) -> bool:
     if any(chunk.startswith(bom) for bom in BOMS):
         return False
 
-    # Null byte strongly indicates binary
-    if b"\x00" in chunk:
+    normalized_encoding = codecs.lookup(encoding).name if encoding is not None else None
+
+    # Null bytes strongly indicate binary except for explicitly requested
+    # UTF-16/UTF-32 text without a BOM.
+    if b"\x00" in chunk and not (
+        normalized_encoding is not None
+        and normalized_encoding.startswith(("utf-16", "utf-32"))
+    ):
         return True
 
-    # Try UTF-8 decode
+    def _decoded_text_is_binary(text: str) -> bool:
+        if not text:
+            return False
+        controls = sum(
+            1 for char in text if not char.isprintable() and char not in "\n\r\t\f"
+        )
+        return controls / len(text) > 0.30
+
+    if normalized_encoding is not None:
+        try:
+            return _decoded_text_is_binary(chunk.decode(normalized_encoding))
+        except UnicodeDecodeError:
+            return True
+
     try:
-        chunk.decode("utf-8")
-        return False
+        return _decoded_text_is_binary(chunk.decode("utf-8"))
     except UnicodeDecodeError:
-        return True
+        # CP1252 covers the common non-UTF-8 text produced on Windows while
+        # still rejecting undefined bytes and control-heavy binary samples.
+        try:
+            return _decoded_text_is_binary(chunk.decode("cp1252"))
+        except UnicodeDecodeError:
+            return True
 # -----------------------------------------------------------------------------
 
 
@@ -830,9 +935,6 @@ def get_file_content(
     """
     p = check_file(path)
 
-    if reject_binary and is_binary_file(p):
-        raise ValueError(f"Binary file detected: {p}")
-
     enc = encoding
     if enc is None:
         enc = detect_file_encoding(
@@ -841,6 +943,9 @@ def get_file_content(
             min_confidence=min_confidence,
             sample_size=sample_size,
         )
+
+    if reject_binary and is_binary_file(p, sample_size=sample_size, encoding=enc):
+        raise ValueError(f"Binary file detected: {p}")
 
     text = p.read_text(encoding=enc, errors=errors)
 
@@ -865,10 +970,7 @@ def set_file_content(
     """
     Write text content to a file, optionally adding a UTF-8 BOM.
     """
-    # Option A: remove runtime check (preferred with strict typing)
-    # If you keep it, prefer TypeError (you already do)
-    # if not isinstance(content, str):
-    #     raise TypeError("content must be a str")
+    content = _require_str(content, name="content")
 
     p = _p(path)
     if create_parents:
@@ -876,13 +978,21 @@ def set_file_content(
 
     target = p.resolve(strict=False)
 
-    enc = "utf-8-sig" if (encoding.lower() == "utf-8" and bom) else encoding
+    normalized_encoding = codecs.lookup(encoding).name
+    if bom and normalized_encoding not in {"utf-8", "utf-8-sig"}:
+        raise ValueError("bom=True is only supported with UTF-8 encodings")
+    enc = "utf-8-sig" if bom else (
+        "utf-8" if normalized_encoding == "utf-8-sig" else encoding
+    )
 
     if not atomic:
         target.write_text(content, encoding=enc, newline=newline)
         return target
 
     tmp_path: Path | None = None
+    existing_mode: int | None = None
+    if target.exists():
+        existing_mode = stat.S_IMODE(target.stat().st_mode)
 
     try:
         fd, tmp_name = tempfile.mkstemp(
@@ -895,6 +1005,9 @@ def set_file_content(
         # Explicit fd -> text stream
         with os.fdopen(fd, "w", encoding=enc, newline=newline) as f:
             f.write(content)
+
+        if existing_mode is not None:
+            os.chmod(tmp_path, existing_mode)
 
         tmp_path.replace(target)
         return target
@@ -1011,6 +1124,11 @@ def apply_to_files(
     - This function does not perform I/O by itself except directory traversal.
     - `func` is responsible for reading/writing file contents.
     """
+    if on_error not in {"raise", "collect"}:
+        raise ValueError(
+            f"on_error must be either 'raise' or 'collect', got: {on_error!r}"
+        )
+
     root_p = _p(root)
 
     # Normalize expected extensions (lowercase, leading dot)
@@ -1022,9 +1140,9 @@ def apply_to_files(
         exts = tuple(e.lower() if e.startswith(".") else f".{e.lower()}" for e in raw)
 
     def _match(rel_posix: str) -> bool:
-        if include_globs and not any(fnmatch(rel_posix, pat) for pat in include_globs):
+        if include_globs and not any(fnmatchcase(rel_posix, pat) for pat in include_globs):
             return False
-        if exclude_globs and any(fnmatch(rel_posix, pat) for pat in exclude_globs):
+        if exclude_globs and any(fnmatchcase(rel_posix, pat) for pat in exclude_globs):
             return False
         return True
 
@@ -1038,24 +1156,29 @@ def apply_to_files(
         if not base.is_dir():
             raise NotADirectoryError(f"Not a directory: {base}")
 
-        if recursive:
-            it = base.rglob("*")
-        else:
-            it = base.glob("*")
+        seen_directories: Set[tuple[int, int, Path]] = set()
 
-        for p in it:
-            # Skip directories
-            if p.is_dir():
-                # Optionally skip symlinked dirs (rglob/glob will still enumerate)
-                if p.is_symlink() and not follow_symlinks:
+        def _walk(directory: Path) -> Iterable[Path]:
+            directory_stat = directory.stat()
+            identity = (
+                directory_stat.st_dev,
+                directory_stat.st_ino,
+                directory.resolve(strict=False),
+            )
+            if identity in seen_directories:
+                return
+            seen_directories.add(identity)
+
+            for p in sorted(directory.iterdir(), key=lambda item: item.name):
+                if p.is_dir():
+                    if recursive and (follow_symlinks or not p.is_symlink()):
+                        yield from _walk(p)
                     continue
-                continue
 
-            # Skip non-files (specials)
-            if not p.is_file():
-                continue
+                if p.is_file():
+                    yield p
 
-            yield p
+        yield from _walk(base)
 
     results: list[T] = []
     errors: list[tuple[Path, Exception]] = []
@@ -1127,8 +1250,10 @@ def find_file(
     Notes
     -----
     - `start_points` are used as anchors; they are *not* required to exist.
-    - `relative_paths` MUST be relative paths (no absolute paths allowed). This is enforced
-      to prevent accidental bypassing of the `anchor` with an absolute path.
+    - `relative_paths` MUST be confined relative paths: absolute, rooted,
+      drive-relative, and parent-traversing forms are rejected.
+    - Resolved candidates must remain below the anchor selected for that
+      iteration, including when links are involved.
     - The returned path is normalized as an absolute path via `resolve(strict=False)`.
     - The function only returns when `candidate.is_file()` is True.
 
@@ -1161,9 +1286,10 @@ def find_file(
     Raises
     ------
     ValueError
-        - If `filename` is empty.
+        - If `filename` is empty or contains a path.
         - If `max_up < 0`.
-        - If any item in `relative_paths` is absolute.
+        - If any item in `relative_paths` is rooted or contains `..`.
+        - If a resolved candidate escapes its current anchor.
     FileNotFoundError
         If no matching file is found. The exception message includes the tested paths.
 
@@ -1188,17 +1314,29 @@ def find_file(
       - <cwd.parent.parent> / "configs" / "config.yml"
       - then the same pattern for "other/start".
     """
-    if not filename:
+    filename = _require_str(filename, name="filename")
+    if not filename.strip():
         raise ValueError("filename must be a non-empty string")
     if max_up < 0:
         raise ValueError(f"max_up must be >= 0, got: {max_up}")
+
+    filename_path = PureWindowsPath(filename)
+    if (
+        filename_path.anchor
+        or len(filename_path.parts) != 1
+        or filename_path.name in {".", ".."}
+    ):
+        raise ValueError(f"filename must be a plain filename, got: {filename!r}")
 
     # Validate relative_paths early and normalize them to Path
     rel_paths: list[Path] = []
     for rel in relative_paths:
         rel_p = _p(rel)
-        if rel_p.is_absolute():
+        windows_rel = PureWindowsPath(str(rel_p))
+        if windows_rel.anchor:
             raise ValueError(f"relative_paths must be relative, got: {rel_p}")
+        if ".." in windows_rel.parts:
+            raise ValueError(f"relative_paths must not contain '..', got: {rel_p}")
         rel_paths.append(rel_p)
 
     tested: list[Path] = []
@@ -1213,7 +1351,12 @@ def find_file(
                 anchor = anchor.parent
 
             for rel_p in rel_paths:
-                candidate = (anchor / rel_p / filename).resolve(strict=False)
+                resolved_anchor = anchor.resolve(strict=False)
+                candidate = (resolved_anchor / rel_p / filename).resolve(strict=False)
+                if not candidate.is_relative_to(resolved_anchor):
+                    raise ValueError(
+                        f"Resolved search path escapes its anchor: {anchor / rel_p}"
+                    )
                 tested.append(candidate)
                 if candidate.is_file():
                     return candidate

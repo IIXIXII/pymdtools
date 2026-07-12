@@ -4,21 +4,22 @@
 # .coveragerc
 [run]
 branch = True
+parallel = False
 source =
     pymdtools
 omit =
     */tests/*
-    */__init__.py
-    */markdownify.py
-    */mistunege.py
+    */_about.py
+    */version.py
 
 [report]
 show_missing = True
 skip_covered = True
 precision = 2
+fail_under = 100
 
 exclude_lines =
     pragma: no cover
+    if TYPE_CHECKING:
     if __name__ == .__main__.:
     raise NotImplementedError
-    pass

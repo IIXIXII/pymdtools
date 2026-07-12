@@ -1,0 +1,66 @@
+name: Publish release
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Verify tag and build distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Verify annotated tag and embedded version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: python scripts/release.py verify-tag "$RELEASE_TAG"
+      - name: Install project and release tools
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Test release commit
+        run: python -m pytest
+      - name: Build and validate distributions
+        run: python scripts/release.py build
+      - name: Store distributions for the isolated publishing job
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish validated distributions to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pymdtools/
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Retrieve validated distributions
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish with PyPI trusted publishing
+        uses: pypa/gh-action-pypi-publish@v1.14.0

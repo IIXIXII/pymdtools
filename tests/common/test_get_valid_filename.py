@@ -33,3 +33,19 @@ def test_empty_filename_raises():
         get_valid_filename("   ")
 
 
+def test_filename_must_be_text() -> None:
+    with pytest.raises(TypeError, match="filename must be a str"):
+        get_valid_filename(b"name.txt")  # type: ignore[arg-type]
+
+
+def test_replacement_must_be_text() -> None:
+    with pytest.raises(TypeError, match="replacement must be a str"):
+        get_valid_filename("a:b", replacement=1)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("replacement", ["", "ab", "\x1f", ":", ".", " "])
+def test_replacement_must_be_one_safe_character(replacement: str) -> None:
+    with pytest.raises(ValueError, match="one safe filename character"):
+        get_valid_filename("a:b", replacement=replacement)
+
+

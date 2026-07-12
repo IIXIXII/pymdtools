@@ -27,6 +27,11 @@ Translate Markdown:
 Network access is required at runtime because translations are requested from
 the MyMemory API.
 
+Translation text is sent to a third-party service. Do not submit secrets or
+regulated content without an appropriate data policy. Network failures keep the
+original text by default; ``on_error="raise"`` is available when a failed
+translation must stop the workflow.
+
 Public API
 ----------
 

@@ -154,10 +154,8 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
 }
-@import url(//fonts.googleapis.com/css?family=PT+Sans);
-@import url(//fonts.googleapis.com/css?family=PT+Sans+Narrow:400,700);
 html {
-  font-family: 'PT Sans', sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 pre,
 code {
@@ -169,7 +167,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'PT Sans Narrow', sans-serif;
+  font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
   font-weight: 700;
 }
 html {

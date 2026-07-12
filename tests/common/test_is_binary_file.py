@@ -35,12 +35,12 @@ def test_is_binary_file_utf16_with_bom(tmp_path):
     assert is_binary_file(f) is False
 
 
-def test_is_binary_file_raises_if_missing(tmp_path):
+def test_is_binary_file_raises_if_missing_path(tmp_path):
     with pytest.raises(FileNotFoundError):
         is_binary_file(tmp_path / "missing")
 
 
-def test_is_binary_file_raises_if_directory(tmp_path):
+def test_is_binary_file_raises_if_root_is_directory(tmp_path):
     with pytest.raises(IsADirectoryError):
         is_binary_file(tmp_path)
 
@@ -141,3 +141,47 @@ def test_is_binary_file_raises_if_directory(tmp_path: Path) -> None:
 
     with pytest.raises(IsADirectoryError):
         is_binary_file(d)
+
+
+def test_is_binary_file_accepts_cp1252_text(tmp_path: Path) -> None:
+    p = tmp_path / "cp1252.txt"
+    p.write_bytes("Café — 10 €".encode("cp1252"))
+
+    assert is_binary_file(p) is False
+    assert is_binary_file(p, encoding="cp1252") is False
+
+
+def test_is_binary_file_accepts_utf16_without_bom_when_explicit(tmp_path: Path) -> None:
+    p = tmp_path / "utf16.txt"
+    p.write_bytes("hello".encode("utf-16-le"))
+
+    assert is_binary_file(p, encoding="utf-16-le") is False
+
+
+def test_is_binary_file_rejects_invalid_explicit_encoding_data(tmp_path: Path) -> None:
+    p = tmp_path / "invalid.bin"
+    p.write_bytes(b"\x80")
+
+    assert is_binary_file(p, encoding="utf-8") is True
+
+
+def test_is_binary_file_rejects_control_heavy_utf8_data(tmp_path: Path) -> None:
+    p = tmp_path / "controls.bin"
+    p.write_bytes(b"\x01\x02\x03A")
+
+    assert is_binary_file(p) is True
+
+
+def test_is_binary_file_validates_sample_size(tmp_path: Path) -> None:
+    p = tmp_path / "text.txt"
+    p.write_text("text", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="sample_size must be > 0"):
+        is_binary_file(p, sample_size=0)
+
+
+def test_is_binary_file_accepts_codec_state_sequence_with_no_text(tmp_path: Path) -> None:
+    p = tmp_path / "state-sequence.txt"
+    p.write_bytes(b"\x1b(B")
+
+    assert is_binary_file(p, encoding="iso2022_jp") is False

@@ -28,7 +28,7 @@ import posixpath
 import re
 from collections.abc import Mapping, Sequence
 from typing import Final, TypeAlias
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, urlunsplit
 
 from . import common
 
@@ -70,7 +70,7 @@ LinkPair: TypeAlias = tuple[LinkMapping, LinkMapping]
 # - The URL group intentionally does not support nested parentheses.
 # -----------------------------------------------------------------------------
 _INLINE_LINK_RE: Final[re.Pattern[str]] = re.compile(
-    r"""(\[(?P<name>[^\]]*)]\s*"""
+    r"""(?<![!\]])(\[(?P<name>[^\]]*)]\s*"""
     r"""\(\s*(?P<url>[^()]+?)\s*(?:\"(?P<title>[\s\S]*?)\")?\))"""
 )
 
@@ -90,7 +90,7 @@ _INLINE_LINK_RE: Final[re.Pattern[str]] = re.compile(
 # - URL resolution is completed by _REF_URL_RE.
 # -----------------------------------------------------------------------------
 _REF_NAME_RE: Final[re.Pattern[str]] = re.compile(
-    r"""\[(?P<name>.*?)\]\s*?\[(?P<id_link>.*?)\]"""
+    r"""(?<![!\]])\[(?P<name>.*?)\]\s*?\[(?P<id_link>.*?)\]"""
 )
 
 
@@ -107,8 +107,10 @@ _REF_NAME_RE: Final[re.Pattern[str]] = re.compile(
 # - title  : optional title surrounded by double quotes
 # -----------------------------------------------------------------------------
 _REF_URL_RE: Final[re.Pattern[str]] = re.compile(
-    r"""\[(?P<id_link>\S*?)\]:\s*"""
-    r"""(?P<url>\S+)\s*(?:\"(?P<title>[\s\S]*?)\")?"""
+    r"""^[ \t]{0,3}\[(?P<id_link>[^\]\r\n]*?)\]:[ \t]*"""
+    r"""(?P<url>\S+?)(?:[ \t]+\"(?P<title>[^\"\r\n]*)\")?"""
+    r"""[ \t]*(?:\r?\n|$)""",
+    re.MULTILINE,
 )
 
 
@@ -213,6 +215,174 @@ def _line_number(text: str, index: int) -> int:
         The one-based line number containing ``index``.
     """
     return text[:index].count("\n") + 1
+
+
+# -----------------------------------------------------------------------------
+def merge_ranges(ranges: Sequence[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Return sorted, overlapping character ranges as disjoint ranges."""
+    merged: list[tuple[int, int]] = []
+    for start, end in sorted(ranges):
+        if start >= end:
+            continue
+        if merged and start <= merged[-1][1]:
+            previous_start, previous_end = merged[-1]
+            merged[-1] = (previous_start, max(previous_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+# -----------------------------------------------------------------------------
+def markdown_code_ranges(text: str) -> list[tuple[int, int]]:
+    """Locate fenced, indented, and inline Markdown code regions."""
+    ranges: list[tuple[int, int]] = []
+    fenced_ranges: list[tuple[int, int]] = []
+    offset = 0
+    fence_start: int | None = None
+    fence_char = ""
+    fence_length = 0
+
+    for line in text.splitlines(keepends=True):
+        if fence_start is None:
+            opener = re.match(r" {0,3}(`{3,}|~{3,})(.*?)(?:\r?\n)?$", line)
+            if opener and not (
+                opener.group(1).startswith("`") and "`" in opener.group(2)
+            ):
+                fence_start = offset
+                fence_char = opener.group(1)[0]
+                fence_length = len(opener.group(1))
+        else:
+            closer = re.match(
+                rf" {{0,3}}{re.escape(fence_char)}{{{fence_length},}}[ \t]*(?:\r?\n)?$",
+                line,
+            )
+            if closer:
+                fenced_ranges.append((fence_start, offset + len(line)))
+                fence_start = None
+                fence_char = ""
+                fence_length = 0
+        offset += len(line)
+
+    if fence_start is not None:
+        fenced_ranges.append((fence_start, len(text)))
+
+    # Conservatively treat every Markdown-indented line as code. Blank lines
+    # between adjacent indented lines remain part of the same block, which
+    # prevents directives embedded in examples from being executed.
+    indented_ranges = [
+        match.span()
+        for match in re.finditer(
+            r"(?m)^(?: {4}|\t)[^\r\n]*(?:\r?\n|$)"
+            r"(?:^[ \t]*(?:\r?\n|$)|^(?: {4}|\t)[^\r\n]*(?:\r?\n|$))*",
+            text,
+        )
+    ]
+    block_ranges = merge_ranges([*fenced_ranges, *indented_ranges])
+    ranges.extend(block_ranges)
+
+    def in_block_range(index: int) -> tuple[int, int] | None:
+        for start, end in block_ranges:
+            if start <= index < end:
+                return start, end
+            if index < start:
+                break
+        return None
+
+    index = 0
+    while index < len(text):
+        code_block = in_block_range(index)
+        if code_block is not None:
+            index = code_block[1]
+            continue
+        escape_start = index
+        while escape_start > 0 and text[escape_start - 1] == "\\":
+            escape_start -= 1
+        is_escaped = (index - escape_start) % 2 == 1
+        if text[index] != "`" or is_escaped:
+            index += 1
+            continue
+
+        opener_end = index + 1
+        while opener_end < len(text) and text[opener_end] == "`":
+            opener_end += 1
+        delimiter_length = opener_end - index
+        search_at = opener_end
+        closing_end: int | None = None
+        while search_at < len(text):
+            next_tick = text.find("`", search_at)
+            if next_tick < 0:
+                break
+            code_block = in_block_range(next_tick)
+            if code_block is not None:
+                search_at = code_block[1]
+                continue
+            run_end = next_tick + 1
+            while run_end < len(text) and text[run_end] == "`":
+                run_end += 1
+            if run_end - next_tick == delimiter_length:
+                closing_end = run_end
+                break
+            search_at = run_end
+
+        if closing_end is None:
+            index = opener_end
+            continue
+        ranges.append((index, closing_end))
+        index = closing_end
+
+    return merge_ranges(ranges)
+
+
+# -----------------------------------------------------------------------------
+def position_in_ranges(index: int, ranges: Sequence[tuple[int, int]]) -> bool:
+    """Return whether ``index`` belongs to one of the sorted ranges."""
+    for start, end in ranges:
+        if index < start:
+            return False
+        if index < end:
+            return True
+    return False
+
+
+# -----------------------------------------------------------------------------
+def _matches_outside_code(pattern: re.Pattern[str], text: str) -> list[re.Match[str]]:
+    """Return regex matches whose opening character is not Markdown code."""
+    ranges = markdown_code_ranges(text)
+    return [
+        match
+        for match in pattern.finditer(text)
+        if not position_in_ranges(match.start(), ranges)
+    ]
+
+
+# -----------------------------------------------------------------------------
+def _apply_replacements(
+    text: str,
+    replacements: Sequence[tuple[int, int, str]],
+) -> str:
+    """Apply non-overlapping replacements expressed with source offsets."""
+    if not replacements:
+        return text
+
+    parts: list[str] = []
+    cursor = 0
+    for start, end, replacement in sorted(replacements, key=lambda item: item[0]):
+        if start < cursor:
+            continue
+        parts.append(text[cursor:start])
+        parts.append(replacement)
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
+# -----------------------------------------------------------------------------
+def _reference_definition_text(link: LinkMapping, id_link: str) -> str:
+    """Build a reference definition without adding an extra line ending."""
+    new_url = _link_string(link, "url")
+    title = _optional_link_string(link, "title")
+    new_title = f' "{title}"' if title is not None else ""
+    return f"[{id_link}]: {new_url}{new_title}"
 
 
 # -----------------------------------------------------------------------------
@@ -355,7 +525,7 @@ def search_link_in_md_text(
     """
     result = [_copy_link(link) for link in previous_links] if previous_links else []
 
-    for match in _INLINE_LINK_RE.finditer(text):
+    for match in _matches_outside_code(_INLINE_LINK_RE, text):
         result.append(
             {
                 "name": match.group("name"),
@@ -366,13 +536,13 @@ def search_link_in_md_text(
         )
 
     links_by_ref: dict[str, LinkRecord] = {}
-    for match in _REF_NAME_RE.finditer(text):
+    for match in _matches_outside_code(_REF_NAME_RE, text):
         links_by_ref[match.group("id_link")] = {
             "name": match.group("name"),
             "url": None,
         }
 
-    for match in _REF_URL_RE.finditer(text):
+    for match in _matches_outside_code(_REF_URL_RE, text):
         id_link = match.group("id_link")
         ref_link = links_by_ref.get(id_link)
         if ref_link is None:
@@ -491,12 +661,22 @@ def move_base_path_in_md_text(text_md: str, mv_base_path: common.PathInput) -> s
 
     for link in search_link_in_md_text(text_md):
         url = _link_string(link, "url")
-        if is_external_link(url):
+        parsed = urlsplit(url)
+        if (
+            is_external_link(url)
+            or parsed.netloc
+            or not parsed.path
+            or parsed.path.startswith("/")
+        ):
             continue
 
         new_link = _copy_link(link)
-        joined = posixpath.normpath(posixpath.join(base, url)) if base else posixpath.normpath(url)
-        new_link["url"] = joined
+        joined = (
+            posixpath.normpath(posixpath.join(base, parsed.path))
+            if base
+            else posixpath.normpath(parsed.path)
+        )
+        new_link["url"] = urlunsplit(("", "", joined, parsed.query, parsed.fragment))
         links_replace.append((link, new_link))
 
     return update_links_from_old_link(text_md, links_replace)
@@ -524,34 +704,40 @@ def update_link_in_md_text(text_md: str, name: str, new_link: LinkMapping) -> st
             strings.
     """
     link = _copy_link(new_link)
-    escaped_name = re.escape(name)
+    replacement_inline = sub_string_link_md("", link)
+    replacement_name = _link_string(link, "name")
+    replacements: list[tuple[int, int, str]] = []
 
-    result = re.sub(
-        r"""(\[%s]\s*\(\s*(?P<url>[^()]+?)\s*(?:\"(?P<title>[\s\S]*?)\")?\))"""
-        % escaped_name,
-        lambda match: sub_string_link_md(match.group(), link),
-        text_md,
-    )
+    for match in _matches_outside_code(_INLINE_LINK_RE, text_md):
+        if match.group("name") == name:
+            replacements.append((*match.span(), replacement_inline))
 
-    match_var = re.search(r"""\[(%s)\]\s*?\[(?P<id_link>.*?)\]""" % escaped_name, text_md)
-    if not match_var:
-        return result
+    reference_ids: set[str] = set()
+    for match in _matches_outside_code(_REF_NAME_RE, text_md):
+        if match.group("name") != name:
+            continue
+        id_link = match.group("id_link")
+        reference_ids.add(id_link)
+        replacements.append(
+            (*match.span(), f"[{replacement_name}][{id_link}]")
+        )
 
-    id_link = match_var.group("id_link")
-    link["id_link"] = id_link
+    for match in _matches_outside_code(_REF_URL_RE, text_md):
+        id_link = match.group("id_link")
+        if id_link not in reference_ids:
+            continue
+        newline = (
+            "\r\n"
+            if match.group().endswith("\r\n")
+            else "\n"
+            if match.group().endswith("\n")
+            else ""
+        )
+        replacements.append(
+            (*match.span(), _reference_definition_text(link, id_link) + newline)
+        )
 
-    result = re.sub(
-        r"""\[(%s)\]\s*?\[(?P<id_link>.*?)\]""" % escaped_name,
-        lambda match: sub_string_name_by_ref_md(match.group(), link),
-        result,
-    )
-    result = re.sub(
-        r"""\[%s]:\s*(?P<url>\S+)\s*(?:\"(?P<title>[\s\S]*?)\")?""" % re.escape(id_link),
-        lambda match: sub_string_link_by_ref_md(match.group(), link),
-        result,
-    )
-
-    return result
+    return _apply_replacements(text_md, replacements)
 
 
 # -----------------------------------------------------------------------------
@@ -581,37 +767,46 @@ def update_link_from_old_link(
     name = _link_string(old_link, "name")
     url = _link_string(old_link, "url")
     link = _copy_link(new_link)
+    replacement_inline = sub_string_link_md("", link)
+    replacement_name = _link_string(link, "name")
+    replacements: list[tuple[int, int, str]] = []
 
-    new_text_md = re.sub(
-        r"""(\[%s]\s*\(\s*(%s([^()]*?))\s*(?:\"(?P<title>[\s\S]*?)\")?\))"""
-        % (re.escape(name), re.escape(url)),
-        lambda match: sub_string_link_md(match.group(), link),
-        text_md,
-    )
+    for match in _matches_outside_code(_INLINE_LINK_RE, text_md):
+        if match.group("name") == name and match.group("url") == url:
+            replacements.append((*match.span(), replacement_inline))
 
-    if new_text_md != text_md:
-        return new_text_md
+    matching_reference_ids = {
+        match.group("id_link")
+        for match in _matches_outside_code(_REF_URL_RE, text_md)
+        if match.group("url") == url
+    }
 
-    match_var = re.search(r"""\[(%s)\]\s*?\[(?P<id_link>.*?)\]""" % re.escape(name), text_md)
-    if not match_var:
-        return new_text_md
+    referenced_ids: set[str] = set()
+    for match in _matches_outside_code(_REF_NAME_RE, text_md):
+        id_link = match.group("id_link")
+        if match.group("name") != name or id_link not in matching_reference_ids:
+            continue
+        referenced_ids.add(id_link)
+        replacements.append(
+            (*match.span(), f"[{replacement_name}][{id_link}]")
+        )
 
-    id_link = match_var.group("id_link")
-    link["id_link"] = id_link
+    for match in _matches_outside_code(_REF_URL_RE, text_md):
+        id_link = match.group("id_link")
+        if id_link not in referenced_ids or match.group("url") != url:
+            continue
+        newline = (
+            "\r\n"
+            if match.group().endswith("\r\n")
+            else "\n"
+            if match.group().endswith("\n")
+            else ""
+        )
+        replacements.append(
+            (*match.span(), _reference_definition_text(link, id_link) + newline)
+        )
 
-    new_text_md = re.sub(
-        r"""\[(%s)\]\s*?\[(?P<id_link>.*?)\]""" % re.escape(name),
-        lambda match: sub_string_name_by_ref_md(match.group(), link),
-        new_text_md,
-    )
-    new_text_md = re.sub(
-        r"""\[%s]:\s*(%s)\s*(?:\"(?P<title>[\s\S]*?)\")?"""
-        % (re.escape(id_link), re.escape(url)),
-        lambda match: sub_string_link_by_ref_md(match.group(), link),
-        new_text_md,
-    )
-
-    return new_text_md
+    return _apply_replacements(text_md, replacements)
 
 
 # -----------------------------------------------------------------------------

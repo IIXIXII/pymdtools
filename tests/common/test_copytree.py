@@ -213,7 +213,7 @@ def test_copytree_symlinks_false_follows_symlink_if_supported(tmp_path: Path) ->
     assert _read(out_link) == "T"
 
 
-def test_copytree_symlinks_true_overwrites_existing_dest_entry_if_supported(tmp_path: Path) -> None:
+def test_copytree_symlinks_true_rejects_existing_dest_entry_if_supported(tmp_path: Path) -> None:
     if not _supports_symlinks(tmp_path):
         pytest.skip("Symlinks not supported in this environment.")
 
@@ -231,8 +231,171 @@ def test_copytree_symlinks_true_overwrites_existing_dest_entry_if_supported(tmp_
     # Pre-create regular file
     _write(dst / "link.txt", "OLD")
 
-    copytree(src, dst, symlinks=True)
+    with pytest.raises(FileExistsError, match="symbolic link over an existing"):
+        copytree(src, dst, symlinks=True)
 
     out_link = dst / "link.txt"
-    assert out_link.is_symlink()
-    assert _read(out_link) == "T"
+    assert not out_link.is_symlink()
+    assert _read(out_link) == "OLD"
+
+
+# ---------------------------------------------------------------------------
+# Safety and conflicting entry types
+# ---------------------------------------------------------------------------
+
+def test_copytree_rejects_source_as_destination(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    _write(src / "a.txt", "A")
+
+    with pytest.raises(ValueError, match="must not be the source"):
+        copytree(src, src)
+
+    assert _read(src / "a.txt") == "A"
+
+
+def test_copytree_rejects_destination_below_source(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    _write(src / "a.txt", "A")
+    destination = src / "generated" / "copy"
+
+    with pytest.raises(ValueError, match="descendants"):
+        copytree(src, destination)
+
+    assert not destination.exists()
+
+
+def test_copytree_rejects_destination_file_for_source_directory(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    _write(src / "entry" / "nested.txt", "nested")
+    _write(dst / "entry", "old file")
+
+    with pytest.raises(FileExistsError, match="directory over a non-directory"):
+        copytree(src, dst)
+
+    assert (dst / "entry").is_file()
+    assert _read(dst / "entry") == "old file"
+
+
+def test_copytree_rejects_destination_directory_for_source_file(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    _write(src / "entry", "new file")
+    _write(dst / "entry" / "old.txt", "old")
+
+    with pytest.raises(FileExistsError, match="file over a directory"):
+        copytree(src, dst)
+
+    assert (dst / "entry").is_dir()
+    assert _read(dst / "entry" / "old.txt") == "old"
+
+
+def test_copytree_detects_repeated_directory_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    src = tmp_path / "src"
+    duplicate = src / "duplicate"
+    duplicate.mkdir(parents=True)
+    dst = tmp_path / "dst"
+    original_stat = Path.stat
+    original_resolve = Path.resolve
+
+    def fake_stat(self: Path, *args, **kwargs):
+        if self == duplicate:
+            return original_stat(src)
+        return original_stat(self, *args, **kwargs)
+
+    def fake_resolve(self: Path, *args, **kwargs):
+        if self == duplicate:
+            return original_resolve(src, *args, **kwargs)
+        return original_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", fake_stat)
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
+
+    with pytest.raises(ValueError, match="Directory cycle detected"):
+        copytree(src, dst)
+
+
+def test_copytree_reports_cycle_during_path_resolution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    src = tmp_path / "src"
+    src.mkdir()
+    dst = tmp_path / "dst"
+    original_resolve = Path.resolve
+
+    def fake_resolve(self: Path, *args, **kwargs):
+        if self == src:
+            raise RuntimeError("symlink loop")
+        return original_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
+
+    with pytest.raises(ValueError, match="cycle detected while resolving source"):
+        copytree(src, dst)
+
+
+def test_copytree_preserved_directory_link_sets_directory_hint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    link = src / "link"
+    link.mkdir(parents=True)
+    _write(link / "nested.txt", "nested")
+    original_is_symlink = Path.is_symlink
+    seen: dict[str, object] = {}
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == link:
+            return True
+        return original_is_symlink(self)
+
+    def fake_readlink(self: Path) -> Path:
+        assert self == link
+        return Path("target-directory")
+
+    def fake_symlink_to(self: Path, target: Path, **kwargs) -> None:
+        seen["target"] = target
+        seen.update(kwargs)
+        self.write_text(str(target), encoding="utf-8")
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+    monkeypatch.setattr(Path, "readlink", fake_readlink)
+    monkeypatch.setattr(Path, "symlink_to", fake_symlink_to)
+
+    copytree(src, dst, symlinks=True)
+
+    assert seen == {
+        "target": Path("target-directory"),
+        "target_is_directory": True,
+    }
+
+
+def test_copytree_rejects_destination_file_link_without_platform_symlink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    source_file = src / "file.txt"
+    destination_file = dst / "file.txt"
+    _write(source_file, "new")
+    _write(destination_file, "old")
+    original_is_symlink = Path.is_symlink
+
+    def fake_is_symlink(self: Path) -> bool:
+        if self == destination_file:
+            return True
+        return original_is_symlink(self)
+
+    monkeypatch.setattr(Path, "is_symlink", fake_is_symlink)
+
+    with pytest.raises(FileExistsError, match="directory or symbolic link"):
+        copytree(src, dst)
+
+    assert _read(destination_file) == "old"

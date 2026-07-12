@@ -68,3 +68,19 @@ def test_include_files_to_md_file_missing_include_can_be_ignored(tmp_path: Path,
 
     out = f.read_text(encoding="utf-8").lstrip("\ufeff")
     assert "<!-- include-file(x.md) -->" in out
+
+
+def test_include_files_to_md_file_resolves_relative_to_document(tmp_path: Path):
+    source = tmp_path / "doc.md"
+    snippet = tmp_path / "snippet.txt"
+    source.write_text("<!-- include-file(snippet.txt) -->\n", encoding="utf-8")
+    snippet.write_text("LOCAL", encoding="utf-8")
+
+    instruction.include_files_to_md_file(
+        source,
+        backup_option=False,
+        read_encoding="utf-8",
+        render_mode="raw",
+    )
+
+    assert source.read_text(encoding="utf-8-sig") == "LOCAL\n"

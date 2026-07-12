@@ -50,6 +50,11 @@ External text files can be resolved and inserted with ``include-file``:
 Referenced paths are intentionally constrained to relative paths without parent
 traversal.
 
+For file-backed operations, explicitly configure trusted search folders. The
+resolver confines results to those roots and ``MarkdownContent`` automatically
+adds the source document's parent directory. Directive-looking text inside
+fenced or inline code is treated as an example, not as an instruction.
+
 Title helpers
 ~~~~~~~~~~~~~
 
