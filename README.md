@@ -10,7 +10,7 @@
 [![Wheel](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.org/project/pymdtools/)
 [![Documentation](https://img.shields.io/readthedocs/pymdtools.svg?style=flat)](https://pymdtools.readthedocs.io/)
 [![CI](https://github.com/IIXIXII/pymdtools/actions/workflows/ci.yml/badge.svg)](https://github.com/IIXIXII/pymdtools/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/IIXIXII/pymdtools.svg?style=flat)](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md)
 
 `pymdtools` is a Python toolkit for working with Markdown documents. It provides
 small, composable helpers to read, normalize, enrich, inspect, convert, and
