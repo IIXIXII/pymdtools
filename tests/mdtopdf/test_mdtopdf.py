@@ -741,6 +741,21 @@ def test_find_wkhtmltopdf_windows_search_handles_missing_environment(
 
     assert len(calls[0][1]) == 2
 
+    calls.clear()
+    program_files = tmp_path / "Program Files"
+    monkeypatch.setattr(
+        mdtopdf,
+        "os",
+        SimpleNamespace(name="nt", environ={"ProgramFiles": str(program_files)}),
+    )
+    mdtopdf.find_wk_html_to_pdf()
+
+    assert calls[0][1] == [
+        mdtopdf._get_this_filename().parent,
+        mdtopdf._get_this_filename().parent.parent,
+        program_files / "wkhtmltopdf",
+    ]
+
 
 def test_overlay_aliases_accept_the_same_file(tmp_path: Path) -> None:
     overlay = _write_pdf(tmp_path / "overlay.pdf", pages=1)
