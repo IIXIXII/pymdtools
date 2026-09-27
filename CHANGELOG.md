@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+## 2.1.1 - 2026-09-27
+
 - Upgrade chardet to 7.6 and inspect the complete requested encoding sample,
   preserving UTF-8 auto-detection when non-ASCII text appears after its default
   200,000-byte limit. Update the dependency inventory for its declared 0BSD license.
+- Upgrade the locked Twine version to 7.0 for distribution validation and
+  publishing, and allow Twine 7 in the development dependencies.
 - Simplify releases: prepare version files and dated changelog notes with one
   local command. A version tag push now runs validation, publishes to PyPI and
   creates the GitHub release with matching notes and distribution archives.
