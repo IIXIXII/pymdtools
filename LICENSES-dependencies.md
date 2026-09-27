@@ -14,7 +14,7 @@ or redistribution is permitted under MIT alone.
 
 | Distribution | Inspected version | Declared terms and primary source |
 | --- | --- | --- |
-| `chardet` | 5.2.0 | LGPL-2.1-or-later, including the Mozilla-derived detector; [source notice](https://github.com/chardet/chardet/blob/5.2.0/chardet/__init__.py). |
+| `chardet` | 7.6.0 | 0BSD, as declared in the distribution metadata and its [shipped license](https://github.com/chardet/chardet/blob/7.6.0/LICENSE). |
 | `Markdown` | 3.11 | BSD-3-Clause; [Python-Markdown](https://github.com/Python-Markdown/markdown). |
 | `markdown-it-py` | 3.0.0 | MIT; preserves both Python port and original markdown-it notices in `LICENSE` and `LICENSE.markdown-it`; [project](https://github.com/executablebooks/markdown-it-py). |
 | `markdownify` | 1.2.3 | MIT; [python-markdownify](https://github.com/matthewwithanm/python-markdownify). |

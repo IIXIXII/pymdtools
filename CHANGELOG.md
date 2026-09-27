@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Upgrade chardet to 7.6 and inspect the complete requested encoding sample,
+  preserving UTF-8 auto-detection when non-ASCII text appears after its default
+  200,000-byte limit. Update the dependency inventory for its declared 0BSD license.
+
 ## 2.1.0 - 2026-09-27
 
 This release updates document assembly, Markdown preservation, optional PDF

@@ -191,8 +191,9 @@ def detect_file_encoding(
 
     The function reads up to `sample_size` bytes. If a known Unicode BOM is
     present, it returns the corresponding encoding immediately. Otherwise it
-    delegates to chardet and returns the detected encoding if the confidence is
-    >= `min_confidence`. If detection is inconclusive, it returns `default`.
+    asks chardet to examine the entire sample and returns the detected encoding
+    if the confidence is >= `min_confidence`. If detection is inconclusive,
+    it returns `default`.
 
     Parameters
     ----------
@@ -256,7 +257,8 @@ def detect_file_encoding(
     except ImportError as ex:
         raise ImportError("chardet is required to detect file encodings") from ex
 
-    result = chardet.detect(data)
+    # chardet 7 otherwise truncates our sample to its own 200,000-byte default.
+    result = chardet.detect(data, max_bytes=len(data))
     enc: Optional[str] = result.get("encoding")
     conf = float(result.get("confidence") or 0.0)
 
