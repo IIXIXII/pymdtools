@@ -7,12 +7,19 @@ No build command pushes Git objects or uploads a package.
 Before releasing
 ----------------
 
-Run the complete validation suite from a clean checkout::
+Install the environment, then validate a clean checkout. See :doc:`contributing`
+for browser integration, workflow validators and platform-specific setup::
 
    uv sync --locked --extra dev --extra docs --extra pdf
    uv run --no-sync pytest
    uv run --no-sync pyright
-   uv run --no-sync sphinx-build -W --keep-going -b html docs docs/_build/html
+   uv run --no-sync ruff check .
+   uv run --no-sync ruff format --check .
+   uv run --no-sync python scripts/update_license_notices.py
+   uv run --no-sync pip-audit --skip-editable
+   uv run --no-sync python examples/run_all.py
+   uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
+   uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
    uv run --no-sync python scripts/release.py build
    uv run --no-sync python scripts/check_distribution.py dist
 
@@ -22,16 +29,28 @@ Version and tag
 The release helper updates both version files and creates an annotated local
 tag only when the worktree is clean::
 
-   python scripts/release.py bump patch
+   uv run --no-sync python scripts/release.py bump patch
    git diff -- src/pymdtools/version.py src/pymdtools/version.bat
    git add src/pymdtools/version.py src/pymdtools/version.bat
-   git commit -m "Release 1.2.3"
-   python scripts/release.py tag
+   git commit -m "Release version bump"
+   uv run --no-sync python scripts/release.py check
+   uv run --no-sync python scripts/release.py tag
+   uv run --no-sync python scripts/release.py verify-tag
 
-Inspect the tag before pushing that single tag. Historical mismatches can be
+The helper prints the actual new version and tag; do not copy a version number
+from an older example. ``bump`` starts from a clean tree and edits both version
+files. ``tag`` requires those edits to have been committed. Update release notes
+for the version before tagging, and validate the final release commit.
+
+Inspect the printed tag before pushing that single tag. Historical mismatches can be
 reported, without changing them, with::
 
-   python scripts/release.py audit-tags
+   uv run --no-sync python scripts/release.py audit-tags
+
+``build`` rebuilds the repository's ``dist/`` directory and checks both archives
+with Twine. It requires a clean tree unless ``--allow-dirty`` is explicitly used
+for local validation. The installed-wheel checker creates a separate environment
+and requires network access for dependencies. Neither command publishes anything.
 
 Publication
 -----------
@@ -45,7 +64,8 @@ password.
 
 The build checks out the event's immutable commit and verifies the annotated
 tag against it. It reruns workflow validation, lint, types, dependency auditing,
-license-notice checks, documentation, tests and the installed-wheel checks.
+license-notice checks, documentation and its offline examples, tests and the
+installed-wheel checks.
 Shared dependency caches are disabled for release jobs. The publishing job
 downloads the artifact by the build job's artifact ID, fails on a digest
 mismatch, and enables PyPI's PEP 740 attestations.

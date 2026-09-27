@@ -19,9 +19,7 @@ sphinx:
   configuration: docs/conf.py
   fail_on_warning: true
 
-# Optionally set the version of Python and requirements required to build your docs
+# This entry point installs the project and its docs extra in the build environment.
 python:
   install:
     - requirements: requirements-docs.txt
-    - method: pip
-      path: .

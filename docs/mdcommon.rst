@@ -37,23 +37,30 @@ Common keys are:
 - ``url`` stores the link target;
 - ``title`` stores the optional Markdown title;
 - ``line`` stores the one-based line number for discovered links;
-- ``id_link`` is used for reference-style links;
 - ``name_to_replace`` can be provided when replacing a label with another one.
+
+Discovery returns one record per occurrence with ``name``, ``url``, ``title``
+and ``line``. ``title`` is None when absent. It does not return a reference ID;
+``id_link`` is accepted by legacy serialization helpers. Reference identifiers
+are matched case-insensitively, and duplicate occurrences remain separate.
+Images, code and escaped literal links are not ordinary link records. No
+filesystem or network check is made for a discovered destination.
 
 Common Usage
 ------------
 
 Extract links from Markdown text:
 
-.. code-block:: python
+.. testcode::
 
    from pymdtools.mdcommon import search_link_in_md_text
 
    links = search_link_in_md_text('[Docs](docs/index.md "Documentation")')
+   assert links[0]["url"] == "docs/index.md"
 
 Replace one link by label:
 
-.. code-block:: python
+.. testcode::
 
    from pymdtools.mdcommon import update_links_in_md_text
 
@@ -61,15 +68,17 @@ Replace one link by label:
        "[old](old.md)",
        {"name_to_replace": "old", "name": "new", "url": "new.md"},
    )
+   assert updated == "[new](new.md)"
 
 Move relative link targets under a new base path while leaving external links
 unchanged:
 
-.. code-block:: python
+.. testcode::
 
    from pymdtools.mdcommon import move_base_path_in_md_text
 
    updated = move_base_path_in_md_text("[Guide](guide.md)", "docs")
+   assert updated == "[Guide](docs/guide.md)"
 
 Apply a transformation to a Markdown tree:
 
@@ -77,14 +86,18 @@ Apply a transformation to a Markdown tree:
 
    from pathlib import Path
 
-   from pymdtools.common import get_file_content, set_file_content
+   from pymdtools.common import create_backup, get_file_content, set_file_content
    from pymdtools.mdcommon import move_base_path_in_md_text
 
    for md_file in Path("docs").rglob("*.md"):
        original = get_file_content(md_file)
        updated = move_base_path_in_md_text(original, "archive")
        if updated != original:
+           create_backup(md_file)
            set_file_content(md_file, updated)
+
+The batch example changes the selected files. Review the results before
+publishing them; running it again prefixes the base path again.
 
 Choosing A Rewrite Function
 ---------------------------
@@ -92,10 +105,20 @@ Choosing A Rewrite Function
 Use ``update_link_in_md_text`` when the visible label is the stable identifier.
 Use ``update_link_from_old_link`` when both the previous label and previous
 target must match before replacing a link. Use ``update_links_from_old_link``
-to apply several old/new replacements in sequence.
+to apply several old/new pairs matched against the original document. If pairs
+select the same occurrence, the last replacement wins.
+
+``update_links_in_md_text`` supports sequential label renames: A to B followed
+by B to C turns the original A into C. It parses the document once. When only
+some users of a shared reference are selected, unselected links retain their
+original targets.
 
 Use ``move_base_path_in_md_text`` for documentation moves where every relative
 target in one Markdown document needs to be prefixed with the same base path.
+It leaves external URLs, root-relative URLs and fragment-only links unchanged;
+queries and fragments are retained. Directory names preserve case and Unicode,
+with spaces encoded as ``%20``. ``legacy_slug=True`` requests historical
+slug-based spelling. See examples 09–11 in :doc:`workflows`.
 
 Public API
 ----------

@@ -1,0 +1,2 @@
+```{include} ../LICENSES-dependencies.md
+```

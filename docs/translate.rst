@@ -24,8 +24,9 @@ Translate Markdown:
 
    translated = translate_md("# Hello", src="en", dest="fr")
 
-Network access is required at runtime because translations are requested from
-the MyMemory API.
+These two snippets make network requests to MyMemory. The default language pair
+is ``src="fr"``, ``dest="en"``; set both explicitly when translating another
+direction. An injected transport can work offline, as shown below.
 
 Translation text is sent to a third-party service. Do not submit secrets or
 regulated content without an appropriate data policy. Network failures keep the
@@ -35,8 +36,8 @@ translation must stop the workflow.
 Reusable clients and paragraph context
 --------------------------------------
 
-Pass a ``TranslationClient`` to enable a bounded in-memory cache and up to two
-retries after transient HTTP or connection errors. Cache entries belong to that
+Pass a ``TranslationClient`` to enable a bounded in-memory cache and, by default,
+up to two retries after transient HTTP or connection errors. Cache entries belong to that
 client and include the language pair and credentials; there is no global cache
 or disk persistence. Use ``cache_size=0`` to disable retention or
 ``client.clear_cache()`` to discard retained data. Each attempt uses ``timeout``;
@@ -50,6 +51,8 @@ Clients are intended for sequential use.
    client = TranslationClient(cache_size=128, max_retries=2)
    result = translate_md(
        "Un **texte** avec un [lien](page.md).",
+       src="fr",
+       dest="en",
        client=client,
        segmentation="paragraph",
    )
@@ -74,6 +77,51 @@ For offline tests or another provider, inject a callable as
 a translated string or raises an exception. Exceptions raised with
 ``on_error="raise"`` remain the caller's responsibility, including closing any
 HTTP error response that it consumes.
+
+Offline transport example
+-------------------------
+
+This example is executable without credentials or network access. It demonstrates
+cache reuse and the transport signature, not a general translation engine:
+
+.. testcode::
+
+   from pymdtools.translate import TranslationClient, translate_txt
+
+   calls = []
+
+   def local_transport(text, src, dest, *, email, api_key, timeout):
+       calls.append((text, src, dest))
+       return {"Hello": "Bonjour"}.get(text, text)
+
+   client = TranslationClient(transport=local_transport, cache_size=8, max_retries=0)
+   for _ in range(2):
+       translated = translate_txt("Hello", src="en", dest="fr", client=client)
+       assert translated == "Bonjour"
+   assert len(calls) == 1
+   client.clear_cache()
+
+Failure handling and scope
+--------------------------
+
+The default timeout is 10 seconds per request attempt. Without a supplied
+client, there is no reusable cache or client retry loop. A client retries
+connection errors, timeouts and HTTP 429, 500, 502, 503 and 504. Its defaults are
+128 cached translations, two retries and an initial 0.25-second exponential wait.
+Only successful responses enter the cache. Use ``max_retries=0`` to disable
+retries, or ``cache_size=0`` to disable caching.
+
+``on_error="keep_original"`` retains failed text, ``"empty"`` returns empty
+text for the failed segment or block, and ``"raise"`` propagates the error.
+Configure application logging to see reported failures; a partial translation
+can contain both translated and original text. The 500-byte chunk limit is
+enforced by this implementation even for injected transports.
+
+Markdown translation parses and re-renders the document. It preserves supported
+structure, link destinations and code, but does not promise identical whitespace
+or formatting syntax. Evaluate dialect extensions and translation quality on
+your own documents. Examples 18–20 in :doc:`workflows` cover caching, paragraph
+structure and simulated failures offline.
 
 Public API
 ----------

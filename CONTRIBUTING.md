@@ -1,5 +1,7 @@
 # Contributing
 
+## Environment and checks
+
 Use Python 3.10 or newer. The lock includes platform and Python-version markers.
 The importable package is under `src/pymdtools`; an editable installation is
 required for local scripts and tests.
@@ -12,6 +14,7 @@ uv run --no-sync pyright
 uv run --no-sync ruff check .
 uv run --no-sync ruff format --check .
 uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
+uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
 ```
 
 Run `uv run --no-sync ruff format .` before submitting a change. Keep new behavior
@@ -19,6 +22,11 @@ covered by contract tests: preservation of literal Markdown, idempotence,
 restricted file access, valid PDF output and preservation of existing targets
 when a conversion fails. The coverage gate remains 100%; it complements these
 behavioral checks.
+
+For a selected test, use `uv run --no-sync pytest tests/mdfile --cov-fail-under=0`.
+Run the complete suite with its normal coverage threshold before submitting.
+
+## VS Code
 
 In VS Code, select `.venv` with **Python: Select Interpreter**, then refresh the
 Testing view. On Windows the interpreter is `.venv\Scripts\python.exe`; on
@@ -48,6 +56,8 @@ appear in the Problems panel. **Run tests** remains the default test task and
 The Pyright task also passes the selected interpreter via `--pythonpath`, so it
 resolves dependencies correctly even when the task terminal has no active venv.
 
+## Test environments and real PDFs
+
 Pytest uses its default per-user temporary directory. When running checks under
 a separate automation or sandbox account, use a separate cache as well, for
 example `pytest -o cache_dir=.pytest_cache_agent`. Do not reuse another account's
@@ -56,11 +66,13 @@ temporary directory or pytest cache: Windows can restrict access to their owner.
 To exercise the real PDF backend, install Chromium with
 `uv run --no-sync playwright install --with-deps chromium`, set
 `PYMDTOOLS_PDF_TESTS=1`, and run
-`uv run --no-sync pytest -m pdf_integration --no-cov`.
+`uv run --no-sync pytest -o addopts="-ra --strict-markers --strict-config --import-mode=importlib" -m pdf_integration`.
 Use `$env:PYMDTOOLS_PDF_TESTS = '1'` in PowerShell or
 `export PYMDTOOLS_PDF_TESTS=1` in a POSIX shell.
 The integration test creates a two-page document with accents, a table, a local
 SVG, and a link. Review rendering when changing the browser, CSS or layouts.
+
+## Distributions and dependencies
 
 ```bash
 uv run --no-sync python scripts/benchmark_markdown.py --max-seconds 3
@@ -81,6 +93,8 @@ after syncing the new lock. The scheduled CI job also tests current compatible
 releases independently of the lock. Verify the GitHub `pypi` environment's
 reviewers and trusted publisher configuration before publishing.
 
+## Code and examples
+
 Keep existing public imports compatible when moving implementations. The
 CommonMark source adapter lives in `src/pymdtools/_markdown.py`; rendering process
 and resource policy live in `src/pymdtools/_rendering/pdf_backend.py`. Use package loggers,
@@ -88,13 +102,45 @@ explicit options and documented exceptions for new API boundaries.
 
 Add semantic regression documents to `tests/fixtures/markdown/`. The same corpus
 is checked through inspection, rewriting, normalization and offline translation.
-Run `python examples/workflows.py --output examples/output` for the complete
-example. The architecture and workflow guides are maintained under `docs/`.
+Run `uv run --no-sync python examples/run_all.py` for the core examples and
+`uv run --no-sync python examples/run_all.py --only-pdf` after installing Chromium for the PDF
+examples. The catalogue in `examples/README.md` describes each script's output.
+Keep fixtures under `examples/data/`; each example writes only to its dedicated
+output directory. CI executes the core examples in the quality job and the PDF
+examples in the browser jobs. Source archives include scripts and fixtures,
+excluding generated outputs. The architecture and workflow guides live in `docs/`.
 
 Windows `make.bat` installation shortcuts use the pinned uv version and
 `uv sync --locked`. They pass `--inexact` to retain the uv bootstrap tool and
 previously installed extras; all requested dependencies still follow the lock.
 VS Code tasks use the selected interpreter and the current Ruff/debugpy tools.
+
+## Documentation
+
+Sphinx imports the installed package; it does not add `src/` to `sys.path`.
+Sync the editable installation first, or install `requirements-docs.txt` and
+use `python -m sphinx.cmd.build` in that same environment. Open
+`docs/_build/html/index.html` after the strict HTML build.
+
+Keep the README focused on installation and the first workflow. Put detailed
+behavior, defaults and migration notes in `docs/`; include public API docstrings
+with autodoc. The site includes the contribution guide, changelog, example
+catalogue and license inventories directly from their repository files.
+
+Use Sphinx `testcode` blocks for runnable offline snippets. Blocks in one page
+share a namespace and a temporary working directory, which is removed afterwards.
+They must not need network access, external credentials or a browser. Run the
+strict `doctest` builder alongside the HTML build; CI and release validation run
+both. PDF and live-service snippets remain ordinary `code-block` examples with
+their prerequisites stated. Real PDF scenarios run separately through the example
+runner. When including Markdown from outside `docs/`, resolve its relative links
+with MyST's `relative-docs` option and check the generated links/downloads.
+
+The inventories are dated license reviews, and `AUDIT.md` is a historical
+technical report. Keep historical measurements clearly dated rather than
+presenting them as current validation results.
+
+## License notices
 
 When changing bundled layouts, review `LICENSES-3rd-party.md` and the original
 authors' notices. Update `THIRD_PARTY_LICENSES/` and the component mapping in

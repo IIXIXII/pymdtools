@@ -1,6 +1,11 @@
-**Audit technique de pymdtools — 26 septembre 2026**
+# Audit technique historique — 26 septembre 2026
 
 **Mise en œuvre des recommandations**
+
+Ce document conserve les mesures et constats de cet audit ; il ne constitue pas
+un état courant du projet. Les numéros de ligne cités concernent les sources
+antérieures au déplacement dans `src/`. Les liens pointent vers les fichiers
+actuels correspondants lorsqu'ils existent.
 
 Les constats de l'audit initial sont conservés ci-dessous comme historique. Les
 sources ont depuis été modernisées : adaptateur CommonMark partagé et positions
@@ -10,7 +15,8 @@ métadonnées centralisées, environnements verrouillés et contrôles CI renfor
 La traduction dispose d'un client injectable avec cache borné et reprises, ainsi
 que d'un mode paragraphe optionnel avec vérification des marqueurs de formatage.
 
-La suite finale compte 736 tests réussis et 9 ignorés, avec 100 % de couverture
+Lors de cette mise en œuvre initiale, la suite comptait 736 tests réussis et
+9 ignorés, avec 100 % de couverture
 des instructions et des branches. Le test Chromium opt-in passe séparément ;
 les huit autres exclusions concernent les liens symboliques et permissions POSIX.
 Le benchmark de 2 000 blocs descend de 14,731 s à environ 0,26 s sur cette machine.
@@ -59,7 +65,7 @@ La construction utilise les outils installés dans `.venv`, sans isolation suppl
 
 **1. Priorité haute : préserver réellement la syntaxe et le sens du Markdown.**
 
-Les fonctions de [mdcommon.py](pymdtools/mdcommon.py) combinent expressions régulières et détection maison des plages de code. Plusieurs cas valides échappent à cette logique. [normalize.py](pymdtools/normalize.py) effectue quant à lui un aller-retour via le renderer Markdown de Mistune, qui ne garantit pas la conservation sémantique de toutes les entrées.
+Les fonctions de [mdcommon.py](src/pymdtools/mdcommon.py) combinent expressions régulières et détection maison des plages de code. Plusieurs cas valides échappent à cette logique. [normalize.py](src/pymdtools/normalize.py) effectue quant à lui un aller-retour via le renderer Markdown de Mistune, qui ne garantit pas la conservation sémantique de toutes les entrées.
 
 Reproductions exécutées avec Mistune 3.3.4 :
 
@@ -87,7 +93,7 @@ Critères de validation : les cas ci-dessus sont couverts, les exemples de code 
 
 **2. Priorité haute : remplacer `pdfkit` / `wkhtmltopdf`.**
 
-Le pipeline dépend directement de ce moteur dans [mdtopdf.py](pymdtools/mdtopdf.py), notamment `convert_html_to_pdf` à la ligne 669. Le mainteneur de [python-pdfkit](https://github.com/JazzCore/python-pdfkit) déclare le projet déprécié. La page officielle [wkhtmltopdf status](https://wkhtmltopdf.org/status) décrit l'ancienneté de Qt/WebKit et déconseille le traitement de HTML non fiable.
+Le pipeline dépend directement de ce moteur dans [mdtopdf.py](src/pymdtools/mdtopdf.py), notamment `convert_html_to_pdf` à la ligne 669. Le mainteneur de [python-pdfkit](https://github.com/JazzCore/python-pdfkit) déclare le projet déprécié. La page officielle [wkhtmltopdf status](https://wkhtmltopdf.org/status) décrit l'ancienneté de Qt/WebKit et déconseille le traitement de HTML non fiable.
 
 `pip-audit` signale `CVE-2025-26240` / `GHSA-9g3x-6x24-vf9f` sur la version installée, sans version corrigée indiquée. L'[avis GitHub](https://github.com/advisories/GHSA-9g3x-6x24-vf9f) concerne `from_string` ; pymdtools utilise `from_file`. Il s'agit d'une alerte de dépendance confirmée, mais l'exploitabilité précise de ce chemin pymdtools n'a pas été démontrée.
 
@@ -99,7 +105,7 @@ Critères de validation : au moins un test d'intégration exécute réellement l
 
 **3. Priorité haute pour les gros documents : réduire la complexité de l'analyse.**
 
-Dans `markdown_code_ranges`, [mdcommon.py](pymdtools/mdcommon.py), lignes 283–315, chaque position de texte peut entraîner une recherche linéaire dans les blocs déjà repérés. `search_link_in_md_text` recalcule ensuite les plages pour plusieurs motifs.
+Dans `markdown_code_ranges`, [mdcommon.py](src/pymdtools/mdcommon.py), lignes 283–315, chaque position de texte peut entraîner une recherche linéaire dans les blocs déjà repérés. `search_link_in_md_text` recalcule ensuite les plages pour plusieurs motifs.
 
 Mesures locales d'un seul appel à `markdown_code_ranges`, pour un document synthétique alternant bloc de code et paragraphe :
 
@@ -116,7 +122,7 @@ Recommandation : parcourir les intervalles triés avec un curseur, ou utiliser u
 
 **4. Priorité moyenne : corriger la réécriture des chemins existants.**
 
-`move_base_path_in_md_text('[doc](file.md)', 'My Docs')` produit `[doc](my-docs/file.md)`. L'appel à `common.path_to_url` transforme le chemin en minuscules, remplace les espaces et translittère par défaut. Il fabrique ainsi un nom différent du répertoire fourni ; cela peut casser les liens, particulièrement sur un système sensible à la casse. Voir [mdcommon.py](pymdtools/mdcommon.py), ligne 659, et [common/text.py](pymdtools/common/text.py), ligne 296.
+`move_base_path_in_md_text('[doc](file.md)', 'My Docs')` produit `[doc](my-docs/file.md)`. L'appel à `common.path_to_url` transforme le chemin en minuscules, remplace les espaces et translittère par défaut. Il fabrique ainsi un nom différent du répertoire fourni ; cela peut casser les liens, particulièrement sur un système sensible à la casse. Voir [mdcommon.py](src/pymdtools/mdcommon.py), ligne 659, et [common/text.py](src/pymdtools/common/text.py), ligne 296.
 
 Séparer la création d'un slug de l'encodage d'un chemin réel. Pour un chemin existant, conserver casse et caractères, puis encoder les espaces en `%20`. Prévoir une transition compatible pour les utilisateurs qui attendent le comportement historique. Ajouter des essais avec espaces, accents et différences de casse.
 
