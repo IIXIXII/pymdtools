@@ -1435,7 +1435,7 @@ requires-dist = [
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.9,<3" },
     { name = "playwright", marker = "extra == 'pdf'", specifier = ">=1.48,<2" },
     { name = "pypdf", marker = "extra == 'pdf'", specifier = ">=6,<7" },
-    { name = "pyright", extras = ["nodejs"], marker = "extra == 'dev'", specifier = ">=1.1.350,<2" },
+    { name = "pyright", extras = ["nodejs"], marker = "extra == 'dev'", specifier = ">=1.1.414,<2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7,<10" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5,<8" },
     { name = "python-dateutil", specifier = ">=2.8,<3" },
