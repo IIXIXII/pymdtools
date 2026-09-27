@@ -1,69 +1,64 @@
 Release process
 ===============
 
-Releases are deliberately split into local validation and remote publication.
-No build command pushes Git objects or uploads a package.
+Pushing an annotated ``vX.Y.Z`` tag starts the whole publication process:
+GitHub Actions validates the release, publishes to PyPI, then creates the GitHub
+release with changelog notes and both distribution archives attached. There is
+no GitHub release to create manually and no local PyPI upload command.
 
-Before releasing
-----------------
+Prepare and publish
+-------------------
 
-Install the environment, then validate a clean checkout. See :doc:`contributing`
-for browser integration, workflow validators and platform-specific setup::
+First commit your changes, including their notes under ``## Unreleased`` in
+``CHANGELOG.md``. From a clean checkout, prepare the next version::
 
-   uv sync --locked --extra dev --extra docs --extra pdf
-   uv run --no-sync pytest
-   uv run --no-sync pyright
-   uv run --no-sync ruff check .
-   uv run --no-sync ruff format --check .
-   uv run --no-sync python scripts/update_license_notices.py
-   uv run --no-sync pip-audit --skip-editable
-   uv run --no-sync python examples/run_all.py
-   uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
-   uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
-   uv run --no-sync python scripts/release.py build
-   uv run --no-sync python scripts/check_distribution.py dist
+   uv run --no-sync python scripts/release.py prepare patch
 
-Version and tag
----------------
+Use ``minor`` for a feature release or ``major`` for a breaking release. The
+command updates both version files, dates the release, moves the Unreleased
+notes under the new version, and leaves an empty Unreleased section for future
+changes. It refuses an empty or duplicate section and mismatched version files.
+It does not commit, tag, push or upload anything.
 
-The release helper updates both version files and creates an annotated local
-tag only when the worktree is clean::
+Review the resulting version and notes, then commit the three files::
 
-   uv run --no-sync python scripts/release.py bump patch
-   git diff -- src/pymdtools/version.py src/pymdtools/version.bat
+   git diff -- src/pymdtools/version.py src/pymdtools/version.bat CHANGELOG.md
    git add src/pymdtools/version.py src/pymdtools/version.bat CHANGELOG.md
-   git commit -m "Release version bump"
-   uv run --no-sync python scripts/release.py check
+   git commit -m "chore(release): prepare X.Y.Z"
+
+Replace ``X.Y.Z`` with the printed version. Push this commit through the normal
+branch/PR process and wait for ``CI success``, ``CodeQL (python)`` and
+``CodeQL (actions)``. If a PR is squash-merged or rebased, update your local
+checkout to the resulting commit before tagging it.
+
+From that clean checkout, create the annotated tag::
+
    uv run --no-sync python scripts/release.py tag
-   uv run --no-sync python scripts/release.py verify-tag
 
-The helper prints the actual new version and tag; do not copy a version number
-from an older example. ``bump`` starts from a clean tree and edits both version
-files. ``tag`` requires those edits to have been committed. Update release notes
-for the version before tagging, and validate the final release commit.
+The helper prints the exact push command. Run it when ready to publish::
 
-Use ``bump minor`` for a feature release and ``bump major`` when adopting a new
-major version. If the version files and dated changelog section are already
-prepared, skip ``bump``: running it again would create another version. Check
-``git status --short`` before tagging; other modified, deleted or untracked files
-must also be committed or set aside deliberately. Never force-update an existing
-published version tag.
+   git push origin vX.Y.Z
 
-Inspect the printed tag before pushing that single tag. Historical mismatches can be
-reported, without changing them, with::
+Follow **Actions > Publish release** and approve the ``pypi`` environment if it
+requires a reviewer. After the workflow succeeds, check the version on PyPI and
+its GitHub release, then install ``pymdtools==X.Y.Z`` in a fresh virtual
+environment and confirm ``pymdtools.__version__``.
 
-   uv run --no-sync python scripts/release.py audit-tags
+If the version and dated notes are already prepared, skip ``prepare``. If the
+tag already exists on this exact commit, use ``scripts/release.py verify-tag``
+and push it without creating it again. Never force-update a published tag or
+push every local tag with ``--tags``.
 
-``build`` rebuilds the repository's ``dist/`` directory and checks both archives
-with Twine. It requires a clean tree unless ``--allow-dirty`` is explicitly used
-for local validation. The installed-wheel checker creates a separate environment
-and requires network access for dependencies. Neither command publishes anything.
+.. important::
 
-Publication
------------
+   The tagged commit must contain the new workflow. Existing tags retain their
+   original workflow: pushing an already-remote tag does not start a new run.
+   For a tag made before this change, follow its original process (publish a
+   GitHub release to trigger publication), or include this automation in the
+   next version. Do not move an existing release tag onto a newer commit.
 
 One-time service configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 
 In the repository's **Settings > Environments**, configure the ``pypi``
 environment. Add release-tag deployment rules (for example, tags matching
@@ -95,59 +90,20 @@ token. See the official PyPI instructions for `adding a Trusted Publisher
 <https://docs.pypi.org/trusted-publishers/using-a-publisher/>`_. These service
 settings are separate from the repository and must be checked in the services.
 
-Publish a validated version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Push the release commit through the normal branch/PR process and wait for
-   ``CI success`` and both CodeQL checks on that commit. If a PR is squash-merged
-   or rebased, update your local checkout to the resulting release commit before
-   creating its tag.
-2. From a clean checkout of that commit, run ``scripts/release.py tag`` and
-   ``scripts/release.py verify-tag``. Inspect the annotated tag, then push only
-   that tag with ``git push origin vX.Y.Z``, replacing the version with the
-   helper's printed value. If you already created it on this exact commit in
-   the previous section, verify and push it without creating it again.
-3. In GitHub **Releases > Draft a new release**, select the existing tag. Use
-   ``pymdtools X.Y.Z`` as the title and copy the matching dated changelog section,
-   including its migration notes. Publish the release when ready.
-4. Follow **Actions > Publish release**. Approve the ``pypi`` environment if it
-   requires a review. Confirm both validation and publication jobs succeed.
-5. Check the new version on PyPI and install that exact version in a fresh
-   environment. For example, for version 2.1.0:
-
-   .. code-block:: console
-
-      python -m venv .venv-release-check
-
-   In PowerShell:
-
-   .. code-block:: powershell
-
-      .venv-release-check\Scripts\python.exe -m pip install "pymdtools==2.1.0"
-      .venv-release-check\Scripts\python.exe -c "import pymdtools; print(pymdtools.__version__)"
-
-   In a POSIX shell:
-
-   .. code-block:: console
-
-      .venv-release-check/bin/python -m pip install "pymdtools==2.1.0"
-      .venv-release-check/bin/python -c "import pymdtools; print(pymdtools.__version__)"
-
-Pushing a tag alone does not publish to PyPI: this workflow listens for the
-GitHub Release ``published`` event. Saving a draft does not trigger it. Use a
-normal stable release for this version; the current workflow does not filter out
-published GitHub prereleases, and marking a release as a prerelease does not
-change the version embedded in its distributions.
-
 Workflow guarantees
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
-Create a GitHub release from the verified annotated version tag. The publication
-workflow checks that the tag points at the release commit and that both version
-files agree. A job without publishing credentials tests and builds the
-distributions; a separate protected job receives only those artifacts and
-publishes them through PyPI trusted publishing. It has no long-lived PyPI
-password.
+The workflow only listens for version tag pushes, so creating the GitHub
+release cannot trigger a second PyPI publication. It checks that the tag is
+annotated, points at the event commit and matches both version files. It also
+requires nonempty dated notes for that version in ``CHANGELOG.md``. The helper
+currently supports stable ``major.minor.patch`` versions only.
+
+A job without publishing credentials tests and builds the distributions; a
+separate protected job receives only those artifacts and publishes them through
+PyPI trusted publishing. A third job creates the GitHub release only after PyPI
+publication succeeds. Its repository write permission is confined to that job;
+it does not check out or execute package code.
 
 The build checks out the event's immutable commit and verifies the annotated
 tag against it. It reruns workflow validation, lint, types, dependency auditing,
@@ -155,7 +111,10 @@ license-notice checks, documentation and its offline examples, tests and the
 installed-wheel checks.
 Shared dependency caches are disabled for release jobs. The publishing job
 downloads the artifact by the build job's artifact ID, fails on a digest
-mismatch, and enables PyPI's PEP 740 attestations.
+mismatch, and enables PyPI's PEP 740 attestations. The GitHub release receives
+the same wheel and source archive, plus validated notes from a separate
+artifact, also retrieved by ID with a digest check. The notes include migration
+instructions and fenced examples from the matching changelog section.
 
 For branch protection, require ``CI success``, ``CodeQL (python)`` and
 ``CodeQL (actions)``. The aggregate CI result includes the reusable workflow
@@ -164,17 +123,43 @@ advanced setup; an existing default setup must first be disabled to avoid
 conflicting analysis configurations.
 
 If publication fails
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 An OIDC/``invalid-publisher`` failure usually requires checking the four PyPI
 fields against the workflow and the GitHub environment. A job waiting for an
 environment approval has not yet uploaded anything. Inspect the failing job's
-log before retrying.
+log before retrying. Prefer **Re-run failed jobs** on the original workflow run:
+this preserves successful jobs and their artifacts.
+
+If only the GitHub release job failed, PyPI publication has already succeeded.
+Retry only failed jobs; do not rerun the successful publishing job. If the CLI
+left a partial draft, inspect its assets and finish that draft manually. If a
+release already exists, inspect it instead of replacing its notes or assets.
 
 PyPI does not permit replacing a previously used distribution filename. If no
-file has been uploaded, correct the service configuration and rerun the workflow
-on the same release. If files were already uploaded, check the release contents
+file has been uploaded, correct the service configuration and rerun failed jobs
+on the same tag. If files were already uploaded, check the release contents
 before retrying; do not delete and try to re-upload an altered build under the
 same version. A code or packaging correction after publication needs a new
 version. The build helper never uploads the local ``dist/`` directory: GitHub
 builds and validates its own artifacts from the tagged commit.
+
+Local validation and advanced helpers
+-------------------------------------
+
+The publication workflow reruns validation. For local checks before sending a
+release commit, see :doc:`contributing`. To inspect release notes or archives::
+
+   uv run --no-sync python scripts/release.py check
+   uv run --no-sync python scripts/release.py notes
+   uv run --no-sync python scripts/release.py build
+   uv run --no-sync python scripts/check_distribution.py dist
+
+``build`` rebuilds ``dist/`` and checks both archives with Twine. It requires a
+clean tree unless ``--allow-dirty`` is explicitly used for local validation.
+The installed-wheel checker needs network access for dependencies. Neither
+command publishes anything.
+
+``bump patch|minor|major`` remains available for updating version files alone;
+maintainers must then date and edit their changelog section themselves.
+``audit-tags`` reports historical tag/version mismatches without changing them.

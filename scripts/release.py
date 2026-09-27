@@ -5,9 +5,9 @@
 # ===============================================================================
 """Safe local helpers for versioning and release validation.
 
-This script never pushes a tag and never uploads a distribution. Publishing is
-performed by the trusted GitHub Actions workflow after a GitHub release is
-created from a verified tag.
+This script never pushes a tag and never uploads a distribution. Pushing a
+verified version tag starts the GitHub Actions workflow, which publishes to
+PyPI and then creates the GitHub release.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from typing import Final, Sequence
 ROOT: Final = Path(__file__).resolve().parents[1]
 VERSION_PY: Final = ROOT / "src" / "pymdtools" / "version.py"
 VERSION_BAT: Final = ROOT / "src" / "pymdtools" / "version.bat"
+CHANGELOG: Final = ROOT / "CHANGELOG.md"
 DIST_DIR: Final = ROOT / "dist"
 DISTRIBUTION_NAME: Final = "pymdtools"
 VERSION_RE: Final = re.compile(
@@ -126,26 +127,107 @@ def write_version(version: tuple[int, int, int]) -> None:
         batch_tmp.unlink(missing_ok=True)
 
 
-def bump_version(part: str) -> str:
-    """Bump one semantic version component from a clean tree."""
+def next_version(part: str) -> tuple[int, int, int]:
+    """Calculate the next semantic version without changing any files."""
     if part not in {"major", "minor", "patch"}:
         raise ReleaseError(f"unknown version component: {part}")
-    require_clean_worktree()
     major, minor, patch = current_version()
     if part == "major":
-        next_version = (major + 1, 0, 0)
-    elif part == "minor":
-        next_version = (major, minor + 1, 0)
-    else:
-        next_version = (major, minor, patch + 1)
-    write_version(next_version)
-    return version_string(next_version)
+        return major + 1, 0, 0
+    if part == "minor":
+        return major, minor + 1, 0
+    return major, minor, patch + 1
+
+
+def bump_version(part: str) -> str:
+    """Bump only the version files from a clean tree (legacy helper)."""
+    version = next_version(part)
+    require_clean_worktree()
+    write_version(version)
+    return version_string(version)
+
+
+def changelog_sections(text: str) -> list[tuple[str, int, int, int]]:
+    """Locate level-two sections, ignoring headings inside fenced examples."""
+    headings: list[tuple[str, int, int]] = []
+    offset = 0
+    fence = ""
+    for line in text.splitlines(keepends=True):
+        if fence:
+            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}\s*", line):
+                fence = ""
+        else:
+            marker = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+            heading = re.match(r"^##[ \t]+(.+?)\s*$", line)
+            if marker:
+                fence = marker[1]
+            elif heading:
+                headings.append((heading[1], offset, offset + len(line)))
+        offset += len(line)
+    return [
+        (title, start, body, headings[index + 1][1] if index + 1 < len(headings) else len(text))
+        for index, (title, start, body) in enumerate(headings)
+    ]
+
+
+def _changelog_section(text: str, pattern: str, label: str) -> tuple[int, int, int]:
+    matches = [
+        (start, body, end)
+        for title, start, body, end in changelog_sections(text)
+        if re.fullmatch(pattern, title)
+    ]
+    if len(matches) != 1:
+        raise ReleaseError(f"CHANGELOG.md must contain exactly one {label} section")
+    start, body, end = matches[0]
+    if not text[body:end].strip():
+        raise ReleaseError(f"CHANGELOG.md {label} section is empty")
+    return start, body, end
+
+
+def release_notes() -> str:
+    """Read the dated changelog section for the current package version."""
+    version = verify_version_files()
+    text = CHANGELOG.read_text(encoding="utf-8")
+    start, body, end = _changelog_section(
+        text, rf"{re.escape(version)} - \d{{4}}-\d{{2}}-\d{{2}}", version
+    )
+    try:
+        date.fromisoformat(text[start:body].strip().rsplit(" - ", 1)[1])
+    except ValueError as exc:
+        raise ReleaseError(f"CHANGELOG.md {version} section has an invalid date") from exc
+    return text[body:end].strip() + "\n"
+
+
+def prepare_release(part: str) -> str:
+    """Bump versions and move Unreleased notes to a dated changelog section."""
+    version = next_version(part)
+    require_clean_worktree()
+    verify_version_files()
+    text = CHANGELOG.read_text(encoding="utf-8")
+    start, body, end = _changelog_section(text, "Unreleased", "Unreleased")
+    dotted = version_string(version)
+    if any(
+        re.fullmatch(rf"{re.escape(dotted)}(?:\s.*)?", title)
+        for title, *_ in changelog_sections(text)
+    ):
+        raise ReleaseError(f"CHANGELOG.md already contains version {dotted}")
+    prepared = (
+        text[:start]
+        + f"## Unreleased\n\n## {dotted} - {date.today().isoformat()}\n\n"
+        + text[body:end].strip()
+        + "\n\n"
+        + text[end:]
+    )
+    write_version(version)
+    CHANGELOG.write_text(prepared, encoding="utf-8", newline="\n")
+    return dotted
 
 
 def create_tag() -> str:
     """Create one annotated local tag after validating release invariants."""
     require_clean_worktree()
     version = verify_version_files()
+    release_notes()
     tag = f"v{version}"
     exists = run_git("rev-parse", "--quiet", "--verify", f"refs/tags/{tag}", check=False)
     if exists.returncode == 0:
@@ -262,6 +344,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    prepare = subparsers.add_parser("prepare", help="prepare version files and changelog locally")
+    prepare.add_argument("part", choices=("major", "minor", "patch"), nargs="?", default="patch")
+    notes = subparsers.add_parser("notes", help="extract and validate this version's release notes")
+    notes.add_argument(
+        "--output", type=Path, help="write UTF-8 notes to this file instead of stdout"
+    )
+
     bump = subparsers.add_parser("bump", help="bump version files from a clean tree")
     bump.add_argument("part", choices=("major", "minor", "patch"), nargs="?", default="patch")
 
@@ -280,10 +369,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the selected release command."""
     args = build_parser().parse_args(argv)
     try:
-        if args.command == "bump":
+        if args.command == "prepare":
+            print(
+                f"Prepared {prepare_release(args.part)}; review and commit "
+                "both version files and CHANGELOG.md."
+            )
+        elif args.command == "notes":
+            notes = release_notes()
+            if args.output is not None:
+                args.output.write_text(notes, encoding="utf-8", newline="\n")
+            else:
+                print(notes, end="")
+        elif args.command == "bump":
             print(f"Version updated to {bump_version(args.part)}; review and commit both files.")
         elif args.command == "tag":
-            print(f"Created local tag {create_tag()}; inspect it before pushing that tag only.")
+            tag = create_tag()
+            print(f"Created local tag {tag}; after review, publish with: git push origin {tag}")
         elif args.command == "verify-tag":
             print(f"Verified {verify_tag(args.tag)}")
         elif args.command == "build":

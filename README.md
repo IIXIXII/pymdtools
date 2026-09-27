@@ -152,7 +152,10 @@ PDF examples and integration test. See
 [CONTRIBUTING.md](https://github.com/IIXIXII/pymdtools/blob/master/CONTRIBUTING.md)
 for lint, types, VS Code, distributions and CI, and the
 [release guide](https://pymdtools.readthedocs.io/en/latest/release.html)
-for versioning and publication. The library lives in `src/pymdtools`.
+for versioning and publication. Maintainers can prepare versions and changelog
+notes with `scripts/release.py prepare patch`; pushing the resulting version tag
+automates validation, PyPI publication and the GitHub release.
+The library lives in `src/pymdtools`.
 
 ## Project links and licenses
 

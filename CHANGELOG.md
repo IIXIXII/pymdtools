@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Simplify releases: prepare version files and dated changelog notes with one
+  local command. A version tag push now runs validation, publishes to PyPI and
+  creates the GitHub release with matching notes and distribution archives.
+
 ## 2.1.0 - 2026-09-27
 
 This release updates document assembly, Markdown preservation, optional PDF
