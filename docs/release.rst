@@ -42,3 +42,21 @@ files agree. A job without publishing credentials tests and builds the
 distributions; a separate protected job receives only those artifacts and
 publishes them through PyPI trusted publishing. It has no long-lived PyPI
 password.
+
+The build checks out the event's immutable commit and verifies the annotated
+tag against it. It reruns workflow validation, lint, types, dependency auditing,
+license-notice checks, documentation, tests and the installed-wheel checks.
+Shared dependency caches are disabled for release jobs. The publishing job
+downloads the artifact by the build job's artifact ID, fails on a digest
+mismatch, and enables PyPI's PEP 740 attestations.
+
+Configure the GitHub ``pypi`` environment with required reviewers and permitted
+release tags. On PyPI, configure the trusted publisher for repository
+``IIXIXII/pymdtools``, workflow ``publish.yml`` and environment ``pypi``.
+These service settings must exist separately from the workflow files.
+
+For branch protection, require ``CI success``, ``CodeQL (python)`` and
+``CodeQL (actions)``. The aggregate CI result includes the reusable workflow
+validator and fails on unsuccessful or skipped required jobs. CodeQL uses
+advanced setup; an existing default setup must first be disabled to avoid
+conflicting analysis configurations.

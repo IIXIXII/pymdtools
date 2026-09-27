@@ -65,6 +65,8 @@ by this project declare the following licenses:
 | `sphinx` | BSD-2-Clause |
 | `setuptools` (build backend) | MIT |
 | `uv` (environment/build command) | MIT OR Apache-2.0 |
+| `actionlint` 1.7.12 (workflow validation) | MIT; [upstream notice](https://github.com/rhysd/actionlint/blob/v1.7.12/LICENSE.txt). |
+| `zizmor` 1.30.1 (workflow security audit) | MIT; [upstream notice](https://github.com/zizmorcore/zizmor/blob/v1.30.1/LICENSE). |
 
 This tool table is not an inventory of all of their transitive dependencies,
 bundled Node.js/driver binaries or the Python interpreter. If redistributing a

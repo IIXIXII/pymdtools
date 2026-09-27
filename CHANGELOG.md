@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Modernize GitHub Actions with verified action pins, uv caching, test reports
+  and a required-check aggregate compatible with merge queues. Add CodeQL,
+  reusable workflow lint/security checks and scheduled dependency compatibility
+  tests. Correct the PDF test invocation and move Dependabot to the uv ecosystem.
+  Harden release validation and artifact handoff, disable release caches and
+  explicitly enable PyPI attestations.
 - Separate original-code, bundled-resource and dependency licensing. Add missing
   component notices and Subtle Patterns CC-BY-SA-3.0 attribution; record unresolved
   historical theme permissions. Export per-layout notices with generated HTML

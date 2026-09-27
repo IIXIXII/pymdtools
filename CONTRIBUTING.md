@@ -105,3 +105,50 @@ they are backed by the authors' terms. Review `LICENSES-dependencies.md` when
 updating dependencies. The MIT-header helper always excludes third-party
 resources, license documents and generated environments, even with
 `--include-hidden`.
+
+## GitHub Actions
+
+The workflows have distinct responsibilities:
+
+| Workflow | Purpose |
+| --- | --- |
+| `ci.yml` | Locked tests on Python 3.10–3.14, Linux/Windows and a macOS job; real PDF rendering on all three systems; lint, types, dependency audit, notices, docs and distributions. |
+| `workflow-lint.yml` | Reusable actionlint and zizmor checks, called by CI and release validation; also runnable manually. |
+| `codeql.yml` | Python and GitHub Actions security analysis on pushes, pull requests, merge groups and weekly runs. |
+| `compatibility.yml` | Weekly/manual tests with the latest allowed dependencies on Python 3.10 and 3.14, without changing `uv.lock`. |
+| `publish.yml` | Validate the release commit, build without a shared cache, then publish the exact uploaded artifact through an isolated PyPI job. |
+
+Tests retain JUnit and coverage reports as Actions artifacts, including after
+failures when reports exist. PDF and compatibility jobs retain JUnit reports.
+Normal CI uses a uv cache keyed by `uv.lock`; only branch pushes save it.
+All external actions are pinned to verified release commits. Dependabot tracks
+the `uv` ecosystem (including the lockfile) and GitHub Actions. Tool versions
+`uv`, actionlint and zizmor are explicitly pinned in workflows; when updating
+actionlint, update its verified Linux archive SHA-256 too.
+
+Run the same workflow checks locally after installing actionlint 1.7.12:
+
+```bash
+actionlint
+uvx --from zizmor==1.30.1 zizmor --offline --strict-collection .github/workflows
+```
+
+The two reusable-workflow calls currently retain `./` syntax because the
+released actionlint does not recognize GitHub's newer `$/` syntax. Their
+targeted zizmor exceptions document that limitation; migrate them and remove
+the exceptions when actionlint supports it. Reusable calls still resolve at
+the caller commit.
+
+Repository administrators should require **CI success**, **CodeQL (python)**
+and **CodeQL (actions)** in branch rules. `CI success` fails if any required
+CI job fails, is cancelled or is skipped. Pull requests and merge queues both
+run these checks; no path filters can leave a required check pending.
+CodeQL uses advanced setup: disable an existing CodeQL default setup before
+enabling this workflow. Keep the dependency graph and Dependabot alerts enabled.
+These repository settings are not configured by committing workflow files.
+
+Protect the `pypi` environment with reviewers and allowed release tags, and
+configure PyPI Trusted Publishing for `IIXIXII/pymdtools`, workflow
+`publish.yml`, environment `pypi`. The publishing job receives only the build
+artifact ID, rejects digest mismatches and produces PyPI attestations. It does
+not check out or execute the package source.
