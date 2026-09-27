@@ -16,6 +16,15 @@ def test_md_beautifier_rejects_non_string() -> None:
         normalize.md_beautifier(123)
 
 
+def test_md_beautifier_rejects_unstable_backend_output(monkeypatch) -> None:
+    outputs = iter(["# Title\n", "Title\n=====\n"])
+    monkeypatch.setattr(
+        normalize.mistune, "create_markdown_with_close", lambda **kwargs: lambda text: next(outputs)
+    )
+    source = "# Title\n\n"
+    assert normalize.md_beautifier(source) == source
+
+
 def test_md_file_beautifier_updates_file_and_returns_checked_filename(tmp_path: Path) -> None:
     source = tmp_path / "doc.md"
     source.write_text("# Title\n\nBody\n\n", encoding="utf-8")

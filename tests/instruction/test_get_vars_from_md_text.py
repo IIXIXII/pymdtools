@@ -4,9 +4,11 @@ import pytest
 
 from pymdtools.instruction import get_vars_from_md_text, unescape_var_value
 
+
 def test_get_vars_supports_slash_names():
     text = '<!-- var(a/b)="1" -->'
     assert get_vars_from_md_text(text) == {"a/b": "1"}
+
 
 def test_unescape_var_value_basic():
     assert unescape_var_value(r"ab") == "ab"

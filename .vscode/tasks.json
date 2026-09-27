@@ -1,71 +1,169 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+            "NO_COLOR": "1"
+        }
+    },
     "tasks": [
         {
+            "label": "Install locked development environment",
+            "type": "process",
+            "command": "uv",
+            "args": [
+                "sync",
+                "--locked",
+                "--extra",
+                "dev",
+                "--extra",
+                "docs",
+                "--extra",
+                "pdf"
+            ],
+            "windows": {
+                "command": "${env:ComSpec}",
+                "args": [
+                    "/d",
+                    "/c",
+                    "make.bat",
+                    "install_editable"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run tests",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "-m",
+                "pytest"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Check types",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "-m",
+                "pyright",
+                "--pythonpath",
+                "${command:python.interpreterPath}"
+            ],
+            "problemMatcher": {
+                "owner": "pyright-task",
+                "source": "Pyright",
+                "fileLocation": "absolute",
+                "pattern": {
+                    "regexp": "^\\s*(.+):(\\d+):(\\d+) - (error|warning): (.+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "Check lint",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "-m",
+                "ruff",
+                "check",
+                ".",
+                "--output-format=concise"
+            ],
+            "problemMatcher": {
+                "owner": "ruff-task",
+                "source": "Ruff",
+                "fileLocation": [
+                    "autoDetect",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(.+):(\\d+):(\\d+): (\\S+) (.+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "code": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "Check formatting",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "-m",
+                "ruff",
+                "format",
+                "--check",
+                "."
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "Generate documentation",
-            "type": "shell",
-            "command": "doxygen.exe",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
             "args": [
-                "config_doc.dox"
+                "-m",
+                "sphinx.cmd.build",
+                "-W",
+                "--keep-going",
+                "-b",
+                "html",
+                "docs",
+                "docs/_build/html"
             ],
-            "options": {
-                "cwd": "${workspaceRoot}/docs/"
-            },
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            }
+            "problemMatcher": []
         },
         {
-            "label": "Generate binary",
-            "type": "shell",
-            "command": "python",
+            "label": "Build distributions",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
             "args": [
-                "mdtoolsmain_setup.py",
-                "build"
+                "scripts/release.py",
+                "build",
+                "--allow-dirty"
             ],
-            "options": {
-                "cwd": "${workspaceRoot}/src/python/"
-            },
             "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            }
-        },
-        {
-            "label": "Run Python",
             "group": {
                 "kind": "build",
                 "isDefault": true
-            },
-            "command": "${config:python.pythonPath}python.exe",
-            "type": "shell",
-            "args": [
-                "${file}"
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": {
-                "fileLocation": "absolute",
-                "pattern": [
-                    {
-                        "regexp": "^\\s+File \"(.*?)\", line ([0-9]+)[,]?.+?$",
-                        "line": 2,
-                        "file": 1,
-                        "message": 0
-                    },
-                    {
-                        "regexp": "^\\s+(.+?)$",
-                        "code": 1
-                    }
-                ]
             }
+        },
+        {
+            "label": "Benchmark Markdown",
+            "type": "process",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "scripts/benchmark_markdown.py",
+                "--max-seconds",
+                "3"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Check project",
+            "dependsOn": [
+                "Check lint",
+                "Check formatting",
+                "Check types",
+                "Run tests",
+                "Generate documentation"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }

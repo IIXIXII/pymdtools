@@ -4,9 +4,11 @@ import pytest
 
 from pymdtools.instruction import set_var_to_md_text
 
+
 def test_set_var_supports_slash_names():
     out = set_var_to_md_text("Body\n", "a/b", "1")
     assert '<!-- var(a/b)="1" -->' in out
+
 
 def test_set_var_replaces_existing_var():
     text = '<!-- var(a)="1" -->\nBody\n'
@@ -38,11 +40,7 @@ def test_set_var_escapes_quotes_and_newlines():
 
 
 def test_set_var_added_after_include_file_directives():
-    text = (
-        '<!-- var(a)="1" -->\n'
-        '<!-- include-file(tpl) some content -->\n'
-        "Body\n"
-    )
+    text = '<!-- var(a)="1" -->\n<!-- include-file(tpl) some content -->\nBody\n'
     out = set_var_to_md_text(text, "b", "2")
 
     # b should be inserted after include-file directive block

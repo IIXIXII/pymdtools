@@ -26,4 +26,3 @@ def test_get_flat_filename_windows_reserved_name():
 def test_get_flat_filename_only_invalid_chars_raises():
     with pytest.raises(ValueError):
         get_flat_filename("!!!")
-

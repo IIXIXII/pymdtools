@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+import pymdtools._translation.mymemory as _translation_mymemory_impl
 import pymdtools.translate as translate
 
 
@@ -24,14 +25,19 @@ class FakeResponse:
         return json.dumps(self.payload).encode("utf-8")
 
 
-def test_public_api_only_exposes_markdown_and_text_translation() -> None:
-    assert translate.__all__ == ["translate_md", "translate_txt"]
+def test_public_api_exposes_translation_and_optional_client() -> None:
+    assert translate.__all__ == [
+        "translate_md",
+        "translate_txt",
+        "TranslationClient",
+        "TranslationStructureError",
+    ]
     assert hasattr(translate, "translate_md")
     assert hasattr(translate, "translate_txt")
 
 
 def test_build_mymemory_url_encodes_required_and_optional_parameters() -> None:
-    url = translate._build_mymemory_url(
+    url = _translation_mymemory_impl.build_mymemory_url(
         "Bonjour le monde",
         "fr",
         "en",
@@ -50,39 +56,45 @@ def test_build_mymemory_url_encodes_required_and_optional_parameters() -> None:
 
 
 def test_build_mymemory_url_omits_empty_optional_parameters() -> None:
-    url = translate._build_mymemory_url("", "fr", "en", email="", api_key=None)
+    url = _translation_mymemory_impl.build_mymemory_url("", "fr", "en", email="", api_key=None)
     query = parse_qs(urlparse(url).query)
 
     assert query == {"langpair": ["fr|en"]}
 
 
 def test_extract_mymemory_translation_returns_translated_text() -> None:
-    assert translate._extract_mymemory_translation(
-        {"responseStatus": 200, "responseData": {"translatedText": "Hello"}}
-    ) == "Hello"
+    assert (
+        _translation_mymemory_impl.extract_mymemory_translation(
+            {"responseStatus": 200, "responseData": {"translatedText": "Hello"}}
+        )
+        == "Hello"
+    )
 
 
 def test_extract_mymemory_translation_accepts_missing_status() -> None:
-    assert translate._extract_mymemory_translation(
-        {"responseData": {"translatedText": "Hello"}}
-    ) == "Hello"
+    assert (
+        _translation_mymemory_impl.extract_mymemory_translation(
+            {"responseData": {"translatedText": "Hello"}}
+        )
+        == "Hello"
+    )
 
 
 def test_extract_mymemory_translation_rejects_api_errors() -> None:
     with pytest.raises(RuntimeError, match="quota exceeded"):
-        translate._extract_mymemory_translation(
+        _translation_mymemory_impl.extract_mymemory_translation(
             {"responseStatus": 429, "responseDetails": "quota exceeded"}
         )
 
 
 def test_extract_mymemory_translation_rejects_missing_response_data() -> None:
     with pytest.raises(RuntimeError, match="responseData"):
-        translate._extract_mymemory_translation({"responseStatus": 200})
+        _translation_mymemory_impl.extract_mymemory_translation({"responseStatus": 200})
 
 
 def test_extract_mymemory_translation_rejects_missing_translated_text() -> None:
     with pytest.raises(RuntimeError, match="translatedText"):
-        translate._extract_mymemory_translation({"responseData": {}})
+        _translation_mymemory_impl.extract_mymemory_translation({"responseData": {}})
 
 
 def test_request_mymemory_translation_reads_json_response(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,16 +104,19 @@ def test_request_mymemory_translation_reads_json_response(monkeypatch: pytest.Mo
         calls.append((url, timeout))
         return FakeResponse({"responseData": {"translatedText": "Hello"}})
 
-    monkeypatch.setattr(translate, "urlopen", fake_urlopen)
+    monkeypatch.setattr(_translation_mymemory_impl, "urlopen", fake_urlopen)
 
-    assert translate._request_mymemory_translation(
-        "Bonjour",
-        "fr",
-        "en",
-        email="me@example.com",
-        api_key="secret",
-        timeout=2.0,
-    ) == "Hello"
+    assert (
+        _translation_mymemory_impl.request_mymemory_translation(
+            "Bonjour",
+            "fr",
+            "en",
+            email="me@example.com",
+            api_key="secret",
+            timeout=2.0,
+        )
+        == "Hello"
+    )
 
     query = parse_qs(urlparse(calls[0][0]).query)
     assert calls[0][1] == 2.0
@@ -115,13 +130,13 @@ def test_request_mymemory_translation_rejects_non_mapping_json(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        translate,
+        _translation_mymemory_impl,
         "urlopen",
         lambda *args, **kwargs: FakeResponse(["unexpected"]),
     )
 
     with pytest.raises(RuntimeError, match="JSON object"):
-        translate._request_mymemory_translation(
+        _translation_mymemory_impl.request_mymemory_translation(
             "Bonjour",
             "fr",
             "en",
@@ -132,16 +147,16 @@ def test_request_mymemory_translation_rejects_non_mapping_json(
 
 
 def test_split_text_for_mymemory_returns_no_chunks_for_empty_text() -> None:
-    assert translate._split_text_for_mymemory("") == []
+    assert _translation_mymemory_impl.split_text_for_mymemory("") == []
 
 
 def test_split_text_for_mymemory_rejects_invalid_max_bytes() -> None:
     with pytest.raises(ValueError, match="greater than zero"):
-        translate._split_text_for_mymemory("Bonjour", max_bytes=0)
+        _translation_mymemory_impl.split_text_for_mymemory("Bonjour", max_bytes=0)
 
 
 def test_split_text_for_mymemory_keeps_chunks_under_limit() -> None:
-    chunks = translate._split_text_for_mymemory("alpha beta gamma", max_bytes=10)
+    chunks = _translation_mymemory_impl.split_text_for_mymemory("alpha beta gamma", max_bytes=10)
 
     assert chunks == ["alpha beta", " gamma"]
     assert all(len(chunk.encode("utf-8")) <= 10 for chunk in chunks)
@@ -149,17 +164,19 @@ def test_split_text_for_mymemory_keeps_chunks_under_limit() -> None:
 
 
 def test_split_text_for_mymemory_splits_oversized_words() -> None:
-    chunks = translate._split_text_for_mymemory("\u00e9\u00e9\u00e9\u00e9\u00e9", max_bytes=4)
+    chunks = _translation_mymemory_impl.split_text_for_mymemory(
+        "\u00e9\u00e9\u00e9\u00e9\u00e9", max_bytes=4
+    )
 
     assert chunks == ["\u00e9\u00e9", "\u00e9\u00e9", "\u00e9"]
 
 
 def test_split_oversized_word_returns_no_chunk_for_empty_word() -> None:
-    assert translate._split_oversized_word("", max_bytes=4) == []
+    assert _translation_mymemory_impl.split_oversized_word("", max_bytes=4) == []
 
 
 def test_split_text_for_mymemory_flushes_current_before_oversized_word() -> None:
-    chunks = translate._split_text_for_mymemory("abc defghijk", max_bytes=4)
+    chunks = _translation_mymemory_impl.split_text_for_mymemory("abc defghijk", max_bytes=4)
 
     assert chunks == ["abc ", "defg", "hijk"]
     assert "".join(chunks) == "abc defghijk"
@@ -170,7 +187,7 @@ def test_split_text_for_mymemory_flushes_current_before_oversized_word() -> None
     ["  leading", "trailing  ", "a   b", "line one\n\nline two\t"],
 )
 def test_split_text_for_mymemory_preserves_all_whitespace(text: str) -> None:
-    chunks = translate._split_text_for_mymemory(text, max_bytes=5)
+    chunks = _translation_mymemory_impl.split_text_for_mymemory(text, max_bytes=5)
 
     assert "".join(chunks) == text
     assert all(len(chunk.encode("utf-8")) <= 5 for chunk in chunks)

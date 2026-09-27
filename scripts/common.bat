@@ -18,9 +18,9 @@ SHIFT
 
 SET "VALID_CMD="
 FOR %%C IN (
-  PRINT_LINE CONFIGURE_DISPLAY CLEAR_SCREEN LINE_BREAK INIT_PYTHON GET_PYTHON
+  INIT_PYTHON GET_PYTHON INIT_UV
   INSTALL_REQUIREMENTS INSTALL_EDITABLE PYTHON_LAUNCHER PYTHON_FROM_MAKE
-  RUN_TESTS RUN_SPHINX RUN_DOXYGEN RUN_BUILD RUN_CLEAN RELEASE_CHECK
+  RUN_TESTS RUN_SPHINX RUN_BUILD RUN_CLEAN RELEASE_CHECK
   BUMP_VERSION TAG_VERSION AUDIT_TAGS
 ) DO IF /I "%CMD%"=="%%C" SET "VALID_CMD=1"
 
@@ -31,22 +31,6 @@ IF NOT DEFINED VALID_CMD (
 
 CALL :%CMD% %1 %2 %3 %4 %5 %6 %7 %8 %9
 EXIT /B %ERRORLEVEL%
-
-:PRINT_LINE
-ECHO(%~1
-EXIT /B 0
-
-:CONFIGURE_DISPLAY
-CHCP 65001 >NUL 2>&1
-EXIT /B 0
-
-:CLEAR_SCREEN
-CLS
-EXIT /B 0
-
-:LINE_BREAK
-ECHO --------------------------------------------------------------------------
-EXIT /B 0
 
 :INIT_PYTHON
 IF /I "%PYTHON_READY%"=="1" EXIT /B 0
@@ -77,7 +61,7 @@ ECHO %PYTHON%
 EXIT /B 0
 
 :INSTALL_REQUIREMENTS
-CALL :INIT_PYTHON
+CALL :INIT_UV
 IF ERRORLEVEL 1 EXIT /B 1
 SET "REQUIRE_FILE=%~1"
 IF "%REQUIRE_FILE%"=="" (
@@ -88,13 +72,27 @@ IF NOT EXIST "%REQUIRE_FILE%" (
   ECHO ERROR: Requirements file not found: "%REQUIRE_FILE%".
   EXIT /B 2
 )
-"%PYTHON%" -m pip install -r "%REQUIRE_FILE%"
+SET "SYNC_EXTRAS="
+IF /I "%REQUIRE_FILE%"=="requirements-dev.txt" SET "SYNC_EXTRAS=--extra dev --extra pdf"
+IF /I "%REQUIRE_FILE%"=="requirements-docs.txt" SET "SYNC_EXTRAS=--extra docs"
+"%UV%" sync --locked --inexact %SYNC_EXTRAS%
 EXIT /B %ERRORLEVEL%
 
 :INSTALL_EDITABLE
+CALL :INIT_UV
+IF ERRORLEVEL 1 EXIT /B 1
+"%UV%" sync --locked --inexact --extra dev --extra docs --extra pdf
+EXIT /B %ERRORLEVEL%
+
+:INIT_UV
 CALL :INIT_PYTHON
 IF ERRORLEVEL 1 EXIT /B 1
-"%PYTHON%" -m pip install --editable ".[dev,docs]"
+SET "UV=%VENV_DIR%\Scripts\uv.exe"
+IF EXIST "%UV%" (
+  "%UV%" --version | FINDSTR /B /C:"uv 0.12.19 " >NUL
+  IF NOT ERRORLEVEL 1 EXIT /B 0
+)
+python.exe -m pip --python "%PYTHON%" install uv==0.12.19
 EXIT /B %ERRORLEVEL%
 
 :PYTHON_LAUNCHER
@@ -129,15 +127,6 @@ EXIT /B %ERRORLEVEL%
 CALL :INIT_PYTHON
 IF ERRORLEVEL 1 EXIT /B 1
 "%PYTHON%" -m sphinx.cmd.build -b html -W --keep-going docs docs\_build\html
-EXIT /B %ERRORLEVEL%
-
-:RUN_DOXYGEN
-WHERE doxygen.exe >NUL 2>&1
-IF ERRORLEVEL 1 (
-  ECHO ERROR: doxygen.exe is not available in PATH.
-  EXIT /B 1
-)
-doxygen.exe docs\config_doc.dox
 EXIT /B %ERRORLEVEL%
 
 :RUN_BUILD

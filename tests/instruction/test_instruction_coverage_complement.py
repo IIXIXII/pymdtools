@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 
+import pymdtools._directives.discovery as _directives_discovery_impl
+import pymdtools._directives.headings as _directives_headings_impl
+import pymdtools._directives.includes as _directives_includes_impl
 import pymdtools.instruction as instruction
-
 
 INCLUDE_RE = r"<!--\s*include-file\((?P<name>[\.A-Za-z0-9_/-]+)\)\s*-->"
 
@@ -26,28 +28,26 @@ def test_normalize_read_encoding_accepts_legacy_unknown(monkeypatch, tmp_path: P
     monkeypatch.setattr(instruction.common, "find_file", fake_find_file)
     monkeypatch.setattr(instruction.common, "get_file_content", fake_get_file_content)
 
-    assert instruction.get_file_content_to_include(
-        "snippet.md",
-        search_folders=[tmp_path],
-        encoding="UNKNOWN",
-    ) == "content"
+    assert (
+        instruction.get_file_content_to_include(
+            "snippet.md",
+            search_folders=[tmp_path],
+            encoding="UNKNOWN",
+        )
+        == "content"
+    )
     assert calls["encoding"] is None
 
 
 def test_get_file_content_to_include_uses_cwd_when_requested(monkeypatch, tmp_path: Path):
     source = tmp_path / "snippet.md"
     source.write_text("content", encoding="utf-8")
-    calls = {}
+    monkeypatch.chdir(tmp_path)
 
-    def fake_find_file(filename, start_points, relative_paths, max_up=1):
-        calls["start_points"] = start_points
-        return source
-
-    monkeypatch.setattr(instruction.common, "find_file", fake_find_file)
-
-    instruction.get_file_content_to_include("snippet.md", include_cwd=True, encoding="utf-8")
-
-    assert str(Path.cwd()) in calls["start_points"]
+    assert (
+        instruction.get_file_content_to_include("snippet.md", include_cwd=True, encoding="utf-8")
+        == "content"
+    )
 
 
 def test_get_refs_around_md_file_rejects_invalid_depths():
@@ -65,7 +65,9 @@ def test_get_refs_around_md_file_stops_at_filesystem_root(monkeypatch):
         calls["depth"] = kwargs["depth"]
         return {"ok": "OK"}
 
-    monkeypatch.setattr(instruction, "get_refs_from_md_directory", fake_get_refs_from_md_directory)
+    monkeypatch.setattr(
+        _directives_discovery_impl, "get_refs_from_md_directory", fake_get_refs_from_md_directory
+    )
     root_file = Path(Path.cwd().anchor) / "doc.md"
 
     assert instruction.get_refs_around_md_file(root_file, depth_up=3, depth_down=0) == {"ok": "OK"}
@@ -87,7 +89,7 @@ def test_get_vars_from_md_text_rejects_non_string():
 
 
 def test_escape_var_value_escapes_all_special_characters():
-    assert instruction.escape_var_value('a\\b\n\t\r"') == r'a\\b\n\t\r\"'
+    assert instruction.escape_var_value('a\\b\n\t\r"') == r"a\\b\n\t\r\""
 
 
 def test_del_var_to_md_text_rejects_non_string_var_name():
@@ -110,7 +112,9 @@ def test_set_title_in_md_text_inserts_before_leading_newline():
 
 
 def test_set_title_in_md_text_falls_back_when_stripped_setext_not_in_original(monkeypatch):
-    monkeypatch.setattr(instruction, "strip_xml_comment", lambda text: "Ghost\n=====\n")
+    monkeypatch.setattr(
+        _directives_headings_impl, "strip_xml_comment", lambda text: "Ghost\n=====\n"
+    )
 
     out = instruction.set_title_in_md_text("Body\n", "Title", style="preserve")
 
@@ -118,7 +122,7 @@ def test_set_title_in_md_text_falls_back_when_stripped_setext_not_in_original(mo
 
 
 def test_set_title_in_md_text_does_not_depend_on_comment_stripping_for_style(monkeypatch):
-    monkeypatch.setattr(instruction, "strip_xml_comment", lambda text: "# Ghost\n")
+    monkeypatch.setattr(_directives_headings_impl, "strip_xml_comment", lambda text: "# Ghost\n")
 
     out = instruction.set_title_in_md_text("Body\n", "Title", style="preserve")
 
@@ -133,7 +137,9 @@ def test_get_vars_around_md_file_stops_at_filesystem_root(monkeypatch):
         calls["depth"] = kwargs["depth"]
         return {"ok": "OK"}
 
-    monkeypatch.setattr(instruction, "get_vars_from_md_directory", fake_get_vars_from_md_directory)
+    monkeypatch.setattr(
+        _directives_discovery_impl, "get_vars_from_md_directory", fake_get_vars_from_md_directory
+    )
     root_file = Path(Path.cwd().anchor) / "doc.md"
 
     assert instruction.get_vars_around_md_file(root_file, depth_up=3, depth_down=0) == {"ok": "OK"}
@@ -151,7 +157,9 @@ def test_get_vars_around_md_file_increases_positive_depth(monkeypatch, tmp_path:
         calls["depth"] = kwargs["depth"]
         return {}
 
-    monkeypatch.setattr(instruction, "get_vars_from_md_directory", fake_get_vars_from_md_directory)
+    monkeypatch.setattr(
+        _directives_discovery_impl, "get_vars_from_md_directory", fake_get_vars_from_md_directory
+    )
 
     instruction.get_vars_around_md_file(target, depth_up=2, depth_down=1)
 
@@ -168,7 +176,9 @@ def test_get_vars_around_md_file_keeps_zero_depth_when_moving_up(monkeypatch, tm
         calls["depth"] = kwargs["depth"]
         return {}
 
-    monkeypatch.setattr(instruction, "get_vars_from_md_directory", fake_get_vars_from_md_directory)
+    monkeypatch.setattr(
+        _directives_discovery_impl, "get_vars_from_md_directory", fake_get_vars_from_md_directory
+    )
 
     instruction.get_vars_around_md_file(target, depth_up=1, depth_down=0)
 
@@ -176,7 +186,9 @@ def test_get_vars_around_md_file_keeps_zero_depth_when_moving_up(monkeypatch, tm
 
 
 def test_include_files_to_md_text_accepts_string_regex(monkeypatch):
-    monkeypatch.setattr(instruction, "get_file_content_to_include", lambda name, **kwargs: "content")
+    monkeypatch.setattr(
+        _directives_includes_impl, "get_file_content_to_include", lambda name, **kwargs: "content"
+    )
 
     out = instruction.include_files_to_md_text(
         "<!-- include-file(a.md) -->",
@@ -228,7 +240,9 @@ def test_ensure_include_file_preserves_existing_trailing_newline_from_match():
 def test_get_include_file_list_accepts_string_regex():
     text = "<!-- include-file(a.md) --><!-- include-file(a.md) -->"
 
-    assert instruction.get_include_file_list(text, include_file_re=INCLUDE_RE, unique=True) == ["a.md"]
+    assert instruction.get_include_file_list(text, include_file_re=INCLUDE_RE, unique=True) == [
+        "a.md"
+    ]
 
 
 def test_del_include_file_to_md_text_rejects_invalid_inputs():

@@ -1,6 +1,7 @@
 import codecs
-import pytest
 from pathlib import Path
+
+import pytest
 
 from pymdtools.common import is_binary_file
 
@@ -49,6 +50,7 @@ def test_is_binary_file_raises_if_root_is_directory(tmp_path):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _write_text(p: Path, text: str, encoding: str = "utf-8") -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(text, encoding=encoding)
@@ -62,6 +64,7 @@ def _write_bytes(p: Path, data: bytes) -> None:
 # ---------------------------------------------------------------------------
 # Basic behavior
 # ---------------------------------------------------------------------------
+
 
 def test_empty_file_is_not_binary(tmp_path: Path) -> None:
     p = tmp_path / "empty.txt"
@@ -111,6 +114,7 @@ def test_random_binary_file_is_binary(tmp_path: Path) -> None:
 # sample_size behavior
 # ---------------------------------------------------------------------------
 
+
 def test_binary_detection_with_small_sample_size(tmp_path: Path) -> None:
     p = tmp_path / "late_null.bin"
 
@@ -127,6 +131,7 @@ def test_binary_detection_with_small_sample_size(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------
+
 
 def test_is_binary_file_raises_if_missing(tmp_path: Path) -> None:
     p = tmp_path / "missing.txt"

@@ -1,19 +1,39 @@
 {
-    // Utilisez IntelliSense pour en savoir plus sur les attributs possibles.
-    // Pointez pour afficher la description des attributs existants.
-    // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python",
-            "type": "python",
+            "name": "Python: current file",
+            "type": "debugpy",
             "request": "launch",
-            "stopOnEntry": false,
-            "pythonPath": "${config:python.pythonPath}",
             "program": "${file}",
-            "cwd": "${workspaceRoot}",
-            "env": {},
-            "envFile": "${workspaceRoot}/.env",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
         },
+        {
+            "name": "Python: documentation examples",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/examples/workflows.py",
+            "args": [
+                "--output",
+                "examples/output"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: debug tests",
+            "type": "debugpy",
+            "request": "launch",
+            "purpose": [
+                "debug-test"
+            ],
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTEST_ADDOPTS": "--no-cov -W ignore::pytest_cov.CovDisabledWarning"
+            }
+        }
     ]
 }

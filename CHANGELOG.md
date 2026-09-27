@@ -1,0 +1,57 @@
+# Changelog
+
+## Unreleased
+
+- Separate original-code, bundled-resource and dependency licensing. Add missing
+  component notices and Subtle Patterns CC-BY-SA-3.0 attribution; record unresolved
+  historical theme permissions. Export per-layout notices with generated HTML
+  assets, verify them in CI, and protect third-party files from MIT header insertion.
+- Remove the legacy Doxygen configuration and assets, unused console logo helper,
+  disabled local-upload shortcut and an empty test placeholder. Documentation
+  is built with Sphinx; releases are published by the GitHub workflow.
+- Move the package to `src/pymdtools`, preserving public module imports. Split
+  directive handling, HTML/layout/PDF operations, filesystem helpers and
+  translation transport into internal modules. Reinstall editable checkouts
+  after updating (`uv sync --locked --extra dev --extra docs --extra pdf`).
+- Preserve link destinations containing escaped or unbalanced parentheses and
+  literal entities during editing and translation.
+- Parse batched label replacements once while preserving sequential renames;
+  index matches and serialize shared reference definitions once.
+- Only discover references when needed by `MarkdownContent.process_tags`.
+  Its default reference depth is now zero for every search root. Set
+  `refs_depth=-1` to request the previous recursive behavior. Discovery excludes
+  generated directories and skips symbolic links and directory alias cycles.
+- Add `IncludeOptions` and `PdfFeatures`; supported legacy keyword arguments
+  remain available. Unknown include/PDF feature options now raise an error.
+- Add a shared Markdown regression corpus, executable offline workflow example,
+  architecture documentation, batch benchmarks and modern VS Code tasks.
+- Make Windows development installation shortcuts use the locked environment.
+
+- Add an optional reusable translation client with an injectable transport,
+  bounded retries and an in-memory LRU cache. Opt-in paragraph segmentation
+  groups text with validated formatting markers; token mode remains the default.
+- Protect code fences nested in lists and blockquotes from directive processing.
+- Recognize balanced parentheses, escaped labels and case-insensitive references;
+  retain every link occurrence and preserve untouched source bytes during edits.
+- Reject normalization candidates that change CommonMark rendering or are not
+  idempotent. Literal escaped links remain literal text.
+- Index code intervals with binary search and batch link replacements.
+- Preserve real directory spelling when rebasing links. Use `legacy_slug=True`
+  for the old behavior; `common.path_to_url` itself is unchanged.
+- Replace pdfkit/wkhtmltopdf with optional Playwright/Chromium. Install the `pdf`
+  extra and Chromium separately. Existing conversion entry points remain, with
+  typed `PdfOptions` for timeouts, page format and resource access. PDF metadata,
+  backgrounds and watermarks continue to use pypdf. PyPDF2 fallback is removed.
+- Keep Markdown and HTML operations available without PDF dependencies.
+- Publish `py.typed`, centralize metadata in pyproject.toml, and include the
+  validation suite and documentation in source distributions.
+- Add locked development environments, Ruff, dependency auditing, pinned actions,
+  installed-wheel validation, benchmarks and real PDF integration tests.
+
+Rendering can differ from wkhtmltopdf, especially pagination and fonts. The
+default network policy is now offline, JavaScript is disabled, and a complete
+conversion is limited to 30 seconds unless configured otherwise. Review PDFs
+from representative documents when migrating.
+
+The Python code remains MIT-licensed. Distribution metadata now describes the
+combined licenses of the code and bundled layouts listed in LICENSES-3rd-party.md.

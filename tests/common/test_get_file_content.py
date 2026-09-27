@@ -1,6 +1,7 @@
 import codecs
-import pytest
 from pathlib import Path
+
+import pytest
 
 from pymdtools.common import get_file_content
 

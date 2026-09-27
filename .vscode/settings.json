@@ -1,45 +1,35 @@
 {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}",
     "python.testing.pytestArgs": [
-        "-c",
-        "${workspaceRoot}/pytest.ini",
-        "--junitxml=${workspaceRoot}/tests/test_result.xml",
-        "-v", // increase verbosity
-        // "-l", // show locals in tracebacks
-        // "-x", // exit instantly on first error or failed test
-        // "--ff", // run all tests but run the last failures first
-        // "--color=yes", // color terminal output (yes/no/auto)
-        "${workspaceRoot}/"
+        "tests",
+        "--cov-fail-under=0"
     ],
-    "python.linting.pycodestyleEnabled": true,
-    "python.linting.pycodestyleArgs": [
-        "--config=${workspaceRoot}/.config/pep8.conf"
-    ],
-    // "python.linting.pylintEnabled": true,
-    // "python.linting.pylintArgs": [
-    "pylint.args": [
-        "--rcfile=${workspaceRoot}/.config/pylint.conf"
-    ],
-    "python.formatting.autopep8Args": [
-        "--global-config=${workspaceRoot}/.config/pep8.conf"
-    ],
-    "editor.formatOnSave": true,
-    "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/doc/html": true,
-        "**/docs/html": true,
+    "ruff.importStrategy": "fromEnvironment",
+    "ruff.configurationPreference": "filesystemFirst",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
     },
-    "git.ignoreLimitWarning": true,
-    "python.testing.nosetestsEnabled": false,
-    "autopep8.args": [
-        "--ignore=E302,W504"
-    ],
-    "autopep8.path": [
-        "\"${workspaceFolder}/.config\""
-    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.egg-info": true,
+        ".hypothesis": true,
+        ".pytest_cache*": true,
+        ".ruff_cache": true,
+        "docs/_build": true,
+        ".pytest_tmp*": true
+    },
+    "files.watcherExclude": {
+        "**/.venv/**": true,
+        "**/docs/_build/**": true,
+        "**/.pytest_tmp*/**": true
+    },
+    "git.ignoreLimitWarning": true
 }

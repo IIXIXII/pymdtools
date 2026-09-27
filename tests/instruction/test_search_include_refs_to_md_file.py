@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
+from pymdtools._directives._shared import INCLUDE_FILE_RE as _INCLUDE_FILE_RE
 from pymdtools.instruction import search_include_refs_to_md_file
-from pymdtools.instruction import _INCLUDE_FILE_RE
+
 
 def test_include_file_name_supports_slash():
-    text = '<!-- include-file(templates/header.md) x -->'
+    text = "<!-- include-file(templates/header.md) x -->"
     assert _INCLUDE_FILE_RE.search(text)
+
 
 def _write(p: Path, name: str, content: str) -> Path:
     f = p / name
@@ -58,6 +61,7 @@ def test_search_include_refs_to_md_file_creates_backup(tmp_path: Path, monkeypat
 
     # deterministic backup naming
     import pymdtools.common as common
+
     monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     search_include_refs_to_md_file(

@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from pymdtools.common import ensure_folder

@@ -1,51 +1,40 @@
-Markdown To PDF
-===============
+Markdown, HTML and PDF conversion
+=================================
 
-``pymdtools.mdtopdf`` contains the Markdown to HTML/PDF conversion pipeline.
-Markdown is rendered to HTML, injected into a packaged layout, converted to PDF
-with ``pdfkit`` and ``wkhtmltopdf``, then optionally post-processed with
-metadata, backgrounds, and watermarks.
+Markdown is rendered into packaged HTML layouts. Optional Playwright/Chromium
+creates PDFs; pypdf handles metadata, page balancing, backgrounds and watermarks.
 
-Pipeline
---------
-
-The high-level path is:
-
-- ``convert_md_to_html`` renders Markdown into a layout-backed HTML file.
-- ``convert_html_to_pdf`` renders that HTML file through ``wkhtmltopdf``.
-- ``pdf_features`` applies metadata and overlay PDFs.
-- ``convert_md_to_pdf`` orchestrates the complete flow.
-
-Common Usage
+Installation
 ------------
 
-.. code-block:: python
+Install the PDF extra and browser::
 
-   from pymdtools.mdtopdf import convert_md_to_pdf
+   python -m pip install "pymdtools[pdf]"
+   python -m playwright install chromium
 
-   pdf_path = convert_md_to_pdf("README.md")
+On Linux, add ``--with-deps`` to the browser installation command.
+Markdown and HTML operations do not require the PDF extra.
 
-The external ``wkhtmltopdf`` executable must be available on ``PATH`` or in one
-of the additional legacy Windows locations scanned by
-``find_wk_html_to_pdf``.
+Resource policy
+---------------
 
-Security
---------
+Chromium runs headlessly with JavaScript disabled. Network access is blocked
+unless ``PdfOptions(allow_network=True)`` is explicitly supplied. Local assets
+are restricted to the generated HTML directory and the optional source asset
+root. A worker process bounds the entire conversion to 30 seconds by default.
+The output is validated before atomically replacing an existing PDF.
 
-The default converter is the escaping Mistune renderer. The explicit
-``converter="markdown"`` compatibility mode preserves raw HTML and must only be
-used with trusted Markdown. Titles and metadata variables are HTML-escaped
-before layout insertion, and layout assets are never allowed to overwrite a
-different existing file.
-
-``wkhtmltopdf`` is a legacy external renderer. Keep it isolated from untrusted
-HTML and network resources, and prefer a maintained rendering backend for new
-server-side deployments.
+Use ``PdfOptions(timeout=60, page_format="Letter")`` to customize rendering.
+``find_wk_html_to_pdf`` remains a legacy lookup helper but is never used by the
+conversion pipeline. Page breaks and fonts can differ from the old renderer.
 
 Public API
 ----------
 
 .. automodule:: pymdtools.mdtopdf
    :members:
+   :imported-members:
    :undoc-members:
-   :show-inheritance:
+
+.. automodule:: pymdtools.pdf_backend
+   :members: PdfOptions, PdfRenderError

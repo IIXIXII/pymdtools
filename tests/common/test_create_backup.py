@@ -1,11 +1,10 @@
-import os
 import re
 from pathlib import Path
 
 import pytest
 
-from pymdtools.common import create_backup
 import pymdtools.common as common
+from pymdtools.common import create_backup
 
 
 def test_create_backup_creates_file_in_same_dir(tmp_path):
@@ -61,11 +60,12 @@ def test_create_backup_raises_when_no_slot_available(tmp_path, monkeypatch):
 
     with pytest.raises(Exception):
         common.create_backup(src, backup_ext=".bak")
-        
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _write(p: Path, text: str) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -79,6 +79,7 @@ def _read(p: Path) -> str:
 # ---------------------------------------------------------------------------
 # Validation errors
 # ---------------------------------------------------------------------------
+
 
 def test_create_backup_raises_if_file_missing(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
@@ -112,6 +113,7 @@ def test_create_backup_raises_if_max_tries_invalid(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Basic behavior
 # ---------------------------------------------------------------------------
+
 
 def test_create_backup_creates_backup_with_expected_name(tmp_path: Path) -> None:
     src = tmp_path / "report.md"
@@ -178,6 +180,7 @@ def test_create_backup_preserves_original_filename(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Max tries exhaustion
 # ---------------------------------------------------------------------------
+
 
 def test_create_backup_raises_when_no_name_available(tmp_path: Path) -> None:
     src = tmp_path / "file.txt"

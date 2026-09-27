@@ -12,7 +12,9 @@ def test_path_to_url_unicode_removed():
 
 
 def test_path_to_url_unicode_kept_when_disabled():
-    assert path_to_url("Été/Mon fichier.txt", remove_accent=False) == "%C3%A9t%C3%A9/mon-fichier.txt"
+    assert (
+        path_to_url("Été/Mon fichier.txt", remove_accent=False) == "%C3%A9t%C3%A9/mon-fichier.txt"
+    )
 
 
 def test_path_to_url_windows_path():

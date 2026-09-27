@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pymdtools.common import set_file_content, get_file_content
+from pymdtools.common import get_file_content, set_file_content
 
 
 def test_set_file_content_creates_file(tmp_path):

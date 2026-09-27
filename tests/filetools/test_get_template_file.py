@@ -82,9 +82,7 @@ def test_get_template_file_missing_file_raises(tmp_path: Path):
         filetools.get_template_file("missing.txt", start_folder=tmp_path)
 
 
-def test_get_template_file_detects_resolved_escape(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def test_get_template_file_detects_resolved_escape(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     template_dir = tmp_path / "template"
     template_dir.mkdir()
     (template_dir / "a.txt").write_text("ok", encoding="utf-8")

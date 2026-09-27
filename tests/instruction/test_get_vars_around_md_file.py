@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from pymdtools.instruction import get_vars_around_md_file
@@ -44,8 +45,8 @@ def test_get_vars_around_md_file_depth_down_0_only_current_dir(tmp_path: Path):
 
     out = get_vars_around_md_file(
         target,
-        depth_up=0,     # stay in sub/
-        depth_down=0,   # only sub/
+        depth_up=0,  # stay in sub/
+        depth_down=0,  # only sub/
         encoding="utf-8",
     )
     assert out == {"b": "2"}

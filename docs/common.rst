@@ -106,5 +106,6 @@ Public API
 
 .. automodule:: pymdtools.common
    :members:
+   :imported-members:
    :undoc-members:
    :show-inheritance:

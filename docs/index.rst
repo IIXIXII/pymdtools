@@ -6,6 +6,8 @@ pymdtools's documentation
    :caption: Contents:
 
    readme
+   workflows
+   architecture
    package
    common
    filetools

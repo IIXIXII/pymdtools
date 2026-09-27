@@ -3,19 +3,17 @@ from __future__ import annotations
 
 import builtins
 import sys
-import os
-import time
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable
 
 import pytest
 
 import pymdtools.common as common
 
-
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
+
 
 def _write_bytes(p: Path, data: bytes) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -53,7 +51,9 @@ def _block_import(monkeypatch: pytest.MonkeyPatch, blocked: str) -> None:
     """
     orig_import = builtins.__import__
 
-    def custom_import(name: str, globals: Any = None, locals: Any = None, fromlist: Any = (), level: int = 0):
+    def custom_import(
+        name: str, globals: Any = None, locals: Any = None, fromlist: Any = (), level: int = 0
+    ):
         if name == blocked or name.startswith(blocked + "."):
             raise ImportError(f"blocked import: {name}")
         return orig_import(name, globals, locals, fromlist, level)
@@ -64,6 +64,7 @@ def _block_import(monkeypatch: pytest.MonkeyPatch, blocked: str) -> None:
 # -----------------------------------------------------------------------------
 # copytree: symlink branches (780-796)
 # -----------------------------------------------------------------------------
+
 
 def test_copytree_symlinks_true_rejects_existing_dest_dir(tmp_path: Path) -> None:
     if not _supports_symlinks(tmp_path):
@@ -265,6 +266,7 @@ def test_copytree_symlinks_false_follows_symlink_directory_without_platform_syml
 # is_binary_file: UnicodeDecodeError branch (983-984)
 # -----------------------------------------------------------------------------
 
+
 def test_is_binary_file_invalid_utf8_no_null_no_bom(tmp_path: Path) -> None:
     p = tmp_path / "bad.bin"
     # invalid UTF-8 sequence, no null byte, no BOM prefix
@@ -275,6 +277,7 @@ def test_is_binary_file_invalid_utf8_no_null_no_bom(tmp_path: Path) -> None:
 # -----------------------------------------------------------------------------
 # detect_file_encoding: validation, BOM branches, ImportError, low confidence
 # -----------------------------------------------------------------------------
+
 
 def test_detect_file_encoding_min_confidence_validation(tmp_path: Path) -> None:
     p = tmp_path / "x.txt"
@@ -319,7 +322,9 @@ def test_detect_file_encoding_utf8_bom_prefer_flag(tmp_path: Path) -> None:
     assert common.detect_file_encoding(p, prefer_utf8_sig=False) == "utf-8"
 
 
-def test_detect_file_encoding_importerror_when_chardet_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_detect_file_encoding_importerror_when_chardet_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     p = tmp_path / "x.txt"
     _write_text(p, "hello")
 
@@ -356,6 +361,7 @@ def test_detect_file_encoding_empty_file_returns_default_lowercase(tmp_path: Pat
 # get_file_content: reject_binary branch (1124) + encoding auto-detect path (1128)
 # -----------------------------------------------------------------------------
 
+
 def test_get_file_content_rejects_binary(tmp_path: Path) -> None:
     p = tmp_path / "bin.dat"
     _write_bytes(p, b"abc\x00def")
@@ -379,6 +385,7 @@ def test_get_file_content_calls_detect_encoding_when_encoding_none(
 # set_file_content: create_parents branch (1164->1167) + cleanup OSError (1196)
 # -----------------------------------------------------------------------------
 
+
 def test_set_file_content_creates_parents(tmp_path: Path) -> None:
     p = tmp_path / "a" / "b" / "c.txt"
     out = common.set_file_content(p, "x", create_parents=True, atomic=False)
@@ -395,7 +402,9 @@ def test_set_file_content_create_parents_false_uses_existing_parent(tmp_path: Pa
     assert p.read_text(encoding="utf-8") == "x"
 
 
-def test_set_file_content_cleanup_unlink_oserror_is_ignored(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_set_file_content_cleanup_unlink_oserror_is_ignored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """
     Force an exception after tmp file is created so the finally block runs,
     and make tmp_path.unlink raise OSError to cover the except OSError branch.
@@ -431,6 +440,7 @@ def test_set_file_content_cleanup_unlink_oserror_is_ignored(tmp_path: Path, monk
 # symlinked dir skipped (1340), non-file skipped (1345), relative_to ValueError (1367-1369)
 # -----------------------------------------------------------------------------
 
+
 def test_apply_to_files_include_globs_no_match_counts_skipped(tmp_path: Path) -> None:
     _write_text(tmp_path / "a.txt", "x")
 
@@ -450,7 +460,9 @@ def test_apply_to_files_include_globs_no_match_counts_skipped(tmp_path: Path) ->
     assert summary.succeeded == 0
 
 
-def test_apply_to_files_not_a_directory_branch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_apply_to_files_not_a_directory_branch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """
     Force the NotADirectoryError branch by making a directory report exists=True,
     is_file=False, is_dir=False.
@@ -490,7 +502,9 @@ def test_apply_to_files_skips_symlinked_dir_when_follow_symlinks_false(tmp_path:
     def fn(_: Path) -> str:
         return "OK"
 
-    results, summary, errors = common.apply_to_files(root, fn, recursive=True, follow_symlinks=False)
+    results, summary, errors = common.apply_to_files(
+        root, fn, recursive=True, follow_symlinks=False
+    )
     # linkdir is a directory symlink; should be skipped entirely => no files processed
     assert results == []
     assert errors == []
@@ -530,7 +544,9 @@ def test_apply_to_files_skips_symlinked_dir_without_platform_symlink(
     def fn(_: Path) -> str:
         return "OK"
 
-    results, summary, errors = common.apply_to_files(root, fn, recursive=True, follow_symlinks=False)
+    results, summary, errors = common.apply_to_files(
+        root, fn, recursive=True, follow_symlinks=False
+    )
 
     assert results == []
     assert errors == []
@@ -598,7 +614,9 @@ def test_apply_to_files_skips_non_file_entries_without_platform_symlink(
     assert summary.processed == 0
 
 
-def test_apply_to_files_relative_to_valueerror_falls_back_to_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_apply_to_files_relative_to_valueerror_falls_back_to_name(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _write_text(tmp_path / "a.txt", "x")
 
     # Force Path.relative_to to raise ValueError for this test
@@ -615,7 +633,9 @@ def test_apply_to_files_relative_to_valueerror_falls_back_to_name(tmp_path: Path
         seen.append(p.name)
         return p.name
 
-    results, summary, errors = common.apply_to_files(tmp_path, fn, recursive=False, include_globs=("a.txt",))
+    results, summary, errors = common.apply_to_files(
+        tmp_path, fn, recursive=False, include_globs=("a.txt",)
+    )
     assert results == ["a.txt"]
     assert summary.succeeded == 1
     assert errors == []
@@ -626,6 +646,7 @@ def test_apply_to_files_relative_to_valueerror_falls_back_to_name(tmp_path: Path
 # -----------------------------------------------------------------------------
 # find_file: filename empty (1481) + absolute relative_paths (1490)
 # -----------------------------------------------------------------------------
+
 
 def test_find_file_rejects_empty_filename(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="filename must be a non-empty string"):
@@ -642,6 +663,7 @@ def test_find_file_rejects_absolute_relative_paths(tmp_path: Path) -> None:
 # to_ascii: ImportError branch (1577-1578)
 # -----------------------------------------------------------------------------
 
+
 def test_to_ascii_importerror_when_unidecode_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_import(monkeypatch, "unidecode")
     with pytest.raises(ImportError, match="Unidecode is required"):
@@ -651,6 +673,7 @@ def test_to_ascii_importerror_when_unidecode_missing(monkeypatch: pytest.MonkeyP
 # -----------------------------------------------------------------------------
 # slugify: allow_unicode True branch (1608)
 # -----------------------------------------------------------------------------
+
 
 def test_slugify_allow_unicode_true_path() -> None:
     # Just ensure allow_unicode=True executes and returns a normalized slug.
@@ -663,9 +686,10 @@ def test_slugify_allow_unicode_true_path() -> None:
 # get_valid_filename: strip branch (1660->1664) + sanitization and reserved names
 # -----------------------------------------------------------------------------
 
+
 def test_get_valid_filename_strip_and_invalid_chars_and_reserved_name() -> None:
     # Leading/trailing spaces stripped, invalid chars replaced
-    out = common.get_valid_filename('  CON:<bad>|name>.txt  ', replacement="_", strip=True)
+    out = common.get_valid_filename("  CON:<bad>|name>.txt  ", replacement="_", strip=True)
     # "CON" is reserved on Windows -> should be modified (stem gets "_")
     assert out.upper().startswith("CON_")
     assert "<" not in out and ">" not in out and "|" not in out and ":" not in out
@@ -679,6 +703,7 @@ def test_get_valid_filename_strip_false_preserves_leading_spaces() -> None:
 # -----------------------------------------------------------------------------
 # parse_timestamp: ImportError branch (1854-1855)
 # -----------------------------------------------------------------------------
+
 
 def test_parse_timestamp_importerror_when_dateutil_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_import(monkeypatch, "dateutil")

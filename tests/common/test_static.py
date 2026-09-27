@@ -1,5 +1,3 @@
-import pytest
-
 from pymdtools.common import static
 
 

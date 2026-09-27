@@ -21,12 +21,9 @@ def test_include_vars_unknown_var_raises_by_default():
 
 
 def test_include_vars_unknown_var_can_be_ignored():
-    text = (
-        "<!-- begin-var(x) -->X<!-- end-var -->\n"
-        "<!-- begin-var(y) -->Y<!-- end-var -->\n"
-    )
+    text = "<!-- begin-var(x) -->X<!-- end-var -->\n<!-- begin-var(y) -->Y<!-- end-var -->\n"
     out = include_vars_to_md_text(text, {"y": "YY"}, error_if_var_not_found=False)
-    assert "X" in out       # bloc x inchangé
+    assert "X" in out  # bloc x inchangé
     assert "<!-- begin-var(y) -->YY<!-- end-var -->" in out
     assert "<!-- begin-var(y) -->Y<!-- end-var -->" not in out
 

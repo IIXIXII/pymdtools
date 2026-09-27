@@ -6,12 +6,7 @@ from pymdtools.instruction import search_include_vars_to_md_text
 
 
 def test_search_include_vars_to_md_text_replaces_using_local_vars():
-    text = (
-        '<!-- var(x)="VALUE" -->\n'
-        'A\n'
-        '<!-- begin-var(x) -->OLD<!-- end-var -->\n'
-        'B\n'
-    )
+    text = '<!-- var(x)="VALUE" -->\nA\n<!-- begin-var(x) -->OLD<!-- end-var -->\nB\n'
     out = search_include_vars_to_md_text(text)
     assert "VALUE" in out
     assert "OLD" not in out
@@ -26,10 +21,10 @@ def test_search_include_vars_to_md_text_unknown_var_raises():
 def test_search_include_vars_to_md_text_unknown_var_can_be_ignored():
     text = (
         '<!-- var(y)="YY" -->\n'
-        '<!-- begin-var(x) -->X<!-- end-var -->\n'
-        '<!-- begin-var(y) -->Y<!-- end-var -->\n'
+        "<!-- begin-var(x) -->X<!-- end-var -->\n"
+        "<!-- begin-var(y) -->Y<!-- end-var -->\n"
     )
     out = search_include_vars_to_md_text(text, error_if_var_not_found=False)
-    assert "X" in out          # bloc x inchangé
+    assert "X" in out  # bloc x inchangé
     assert "<!-- begin-var(y) -->YY<!-- end-var -->" in out
     assert "<!-- begin-var(y) -->Y<!-- end-var -->" not in out

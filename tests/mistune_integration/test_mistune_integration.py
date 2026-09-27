@@ -95,4 +95,3 @@ def test_append_close_output_calls_close_hook() -> None:
             return " done"
 
     assert mi._append_close_output(Renderer(), "content") == "content done"
-

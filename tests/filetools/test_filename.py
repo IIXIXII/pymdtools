@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pytest
 
 from pymdtools.filetools import FileName
@@ -129,4 +130,3 @@ def test_is_file_and_is_dir(tmp_path):
     f2 = FileName(str(dir_path))
     assert f2.is_dir() is True
     assert f2.is_file() is False
-

@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  schedule:
+    - cron: "17 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -22,20 +24,25 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        include:
+          - os: macos-latest
+            python-version: "3.12"
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
-      - uses: actions/checkout@v7.0.0
-      - uses: actions/setup-python@v6.2.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Install project and test tools
-        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Install uv
+        run: python -m pip install uv==0.12.19
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev --extra pdf --python ${{ matrix.python-version }}
       - name: Check dependency consistency
-        run: python -m pip check
+        run: uv pip check
       - name: Run test suite
-        run: python -m pytest
+        run: uv run --no-sync pytest
 
   quality:
     name: Types, documentation and distributions
@@ -43,37 +50,76 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v6.2.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install development and documentation tools
-        run: python -m pip install --disable-pip-version-check -e ".[dev,docs]"
-      - name: Check dependency consistency
-        run: python -m pip check
-      - name: Check version files
-        run: python scripts/release.py check
-      - name: Run strict type checking
-        run: python -m pyright
-      - name: Build documentation with warnings as errors
-        run: python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
-      - name: Build and validate distributions
-        run: python scripts/release.py build
-      - name: Install wheel in an isolated environment and smoke-test resources
-        shell: bash
+      - name: Install uv
+        run: python -m pip install uv==0.12.19
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev --extra docs --extra pdf --python 3.12
+      - name: Lint and format
         run: |
-          smoke_dir="$RUNNER_TEMP/pymdtools-wheel-smoke"
-          python -m venv "$smoke_dir"
-          "$smoke_dir/bin/python" -m pip install --disable-pip-version-check --no-deps dist/*.whl
-          cd "$RUNNER_TEMP"
-          "$smoke_dir/bin/python" -c "from pathlib import Path; import pymdtools; package = Path(pymdtools.__file__).resolve().parent; assert (package / 'layouts/github/page.html').is_file(); assert (package / 'referenced_files/license.txt').is_file(); print(pymdtools.__version__)"
+          uv run --no-sync ruff check .
+          uv run --no-sync ruff format --check .
+      - name: Audit installed dependencies
+        run: uv run --no-sync pip-audit --skip-editable
+      - name: Check bundled license notices
+        run: uv run --no-sync python scripts/update_license_notices.py
+      - name: Check dependency consistency
+        run: uv pip check
+      - name: Check version files
+        run: uv run --no-sync python scripts/release.py check
+      - name: Run strict type checking
+        run: uv run --no-sync pyright
+      - name: Build documentation with warnings as errors
+        run: uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
+      - name: Build and validate distributions
+        run: uv run --no-sync python scripts/release.py build
+      - name: Test installed wheel and source archive
+        run: uv run --no-sync python scripts/check_distribution.py dist
+      - name: Check parser performance
+        run: uv run --no-sync python scripts/benchmark_markdown.py --max-seconds 3
       - name: Preserve validated distributions
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: distributions-${{ github.sha }}
           path: dist/
           if-no-files-found: error
           retention-days: 7
+
+  pdf:
+    name: Real PDF renderer (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install uv==0.12.19
+      - run: uv sync --locked --extra dev --extra pdf --python 3.12
+      - run: uv run --no-sync playwright install --with-deps chromium
+      - name: Render reference documents
+        env:
+          PYMDTOOLS_PDF_TESTS: "1"
+        run: uv run --no-sync pytest -m pdf_integration --no-cov
+
+  latest:
+    name: Compatibility with latest dependencies
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+      - run: python -m pip install -e ".[dev,pdf]"
+      - run: python -m pytest

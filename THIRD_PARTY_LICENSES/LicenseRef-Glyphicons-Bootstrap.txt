@@ -1,0 +1,32 @@
+LicenseRef-Glyphicons-Bootstrap
+Review date: 2026-09-27
+
+Glyphicons Halflings by Jan Kovarik / GLYPHICONS
+https://glyphicons.com/
+
+The bundled font's internal copyright notice is:
+Copyright (c) 2013 by Jan Kovarik. All rights reserved.
+
+Scope:
+  bootstrap3/assets/fonts/glyphicons-halflings-regular.{eot,svg,ttf,woff}
+  mixu-bootstrap/assets/img/glyphicons-halflings{,-white}.png
+  mixu-bootstrap-2col/assets/img/glyphicons-halflings{,-white}.png
+  mixu-gray/assets/img/glyphicons-halflings{,-white}.png
+Paths are relative to src/pymdtools/layouts.
+
+The Bootstrap 3.1.1 documentation says that Glyphicons Halflings are made
+available free of cost for Bootstrap by their creator, and requests a link
+to Glyphicons where possible:
+https://github.com/twbs/bootstrap/blob/v3.1.1/docs/components.html
+
+Bootstrap 2.3.2 documents the same special arrangement and optional credit:
+https://github.com/twbs/bootstrap/blob/v2.3.2/docs/base-css.html#icons
+Its footer separately mentions CC-BY-3.0 for "Glyphicons Free". This inventory
+does not assume that statement grants a general CC license for every
+Halflings font or sprite.
+
+This notice records the Bootstrap-specific permission evidenced by those
+sources; it does not replace the creator's terms, grant new rights, or assert
+that Twitter's MIT/Apache license owns these independently authored glyphs.
+Confirm terms with the creator for independent redistribution or font use
+outside that documented arrangement.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from pymdtools.filetools import FileContent
@@ -100,7 +101,7 @@ def test_filecontent_write_creates_backup_when_overwriting(tmp_path: Path, monke
 
     fc.write(backup_ext=".bak")
 
-    backups = list(tmp_path.glob("a.txt."+common.today_utc()+"-*.bak"))
+    backups = list(tmp_path.glob("a.txt." + common.today_utc() + "-*.bak"))
     assert len(backups) == 1
     assert p.read_text(encoding="utf-8").lstrip("\ufeff") == "new"
 

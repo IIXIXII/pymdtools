@@ -12,6 +12,7 @@ from pymdtools.common import convert_for_stdout
 @dataclass
 class DummyStream:
     """Minimal TextIO-like object for tests."""
+
     encoding: Optional[str] = None
 
 

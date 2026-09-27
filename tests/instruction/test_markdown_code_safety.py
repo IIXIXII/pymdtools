@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import pymdtools._directives.includes as _directives_includes_impl
 import pymdtools.instruction as instruction
 
 
@@ -21,16 +22,16 @@ def test_titles_ignore_fenced_code_and_follow_document_order() -> None:
 
 def test_directive_discovery_ignores_all_markdown_code_forms() -> None:
     text = (
-        "`<!-- var(hidden)=\"inline\" -->`\n"
+        '`<!-- var(hidden)="inline" -->`\n'
         "```markdown\n"
-        "<!-- var(hidden)=\"fenced\" -->\n"
+        '<!-- var(hidden)="fenced" -->\n'
         "<!-- begin-ref(hidden) -->NO<!-- end-ref -->\n"
         "<!-- begin-include(hidden) -->OLD<!-- end-include -->\n"
         "```\n"
-        "    <!-- var(hidden)=\"indented\" -->\n"
+        '    <!-- var(hidden)="indented" -->\n'
         "\n"
         "\t<!-- begin-include(hidden) -->OLD<!-- end-include -->\n"
-        "<!-- var(real)=\"yes\" -->\n"
+        '<!-- var(real)="yes" -->\n'
         "<!-- begin-ref(real) -->YES<!-- end-ref -->\n"
         "<!-- begin-include(real) -->OLD<!-- end-include -->\n"
     )
@@ -50,7 +51,7 @@ def test_include_file_ignores_code_spans_and_fences(
         calls.append(name)
         return "INCLUDED"
 
-    monkeypatch.setattr(instruction, "get_file_content_to_include", fake_include)
+    monkeypatch.setattr(_directives_includes_impl, "get_file_content_to_include", fake_include)
     text = (
         "`<!-- include-file(inline.md) -->`\n"
         "```\n<!-- include-file(fenced.md) -->\n```\n"

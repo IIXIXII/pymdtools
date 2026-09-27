@@ -4,6 +4,15 @@
 ===============================================================================
 -->
 
+The MIT license below applies to the original pymdtools Python code, scripts,
+tests, examples and documentation. Bundled third-party layouts and assets retain
+their own licenses, detailed in [LICENSES-3rd-party.md](LICENSES-3rd-party.md).
+Separately installed dependencies are listed in
+[LICENSES-dependencies.md](LICENSES-dependencies.md).
+
+The license of this software does not assign a license to documents processed
+with it. Copied third-party assets retain their notices and terms.
+
 MIT License
 ===========
 

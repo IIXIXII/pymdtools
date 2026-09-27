@@ -1,0 +1,29 @@
+LicenseRef-Theme-Permission-Review
+Review date: 2026-09-27
+
+This is a record of unresolved permission, NOT a license grant.
+
+Affected original-theme content under src/pymdtools/layouts:
+  jasonm23-dark/assets/style.css
+  jasonm23-foghorn/assets/style.css
+  jasonm23-markdown/assets/style.css
+  markedapp-byword/assets/style.css
+
+The three Jason Milkins themes are credited by mixu/markdown-styles to:
+https://github.com/jasonm23/markdown-css-themes
+The reviewed repository has no standalone license and its README does not
+state a license grant. The dark theme also marks a Twitter-owned section.
+
+The Byword file preserves the following attributions:
+  Copyright 2011 Brett Terpstra
+  Copyright 2011 Metaclassy, Lda.
+  Authors: @brunodecarvalho, @jpedroso, @rcabaco
+It requests preservation of credits. A separate redistribution grant was not
+located. The historical source credited by markdown-styles is:
+http://bywordapp.com/extras/
+
+The BSD-3-Clause declaration for the surrounding markdown-styles collection
+does not establish the original authors' permission for these independent
+works. Their existing notices are preserved; no MIT or BSD grant is inferred.
+Resolve this by recording the authors' applicable permission or replacing
+the affected resources before claiming fully verified redistribution rights.

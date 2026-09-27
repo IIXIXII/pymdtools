@@ -1,9 +1,7 @@
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 
-import pytest
-
-from pymdtools.common import today_utc, now_utc_timestamp, parse_timestamp
+from pymdtools.common import now_utc_timestamp, parse_timestamp, today_utc
 
 
 def test_today_utc_format():

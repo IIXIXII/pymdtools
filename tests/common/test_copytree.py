@@ -8,10 +8,10 @@ import pytest
 
 from pymdtools.common import copytree
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _write(p: Path, text: str) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -51,6 +51,7 @@ def _supports_symlinks(tmp_path: Path) -> bool:
 # Basic validation
 # ---------------------------------------------------------------------------
 
+
 def test_copytree_raises_when_src_missing(tmp_path: Path) -> None:
     src = tmp_path / "missing"
     dst = tmp_path / "dst"
@@ -73,6 +74,7 @@ def test_copytree_raises_when_src_not_directory(tmp_path: Path) -> None:
 # Basic recursive copy
 # ---------------------------------------------------------------------------
 
+
 def test_copytree_basic_recursive_copy(tmp_path: Path) -> None:
     src = tmp_path / "src"
     dst = tmp_path / "dst"
@@ -92,6 +94,7 @@ def test_copytree_basic_recursive_copy(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Ignore callable
 # ---------------------------------------------------------------------------
+
 
 def test_copytree_ignore_callable(tmp_path: Path) -> None:
     src = tmp_path / "src"
@@ -116,6 +119,7 @@ def test_copytree_ignore_callable(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Incremental logic
 # ---------------------------------------------------------------------------
+
 
 def test_copytree_does_not_overwrite_when_dest_newer(tmp_path: Path) -> None:
     src = tmp_path / "src"
@@ -169,6 +173,7 @@ def test_copytree_overwrites_when_size_differs(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Symlink behavior (portable)
 # ---------------------------------------------------------------------------
+
 
 def test_copytree_symlinks_true_preserves_symlink_if_supported(tmp_path: Path) -> None:
     if not _supports_symlinks(tmp_path):
@@ -242,6 +247,7 @@ def test_copytree_symlinks_true_rejects_existing_dest_entry_if_supported(tmp_pat
 # ---------------------------------------------------------------------------
 # Safety and conflicting entry types
 # ---------------------------------------------------------------------------
+
 
 def test_copytree_rejects_source_as_destination(tmp_path: Path) -> None:
     src = tmp_path / "src"

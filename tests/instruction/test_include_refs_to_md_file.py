@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from pymdtools.instruction import include_refs_to_md_file
@@ -28,6 +29,7 @@ def test_include_refs_to_md_file_creates_backup(tmp_path: Path, monkeypatch):
 
     # Make backup name deterministic
     import pymdtools.common as common
+
     monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     include_refs_to_md_file(p, {"x": "NEW"}, backup_option=True, backup_ext=".bak")
@@ -61,6 +63,6 @@ def test_include_refs_to_md_file_unknown_key_can_be_ignored(tmp_path: Path):
     )
 
     out = p.read_text(encoding="utf-8").lstrip("\ufeff")
-    assert "X" in out   # unchanged
+    assert "X" in out  # unchanged
     assert "<!-- begin-include(y) -->YY<!-- end-include -->" in out  # replaced
     assert "<!-- begin-include(y) -->Y<!-- end-include -->" not in out

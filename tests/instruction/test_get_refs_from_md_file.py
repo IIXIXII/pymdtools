@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from pymdtools.instruction import get_refs_from_md_file
@@ -9,11 +10,7 @@ from pymdtools.instruction import get_refs_from_md_file
 def test_get_refs_from_md_file_extracts_refs(tmp_path: Path):
     p = tmp_path / "a.md"
     p.write_text(
-        "before\n"
-        "<!-- begin-ref(x) -->\n"
-        "X\n"
-        "<!-- end-ref -->\n"
-        "after\n",
+        "before\n<!-- begin-ref(x) -->\nX\n<!-- end-ref -->\nafter\n",
         encoding="utf-8",
     )
 

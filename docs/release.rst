@@ -9,10 +9,12 @@ Before releasing
 
 Run the complete validation suite from a clean checkout::
 
-   python -m pytest
-   pyright pymdtools scripts/release.py
-   sphinx-build -W --keep-going -b html docs docs/_build/html
-   python scripts/release.py build
+   uv sync --locked --extra dev --extra docs --extra pdf
+   uv run --no-sync pytest
+   uv run --no-sync pyright
+   uv run --no-sync sphinx-build -W --keep-going -b html docs docs/_build/html
+   uv run --no-sync python scripts/release.py build
+   uv run --no-sync python scripts/check_distribution.py dist
 
 Version and tag
 ---------------
@@ -21,8 +23,8 @@ The release helper updates both version files and creates an annotated local
 tag only when the worktree is clean::
 
    python scripts/release.py bump patch
-   git diff -- pymdtools/version.py pymdtools/version.bat
-   git add pymdtools/version.py pymdtools/version.bat
+   git diff -- src/pymdtools/version.py src/pymdtools/version.bat
+   git add src/pymdtools/version.py src/pymdtools/version.bat
    git commit -m "Release 1.2.3"
    python scripts/release.py tag
 

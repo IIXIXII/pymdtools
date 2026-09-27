@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import sys
-import types
+from pathlib import Path
 
 import pytest
 
@@ -46,12 +45,14 @@ def test_get_this_filename_fallback_to_argv0(monkeypatch, tmp_path: Path):
     out = common.get_this_filename()
     assert Path(out).resolve() == fake_script.resolve()
 
+
 def test_get_this_filename_unfrozen():
     path = common.get_this_filename()
     p = Path(path)
 
     assert p.exists()
     assert p.is_file()
+
 
 def test_get_this_filename_frozen(monkeypatch, tmp_path):
     fake_exe = tmp_path / "app.exe"
@@ -63,6 +64,7 @@ def test_get_this_filename_frozen(monkeypatch, tmp_path):
     path = common.get_this_filename()
     assert Path(path) == fake_exe.resolve()
 
+
 def test_get_this_filename_default_returns_module_file() -> None:
     # In normal imports, __file__ exists: function should return resolved module path.
     got = common.get_this_filename()
@@ -70,7 +72,9 @@ def test_get_this_filename_default_returns_module_file() -> None:
     assert Path(got) == Path(common.__file__).resolve()
 
 
-def test_get_this_filename_frozen_uses_sys_executable(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_get_this_filename_frozen_uses_sys_executable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     fake_exe = tmp_path / "app.exe"
     fake_exe.write_text("x", encoding="utf-8")
 
@@ -81,7 +85,9 @@ def test_get_this_filename_frozen_uses_sys_executable(monkeypatch: pytest.Monkey
     assert Path(got) == fake_exe.resolve()
 
 
-def test_get_this_filename_without___file___uses_argv0(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_get_this_filename_without___file___uses_argv0(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # Simulate an interactive context: no __file__
     monkeypatch.setitem(common.__dict__, "__file__", None)
 

@@ -7,7 +7,8 @@
 Autonomous license header injector.
 
 - Scans recursively from ../ (relative to this script location)
-- Adds a centered 79-char MIT header only if not already present
+- Adds a centered 79-char MIT header to project-owned files without a notice
+- Always excludes third-party resources, license documents and environments
 - Supports multiple file types with appropriate comment syntax
 - Preserves Python shebang & coding cookie; preserves shebang for .sh
 - Default: dry-run. Use --write to apply changes.
@@ -16,13 +17,36 @@ Autonomous license header injector.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Tuple, Optional
+from typing import Iterable, Tuple
 
 MARKER = "Author: Florent TOURNOIS | License: MIT"
 SCAN_LINES = 150
+PROTECTED_DIRS = {
+    ".git",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "third_party_licenses",
+    "layouts",
+    "referenced_files",
+    "dist",
+    "build",
+    "_build",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".hypothesis",
+}
+NOTICE_RE = re.compile(
+    r"copyright|SPDX-License-Identifier|licen[cs]e\s*[:=]|licensed under|all rights reserved",
+    re.IGNORECASE,
+)
 
 # PEP 263 coding cookie (must be in line 1 or 2 of file, after optional shebang)
 CODING_RE = re.compile(r"^#\s*.*coding[:=]\s*([-\w.]+)", re.IGNORECASE)
@@ -39,29 +63,95 @@ CODING_RE = re.compile(r"^#\s*.*coding[:=]\s*([-\w.]+)", re.IGNORECASE)
 # - keep_echo_off: preserve "@ECHO OFF" (bat/cmd)
 SUPPORTED = {
     # Python
-    ".py": dict(line_comment="#", block_comment=None, keep_shebang=True, keep_coding=True, keep_echo_off=False),
-
+    ".py": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=True,
+        keep_coding=True,
+        keep_echo_off=False,
+    ),
     # Windows batch
-    ".bat": dict(line_comment="REM", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=True),
-    ".cmd": dict(line_comment="REM", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=True),
-
+    ".bat": dict(
+        line_comment="REM",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=True,
+    ),
+    ".cmd": dict(
+        line_comment="REM",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=True,
+    ),
     # Config/text with # comments
-    ".conf": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-    ".ini": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-    ".cfg": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-    ".toml": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-    ".yaml": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-    ".yml": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-
+    ".conf": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
+    ".ini": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
+    ".cfg": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
+    ".toml": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
+    ".yaml": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
+    ".yml": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
     # PowerShell
-    ".ps1": dict(line_comment="#", block_comment=None, keep_shebang=False, keep_coding=False, keep_echo_off=False),
-
+    ".ps1": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
     # Shell scripts
-    ".sh": dict(line_comment="#", block_comment=None, keep_shebang=True, keep_coding=False, keep_echo_off=False),
-
+    ".sh": dict(
+        line_comment="#",
+        block_comment=None,
+        keep_shebang=True,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
     # Markdown (HTML comment block)
-    ".md": dict(line_comment=None, block_comment=("<!--", "-->"), keep_shebang=False, keep_coding=False, keep_echo_off=False),
-
+    ".md": dict(
+        line_comment=None,
+        block_comment=("<!--", "-->"),
+        keep_shebang=False,
+        keep_coding=False,
+        keep_echo_off=False,
+    ),
     # # JS/TS/CSS (block comment)
     # ".js": dict(line_comment=None, block_comment=("/*", "*/"), keep_shebang=False, keep_coding=False, keep_echo_off=False),
     # ".ts": dict(line_comment=None, block_comment=("/*", "*/"), keep_shebang=False, keep_coding=False, keep_echo_off=False),
@@ -183,6 +273,12 @@ def ensure_newline(s: str) -> str:
 
 
 def process_file(path: Path, write: bool) -> Tuple[bool, str]:
+    if (
+        path.is_symlink()
+        or any(part.lower() in PROTECTED_DIRS for part in path.parts[:-1])
+        or path.name.lower().startswith(("license", "licence", "copying", "notice"))
+    ):
+        return (False, "skip:protected")
     ext = path.suffix.lower()
     if ext not in SUPPORTED:
         return (False, "skip:unsupported")
@@ -196,14 +292,14 @@ def process_file(path: Path, write: bool) -> Tuple[bool, str]:
         return (False, f"skip:read_error:{e}")
 
     lines = raw.splitlines(keepends=True)
-    head = [l.rstrip("\n") for l in lines[:SCAN_LINES]]
+    head = [line.rstrip("\n") for line in lines[:SCAN_LINES]]
 
     # Marker already present => keep
     if marker_present(head):
         return (False, "keep:marker_present")
 
-    # Conservative: if any MIT mention exists, keep (avoid partial duplicates)
-    if any("License: MIT" in l for l in head):
+    # A foreign grant or attribution must never be labelled as our own MIT work.
+    if NOTICE_RE.search(raw):
         return (False, "keep:license_detected")
 
     hdr = header_for(ext)
@@ -224,19 +320,24 @@ def process_file(path: Path, write: bool) -> Tuple[bool, str]:
 
 
 def iter_targets(root: Path, include_hidden: bool) -> Iterable[Path]:
-    skip_dirs = {
-        ".git", ".venv", ".egs", "__pycache__", "node_modules", "dist", "build",
-        ".mypy_cache", ".pytest_cache", ".ruff_cache", "tests"
-    }
-    for p in root.rglob("*"):
-        if not p.is_file():
-            continue
-        if not include_hidden:
-            parts = {part.lower() for part in p.parts}
-            if any(d in parts for d in skip_dirs):
-                continue
-        if p.suffix.lower() in SUPPORTED:
-            yield p
+    if any(part.lower() in PROTECTED_DIRS for part in root.parts):
+        return
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        dirs[:] = [
+            name
+            for name in dirs
+            if name.lower() not in PROTECTED_DIRS
+            and name.lower() != "tests"
+            and not name.lower().endswith(".egg-info")
+            and not name.lower().startswith((".pytest_cache", ".pytest_tmp"))
+            and (include_hidden or not name.startswith("."))
+            and not (Path(directory) / name).is_symlink()
+        ]
+        for name in files:
+            if include_hidden or not name.startswith("."):
+                path = Path(directory) / name
+                if path.suffix.lower() in SUPPORTED:
+                    yield path
 
 
 def main(argv: list[str]) -> int:
@@ -256,7 +357,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--include-hidden",
         action="store_true",
-        help="Include hidden/build dirs (.git, .venv, dist, build...).",
+        help="Include hidden project files; third-party and generated directories stay excluded.",
     )
     parser.add_argument(
         "--verbose",

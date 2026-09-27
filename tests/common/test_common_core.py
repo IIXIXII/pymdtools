@@ -5,10 +5,10 @@ import pytest
 
 from pymdtools.common.core import Constant, check_len, handle_exception, static
 
-
 # =============================================================================
 # handle_exception
 # =============================================================================
+
 
 def test_handle_exception_wraps_and_enriches_message_and_preserves_cause():
     @handle_exception("Error while converting file", filename="File", output_dir="Output")
@@ -56,6 +56,7 @@ def test_handle_exception_preserves_return_value_when_no_error():
 # Constant
 # =============================================================================
 
+
 def test_constant_descriptor_readable_from_class_and_instance():
     class C:
         A = Constant("v")
@@ -93,6 +94,7 @@ def test_constant_allows_class_level_rebinding_by_design():
 # static
 # =============================================================================
 
+
 def test_static_attaches_attributes_to_function():
     @static(counter=0, label="ok")
     def f() -> int:
@@ -123,6 +125,7 @@ def test_static_overwrites_existing_attribute():
 # =============================================================================
 # check_len
 # =============================================================================
+
 
 def test_check_len_ok_returns_same_object():
     obj = [1]

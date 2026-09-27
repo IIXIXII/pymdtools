@@ -4,7 +4,7 @@ from pymdtools.common import get_valid_filename
 
 
 def test_replaces_invalid_characters():
-    assert get_valid_filename('a:b*c?.txt') == 'a_b_c_.txt'
+    assert get_valid_filename("a:b*c?.txt") == "a_b_c_.txt"
 
 
 def test_removes_trailing_dot_and_space():
@@ -47,5 +47,3 @@ def test_replacement_must_be_text() -> None:
 def test_replacement_must_be_one_safe_character(replacement: str) -> None:
     with pytest.raises(ValueError, match="one safe filename character"):
         get_valid_filename("a:b", replacement=replacement)
-
-

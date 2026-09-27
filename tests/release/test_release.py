@@ -8,7 +8,6 @@ from typing import Any
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -109,6 +108,7 @@ def test_create_tag_rejects_an_existing_tag(monkeypatch: pytest.MonkeyPatch) -> 
 def test_verify_tag_requires_matching_tag_at_head(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
     monkeypatch.setattr(release, "verify_version_files", lambda: "1.2.3")
+
     def fake_git(*args: str, **kwargs: Any) -> Any:
         del kwargs
         if args[:2] == ("cat-file", "-t"):
@@ -284,3 +284,21 @@ def test_build_distributions_uses_utf8_and_strict_twine(
     assert len(artifacts) == 2
     assert commands[0][1:3] == ["-m", "build"]
     assert commands[1][1:5] == ["-m", "twine", "check", "--strict"]
+
+
+def test_audit_tags_reads_both_source_layouts(monkeypatch):
+    calls = []
+
+    def fake_git(*args, **kwargs):
+        calls.append(args)
+        if args[0] == "tag":
+            return _completed(*args, stdout="v1.0.0\nv2.0.0\n")
+        if args[1] == "v1.0.0:src/pymdtools/version.py":
+            return _completed(*args, returncode=1)
+        version = "1, 0, 0" if args[1].startswith("v1.") else "2, 0, 0"
+        return _completed(*args, stdout=f"__version_info__ = ({version})\n")
+
+    monkeypatch.setattr(release, "run_git", fake_git)
+    assert release.audit_tags() == []
+    assert ("show", "v1.0.0:pymdtools/version.py") in calls
+    assert ("show", "v2.0.0:pymdtools/version.py") not in calls

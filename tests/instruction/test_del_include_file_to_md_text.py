@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-import pymdtools.instruction as instruction
 
+import pymdtools.instruction as instruction
 
 INCLUDE_RE = re.compile(r"<!--\s*include-file\((?P<name>[\.A-Za-z0-9_/-]+)\)\s*-->")
 
@@ -29,7 +29,9 @@ def test_del_include_file_removes_all_by_default():
 
 def test_del_include_file_first_only():
     text = "<!-- include-file(a.md) --><!-- include-file(a.md) -->"
-    out = instruction.del_include_file_to_md_text(text, "a.md", include_file_re=INCLUDE_RE, first_only=True)
+    out = instruction.del_include_file_to_md_text(
+        text, "a.md", include_file_re=INCLUDE_RE, first_only=True
+    )
     assert out.count("include-file(a.md)") == 1
 
 

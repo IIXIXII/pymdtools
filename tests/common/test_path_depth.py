@@ -1,5 +1,4 @@
 import os
-import pytest
 
 from pymdtools.common import path_depth
 
@@ -27,4 +26,3 @@ def test_path_depth_current_dir():
 def test_path_depth_root():
     # platform-dependent, but root has depth 0
     assert path_depth(os.path.abspath(os.sep)) == 0
-

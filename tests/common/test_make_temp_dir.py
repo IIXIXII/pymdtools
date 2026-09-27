@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from pymdtools.common import make_temp_dir

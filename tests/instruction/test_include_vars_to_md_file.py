@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from pymdtools.instruction import include_vars_to_md_file
@@ -25,22 +26,17 @@ def test_include_vars_to_md_file_unknown_var_raises(tmp_path: Path):
     f.write_text("<!-- begin-var(x) -->OLD<!-- end-var -->", encoding="utf-8")
 
     with pytest.raises(KeyError):
-        include_vars_to_md_file(
-            f, {}, backup_option=False, error_if_var_not_found=True
-        )
+        include_vars_to_md_file(f, {}, backup_option=False, error_if_var_not_found=True)
 
 
 def test_include_vars_to_md_file_unknown_var_can_be_ignored(tmp_path: Path):
     f = tmp_path / "doc.md"
     f.write_text(
-        "<!-- begin-var(x) -->X<!-- end-var -->\n"
-        "<!-- begin-var(y) -->Y<!-- end-var -->\n",
+        "<!-- begin-var(x) -->X<!-- end-var -->\n<!-- begin-var(y) -->Y<!-- end-var -->\n",
         encoding="utf-8",
     )
 
-    include_vars_to_md_file(
-        f, {"y": "YY"}, backup_option=False, error_if_var_not_found=False
-    )
+    include_vars_to_md_file(f, {"y": "YY"}, backup_option=False, error_if_var_not_found=False)
 
     out = f.read_text(encoding="utf-8").lstrip("\ufeff")
     assert "X" in out
@@ -54,6 +50,7 @@ def test_include_vars_to_md_file_creates_backup(tmp_path: Path, monkeypatch):
 
     # deterministic backup naming
     import pymdtools.common as common
+
     monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
 
     include_vars_to_md_file(f, {"x": "NEW"}, backup_option=True)

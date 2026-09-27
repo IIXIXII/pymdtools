@@ -16,7 +16,7 @@ IF NOT EXIST "%COMMON%" (
   EXIT /B 1
 )
 
-IF EXIST "%REPO_ROOT%%MODULE%\version.bat" CALL "%REPO_ROOT%%MODULE%\version.bat"
+IF EXIST "%REPO_ROOT%src\%MODULE%\version.bat" CALL "%REPO_ROOT%src\%MODULE%\version.bat"
 ECHO [%MODULE% %VERSION%] %ACTION%
 
 IF /I "%ACTION%"=="requirements" (
@@ -41,10 +41,6 @@ IF /I "%ACTION%"=="test" (
 )
 IF /I "%ACTION%"=="sphinx" (
   CALL "%COMMON%" RUN_SPHINX
-  GOTO :RESULT
-)
-IF /I "%ACTION%"=="doxygen" (
-  CALL "%COMMON%" RUN_DOXYGEN
   GOTO :RESULT
 )
 IF /I "%ACTION%"=="build" (
@@ -75,11 +71,6 @@ IF /I "%ACTION%"=="python" (
   CALL "%COMMON%" PYTHON_FROM_MAKE %*
   GOTO :RESULT
 )
-IF /I "%ACTION%"=="upload" (
-  ECHO ERROR: Local upload is disabled. Publish a verified GitHub release instead.
-  EXIT /B 2
-)
-
 ECHO ERROR: Unknown action "%ACTION%".
 GOTO :USAGE
 
@@ -91,7 +82,7 @@ ECHO Usage: %~nx0 ^<action^>
 ECHO.
 ECHO Actions:
 ECHO   requirements requirements-dev requirements-docs install_editable
-ECHO   test sphinx doxygen build clean check audit_tags
+ECHO   test sphinx build clean check audit_tags
 ECHO   increase_version [major^|minor^|patch] tag_version
 ECHO   python ^<script.py^> [args...]
 EXIT /B 2

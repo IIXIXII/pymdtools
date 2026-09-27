@@ -64,9 +64,7 @@ def test_set_include_file_uses_current_instruction_api() -> None:
 
 
 def test_del_include_file_removes_matching_directive() -> None:
-    content = mdfile.MarkdownContent(
-        content="<!-- include-file(snippet.md) -->\n\nBody\n"
-    )
+    content = mdfile.MarkdownContent(content="<!-- include-file(snippet.md) -->\n\nBody\n")
 
     content.del_include_file("snippet.md")
 
@@ -88,14 +86,11 @@ def test_process_tags_includes_refs_from_current_file_folder(tmp_path: Path) -> 
     ref = tmp_path / "ref.md"
 
     source.write_text(
-        "# Source\n\n"
-        "<!-- begin-include(section) -->OLD<!-- end-include -->\n",
+        "# Source\n\n<!-- begin-include(section) -->OLD<!-- end-include -->\n",
         encoding="utf-8",
     )
     ref.write_text(
-        "<!-- begin-ref(section) -->\n"
-        "NEW\n"
-        "<!-- end-ref -->\n",
+        "<!-- begin-ref(section) -->\nNEW\n<!-- end-ref -->\n",
         encoding="utf-8",
     )
 
@@ -131,8 +126,7 @@ def test_process_tags_can_extend_refs_from_search_folders(tmp_path: Path) -> Non
 
 def test_process_tags_without_filename_uses_empty_ref_set() -> None:
     content = mdfile.MarkdownContent(
-        content='<!-- var(name)="Ada" -->\n'
-        "<!-- begin-var(name) -->OLD<!-- end-var -->\n"
+        content='<!-- var(name)="Ada" -->\n<!-- begin-var(name) -->OLD<!-- end-var -->\n'
     )
 
     out = content.process_tags()
