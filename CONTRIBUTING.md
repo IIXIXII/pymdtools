@@ -162,7 +162,7 @@ The workflows have distinct responsibilities:
 | `workflow-lint.yml` | Reusable actionlint and zizmor checks, called by CI and release validation; also runnable manually. |
 | `codeql.yml` | Python and GitHub Actions security analysis on pushes, pull requests, merge groups and weekly runs. |
 | `compatibility.yml` | Weekly/manual tests with the latest allowed dependencies on Python 3.10 and 3.14, without changing `uv.lock`. |
-| `publish.yml` | Validate the release commit, build without a shared cache, then publish the exact uploaded artifact through an isolated PyPI job. |
+| `publish.yml` | On a version tag push, validate and build without a shared cache, publish through an isolated PyPI job, then create the GitHub release with changelog notes and the same archives. |
 
 Tests retain JUnit and coverage reports as Actions artifacts, including after
 failures when reports exist. PDF and compatibility jobs retain JUnit reports.
@@ -198,3 +198,12 @@ configure PyPI Trusted Publishing for `IIXIXII/pymdtools`, workflow
 `publish.yml`, environment `pypi`. The publishing job receives only the build
 artifact ID, rejects digest mismatches and produces PyPI attestations. It does
 not check out or execute the package source.
+
+For a new release, commit notes under `## Unreleased` in `CHANGELOG.md`, then
+run `uv run --no-sync python scripts/release.py prepare patch` (or `minor` /
+`major`). Review and commit the resulting version files and dated changelog,
+push through the normal branch/PR process, and wait for CI. From the final
+commit, `scripts/release.py tag` prints the single-tag push command that starts
+publication. Follow the [release guide](https://pymdtools.readthedocs.io/en/latest/release.html)
+for setup, existing tags and failure recovery. No manual GitHub release or
+local PyPI token is needed for tags containing this workflow.

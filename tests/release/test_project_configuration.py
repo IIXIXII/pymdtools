@@ -57,6 +57,9 @@ def test_ci_uses_current_actions_and_an_isolated_wheel_smoke_test() -> None:
 def test_publish_keeps_build_code_away_from_oidc_credentials() -> None:
     workflow = (ROOT / ".github" / "workflows" / "publish.yml").read_text(encoding="utf-8")
     build_section, publish_section = workflow.split("\n  publish:\n", maxsplit=1)
+    publish_section, github_release_section = publish_section.split(
+        "\n  github-release:\n", maxsplit=1
+    )
 
     _assert_action_pinned(workflow, "actions/checkout")
     _assert_action_pinned(workflow, "actions/setup-python")
@@ -65,7 +68,7 @@ def test_publish_keeps_build_code_away_from_oidc_credentials() -> None:
     _assert_action_pinned(workflow, "pypa/gh-action-pypi-publish")
     assert "id-token: write" not in build_section
     assert "actions/upload-artifact@" in build_section
-    assert "RELEASE_TAG: ${{ github.event.release.tag_name }}" in build_section
+    assert "RELEASE_TAG: ${{ github.ref_name }}" in build_section
     assert 'verify-tag "$RELEASE_TAG"' in build_section
     assert "ref: ${{ github.sha }}" in build_section
     assert "cache: pip" not in build_section
@@ -79,6 +82,29 @@ def test_publish_keeps_build_code_away_from_oidc_credentials() -> None:
     assert "artifact-ids: ${{ needs.build.outputs.artifact-id }}" in publish_section
     assert "digest-mismatch: error" in publish_section
     assert "attestations: true" in publish_section
+    assert "contents: write" not in build_section + publish_section
+    assert "contents: write" in github_release_section
+    assert "id-token: write" not in github_release_section
+    assert "actions/checkout" not in github_release_section
+
+
+def test_tag_push_publishes_before_creating_github_release() -> None:
+    workflow = (ROOT / ".github/workflows/publish.yml").read_text(encoding="utf-8")
+    trigger = workflow.split("\npermissions:", maxsplit=1)[0]
+    assert 'tags: ["v*"]' in trigger
+    assert "  push:" in trigger
+    assert "  release:" not in trigger  # Avoid publishing the same version twice.
+    build_section, following_jobs = workflow.split("\n  publish:\n", maxsplit=1)
+    assert 'scripts/release.py notes --output "$RUNNER_TEMP/release-notes.md"' in build_section
+    github_release = following_jobs.split("\n  github-release:\n", maxsplit=1)[1]
+    assert "needs: [build, publish]" in github_release
+    assert "artifact-ids: ${{ needs.build.outputs.artifact-id }}" in github_release
+    assert "artifact-ids: ${{ needs.build.outputs.notes-artifact-id }}" in github_release
+    assert github_release.count("digest-mismatch: error") == 2
+    assert 'gh release create "$RELEASE_TAG" dist/*.whl dist/*.tar.gz' in github_release
+    assert "--verify-tag" in github_release
+    assert "--notes-file notes/release-notes.md" in github_release
+    assert "--clobber" not in github_release
 
 
 def test_dependabot_tracks_python_and_action_dependencies() -> None:

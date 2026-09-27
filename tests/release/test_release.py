@@ -25,6 +25,124 @@ def _load_release_module() -> ModuleType:
 release = _load_release_module()
 
 
+@pytest.fixture
+def release_tree(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    monkeypatch.setattr(release, "ROOT", tmp_path)
+    monkeypatch.setattr(release, "VERSION_PY", tmp_path / "version.py")
+    monkeypatch.setattr(release, "VERSION_BAT", tmp_path / "version.bat")
+    monkeypatch.setattr(release, "CHANGELOG", tmp_path / "CHANGELOG.md")
+    release.write_version((1, 2, 3))
+    release.CHANGELOG.write_text(
+        "# Changelog\n\n## Unreleased\n\n- Preserve café links.\n\n"
+        "### Migration\n\nKeep these instructions.\n\n"
+        "## 1.2.3 - 2026-01-01\n\n- Previous release.\n",
+        encoding="utf-8",
+    )
+    return tmp_path
+
+
+@pytest.mark.parametrize(
+    "part,expected", [("patch", "1.2.4"), ("minor", "1.3.0"), ("major", "2.0.0")]
+)
+def test_prepare_release_preserves_notes_and_history(
+    release_tree: Path, monkeypatch: pytest.MonkeyPatch, part: str, expected: str
+) -> None:
+    monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
+    assert release.prepare_release(part) == expected
+    assert release.verify_version_files() == expected
+    changelog = release.CHANGELOG.read_text(encoding="utf-8")
+    assert f"## Unreleased\n\n## {expected} - {release.date.today().isoformat()}" in changelog
+    assert changelog.endswith("## 1.2.3 - 2026-01-01\n\n- Previous release.\n")
+    assert (
+        release.release_notes()
+        == "- Preserve café links.\n\n### Migration\n\nKeep these instructions.\n"
+    )
+    assert b"\r\nSET VERSION=" in (release_tree / "version.bat").read_bytes()
+
+
+@pytest.mark.parametrize(
+    "changelog,message",
+    [
+        ("# Changelog\n", "exactly one Unreleased"),
+        ("## Unreleased\n\n## 1.2.3 - 2026-01-01\n- Old\n", "Unreleased section is empty"),
+        ("## Unreleased\n- A\n## Unreleased\n- B\n", "exactly one Unreleased"),
+        ("## Unreleased\n- A\n## 1.2.4 - 2026-01-01\n- B\n", "already contains version"),
+    ],
+)
+def test_prepare_rejects_invalid_changelog_before_editing_versions(
+    release_tree: Path, monkeypatch: pytest.MonkeyPatch, changelog: str, message: str
+) -> None:
+    monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
+    release.CHANGELOG.write_text(changelog, encoding="utf-8")
+    before = {path: path.read_bytes() for path in release_tree.iterdir()}
+    with pytest.raises(release.ReleaseError, match=message):
+        release.prepare_release("patch")
+    assert {path: path.read_bytes() for path in release_tree.iterdir()} == before
+
+
+def test_prepare_rejects_mismatched_version_files(
+    release_tree: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
+    release.VERSION_BAT.write_text("SET VERSION=1.2.9\n", encoding="utf-8")
+    before = {path: path.read_bytes() for path in release_tree.iterdir()}
+    with pytest.raises(release.ReleaseError, match="version mismatch"):
+        release.prepare_release("patch")
+    assert {path: path.read_bytes() for path in release_tree.iterdir()} == before
+
+
+@pytest.mark.parametrize(
+    "section,message",
+    [
+        ("## Unreleased\n- Pending\n", "exactly one 1.2.3"),
+        ("## 1.2.3\n- Missing date\n", "exactly one 1.2.3"),
+        ("## 1.2.3 - 2026-01-01\n", "section is empty"),
+        ("## 1.2.3 - 2026-02-30\n- Invalid date\n", "invalid date"),
+        ("## 1.2.3 - 2026-01-01\n- A\n## 1.2.3 - 2026-01-02\n- B\n", "exactly one 1.2.3"),
+    ],
+)
+def test_notes_rejects_invalid_sections(release_tree: Path, section: str, message: str) -> None:
+    release.CHANGELOG.write_text(section, encoding="utf-8")
+    with pytest.raises(release.ReleaseError, match=message):
+        release.release_notes()
+
+
+@pytest.mark.parametrize("fence", ["```", "~~~~"])
+def test_notes_preserves_fenced_headings_and_unicode(
+    release_tree: Path, fence: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    notes = f"- Café 🚀\n\n{fence}markdown\n## 1.2.3 - 2026-01-01\n## Unreleased\n{fence}\n"
+    release.CHANGELOG.write_text(
+        f"## Unreleased\n\n## 1.2.3 - 2026-01-01\n\n{notes}\n## 1.2.2 - 2025-01-01\n- Old\n",
+        encoding="utf-8",
+    )
+    output = release_tree / "notes.md"
+    assert release.main(["notes", "--output", str(output)]) == 0
+    assert output.read_bytes() == notes.encode("utf-8")
+    assert release.main(["notes"]) == 0
+    assert capsys.readouterr().out == notes
+
+
+def test_local_prepare_commit_tag_flow(release_tree: Path) -> None:
+    """Exercise the documented sequence in a disposable, entirely local Git repo."""
+    release.run_git("init")
+    release.run_git("config", "user.email", "release-test@example.invalid")
+    release.run_git("config", "user.name", "Release test")
+    release.run_git("add", "version.py", "version.bat", "CHANGELOG.md")
+    release.run_git("commit", "-m", "Initial files")
+    assert release.main(["prepare", "patch"]) == 0
+    # Preparing or tagging again while the release edits are uncommitted must fail.
+    assert release.main(["prepare", "patch"]) == 1
+    assert release.main(["tag"]) == 1
+    release.run_git("add", "version.py", "version.bat", "CHANGELOG.md")
+    release.run_git("commit", "-m", "Release 1.2.4")
+    assert release.main(["tag"]) == 0
+    assert release.verify_tag("v1.2.4") == "v1.2.4"
+    assert "Keep these instructions." in release.release_notes()
+    assert release.run_git("status", "--porcelain").stdout == ""
+    assert release.run_git("remote").stdout == ""
+
+
 def _completed(*args: str, stdout: str = "", returncode: int = 0) -> Any:
     return subprocess.CompletedProcess(args, returncode, stdout=stdout, stderr="")
 
@@ -77,6 +195,7 @@ def test_create_tag_is_local_and_annotated(monkeypatch: pytest.MonkeyPatch) -> N
     calls: list[tuple[str, ...]] = []
     monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
     monkeypatch.setattr(release, "verify_version_files", lambda: "1.2.3")
+    monkeypatch.setattr(release, "release_notes", lambda: "- Release notes.\n")
 
     def fake_git(*args: str, check: bool = True) -> Any:
         del check
@@ -95,6 +214,7 @@ def test_create_tag_is_local_and_annotated(monkeypatch: pytest.MonkeyPatch) -> N
 def test_create_tag_rejects_an_existing_tag(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
     monkeypatch.setattr(release, "verify_version_files", lambda: "1.2.3")
+    monkeypatch.setattr(release, "release_notes", lambda: "- Release notes.\n")
     monkeypatch.setattr(
         release,
         "run_git",
@@ -102,6 +222,20 @@ def test_create_tag_rejects_an_existing_tag(monkeypatch: pytest.MonkeyPatch) -> 
     )
 
     with pytest.raises(release.ReleaseError, match="already exists"):
+        release.create_tag()
+
+
+def test_create_tag_rejects_missing_notes_before_mutating_git(
+    release_tree: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(release, "require_clean_worktree", lambda: None)
+    release.CHANGELOG.write_text("## Unreleased\n- Pending\n", encoding="utf-8")
+
+    def unexpected_git(*args: str, **kwargs: Any) -> Any:
+        pytest.fail("Git must not be changed before validating release notes")
+
+    monkeypatch.setattr(release, "run_git", unexpected_git)
+    with pytest.raises(release.ReleaseError, match="exactly one 1.2.3"):
         release.create_tag()
 
 
