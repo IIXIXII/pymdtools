@@ -4,14 +4,8 @@
 #                    Author: Florent TOURNOIS | License: MIT
 # =============================================================================
 
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-
-import pymdtools as mymodule  # noqa: E402
-from pymdtools import _about as about  # noqa: E402
+import pymdtools as mymodule
+from pymdtools import _about as about
 
 # -- Project information -----------------------------------------------------
 
@@ -27,6 +21,7 @@ exclude_patterns = ["_build"]
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
     "sphinx.ext.napoleon",
 ]
 source_suffix = {
@@ -35,6 +30,25 @@ source_suffix = {
 }
 
 master_doc = "index"
+
+# Only explicitly marked snippets are executable; autodoc also contains
+# illustrative console sessions that require caller-owned files or state.
+doctest_test_doctest_blocks = ""
+
+# Each page's executable examples share a disposable working directory.
+doctest_global_setup = """
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+_previous_directory = Path.cwd()
+_example_directory = TemporaryDirectory(prefix="pymdtools-docs-")
+os.chdir(_example_directory.name)
+"""
+doctest_global_cleanup = """
+os.chdir(_previous_directory)
+_example_directory.cleanup()
+"""
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = "py"

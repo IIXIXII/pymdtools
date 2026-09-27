@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Local assets and page breaks</title>
+<style>
+  body { font: 12pt sans-serif; color: #16324f; }
+  img { width: 100%; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #aab7c4; padding: 8px; text-align: left; }
+  .next-page { break-before: page; }
+</style>
+<h1>Local assets</h1>
+<p>Accents: café, été, Noël. The diagram below is loaded from a local SVG.</p>
+<img src="diagram.svg" alt="Markdown to HTML to PDF">
+<table>
+  <tr><th>Document</th><th>Status</th></tr>
+  <tr><td>Getting started</td><td>Reviewed</td></tr>
+  <tr><td>API reference</td><td>In progress</td></tr>
+</table>
+<section class="next-page">
+  <h1>Second page</h1>
+  <p>This section starts on a new page because of its CSS rule.</p>
+  <p><a href="https://example.com">An external link</a> is clickable; rendering
+     this document does not require downloading anything from that site.</p>
+</section>
+</html>

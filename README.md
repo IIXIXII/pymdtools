@@ -7,275 +7,163 @@
 # pymdtools
 
 [![PyPI version](https://img.shields.io/pypi/v/pymdtools.svg?style=flat)](https://pypi.org/project/pymdtools/)
-[![Wheel](https://img.shields.io/pypi/wheel/pymdtools.svg?style=flat)](https://pypi.org/project/pymdtools/)
 [![Documentation](https://img.shields.io/readthedocs/pymdtools.svg?style=flat)](https://pymdtools.readthedocs.io/)
 [![CI](https://github.com/IIXIXII/pymdtools/actions/workflows/ci.yml/badge.svg)](https://github.com/IIXIXII/pymdtools/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md)
 
-`pymdtools` is a Python toolkit for working with Markdown documents. It provides
-small, composable helpers to read, normalize, enrich, inspect, convert, and
-translate Markdown content.
+`pymdtools` is a Python library for inspecting, transforming and publishing
+Markdown documents. Assemble reusable sections, edit links, normalize formatting,
+generate HTML or PDF, and translate text through an injectable client.
 
-The project is designed for practical documentation workflows: maintaining
-Markdown files, resolving reusable snippets, updating links, converting Markdown
-to HTML or PDF, and integrating with modern Markdown libraries such as Mistune
-and markdownify.
-
-## Features
-
-- Read and write text files with encoding-aware helpers.
-- Normalize Markdown content and Markdown files.
-- Manage reusable Markdown instructions stored in HTML comments:
-  - variables;
-  - include-file directives;
-  - shared reference blocks;
-  - generated include blocks.
-- Inspect and rewrite Markdown links.
-- Work with Markdown files through a high-level `MarkdownContent` wrapper.
-- Convert Markdown to HTML with Python-Markdown or Mistune.
-- Convert Markdown or HTML to PDF with optional Playwright/Chromium.
-- Apply PDF metadata, backgrounds, watermarks, and blank-page balancing.
-- Convert HTML fragments to Markdown through the external `markdownify` package.
-- Translate plain text and Markdown with the MyMemory API.
+Python **3.10–3.14** is tested in CI on Linux and Windows, with additional macOS
+checks. Core Markdown and HTML features work without a browser or PDF dependencies.
 
 ## Installation
 
-Install the published package from PyPI:
+Install into your Python environment:
 
 ```bash
-pip install pymdtools
+python -m pip install pymdtools
 ```
 
-For development, clone the repository and install the project dependencies:
-
-```bash
-git clone https://github.com/IIXIXII/pymdtools.git
-cd pymdtools
-python -m pip install uv==0.12.19
-uv sync --locked --extra dev --extra docs --extra pdf
-```
-
-`pymdtools` supports Python 3.10 through Python 3.14.
-
-## Optional PDF support
-
-Install the browser renderer only when you need PDF output:
+For PDF output, install the extra and the browser in the same environment:
 
 ```bash
 python -m pip install "pymdtools[pdf]"
 python -m playwright install chromium
 ```
 
-On Linux, `python -m playwright install --with-deps chromium` also installs
-required system libraries. Chromium runs headlessly with JavaScript disabled;
-remote resources are blocked by default. Local resources are restricted to the
-HTML directory and, for Markdown conversion, the source document directory.
-Each conversion has a 30-second limit covering browser startup and rendering.
+On Linux, use `python -m playwright install --with-deps chromium` to install
+browser system libraries as well. See the
+[installation guide](https://pymdtools.readthedocs.io/en/latest/getting_started.html)
+for virtual environments and source installations. The examples and developer
+scripts below belong to the repository or source archive; they are not installed
+as commands by the wheel.
+
+## First document
+
+This example creates `build/hello.md` and `build/hello.html`, together with the
+HTML layout's assets. Running it again replaces the generated files; Markdown
+writes keep a dated backup by default.
+
+```python
+from pathlib import Path
+
+from pymdtools.mdfile import MarkdownContent
+from pymdtools.mdtopdf import convert_md_to_html
+
+output = Path("build")
+output.mkdir(exist_ok=True)
+document = MarkdownContent(
+    content="# Welcome\n\nProject: <!-- begin-var(project) --><!-- end-var -->\n"
+)
+document["project"] = "pymdtools"
+document.process_tags()
+document.write(output / "hello.md")
+html_path = convert_md_to_html(output / "hello.md", layout="github")
+print(html_path)
+```
+
+Open the HTML file in a browser. Keep its adjacent `_pymdtools_assets/` directory
+when copying or publishing the page. To also produce `build/hello.pdf`, after
+installing PDF support:
 
 ```python
 from pymdtools.mdtopdf import convert_md_to_pdf
+from pymdtools.options import PdfFeatures
 from pymdtools.pdf_backend import PdfOptions
 
-pdf_path = convert_md_to_pdf("README.md", options=PdfOptions(timeout=60))
+pdf_path = convert_md_to_pdf(
+    "build/hello.md",
+    options=PdfOptions(page_format="A4", timeout=60),
+    features=PdfFeatures(metadata={"title": "Welcome", "author": "Example team"}),
+)
 ```
 
-Existing `convert_md_to_pdf` and `convert_html_to_pdf` entry points remain.
-`find_wk_html_to_pdf` is retained only as a legacy executable lookup helper;
-conversion no longer calls it. See [CHANGELOG.md](https://github.com/IIXIXII/pymdtools/blob/master/CHANGELOG.md) for migration notes.
+## Choose a workflow
 
-## Quick Start
+| Task | Public entry point | Guide |
+| --- | --- | --- |
+| Edit documents, titles and variables | `pymdtools.mdfile.MarkdownContent` | [Documents](https://pymdtools.readthedocs.io/en/latest/mdfile.html) |
+| Resolve snippets and shared sections | `pymdtools.instruction` | [Directives](https://pymdtools.readthedocs.io/en/latest/instruction.html) |
+| Find, rename and rebase links | `pymdtools.mdcommon` | [Links](https://pymdtools.readthedocs.io/en/latest/mdcommon.html) |
+| Normalize Markdown | `pymdtools.normalize` | [Normalization](https://pymdtools.readthedocs.io/en/latest/normalize.html) |
+| Generate HTML, PDF and overlays | `pymdtools.mdtopdf` | [Conversion](https://pymdtools.readthedocs.io/en/latest/mdtopdf.html) |
+| Convert HTML to Markdown | `pymdtools.markdownify_integration` | [HTML input](https://pymdtools.readthedocs.io/en/latest/markdownify_integration.html) |
+| Translate text and Markdown | `pymdtools.translate` | [Translation](https://pymdtools.readthedocs.io/en/latest/translate.html) |
+| Read files, process trees and load templates | `pymdtools.common`, `pymdtools.filetools` | [File tools](https://pymdtools.readthedocs.io/en/latest/filetools.html) |
 
-Normalize Markdown text:
-
-```python
-from pymdtools.normalize import md_beautifier
-
-markdown = md_beautifier("# Title\n\nBody\n")
-```
-
-Work with a Markdown file:
-
-```python
-from pymdtools.mdfile import MarkdownContent
-
-doc = MarkdownContent("README.md")
-doc["project"] = "pymdtools"
-doc.title = "Project README"
-doc.process_tags()
-doc.write()
-```
-
-Resolve include references in a Markdown file:
-
-```python
-from pymdtools.instruction import search_include_refs_to_md_file
-
-search_include_refs_to_md_file("docs/page.md", backup_option=True)
-```
-
-Convert Markdown to PDF:
-
-```python
-from pymdtools.mdtopdf import convert_md_to_pdf
-
-pdf_path = convert_md_to_pdf("README.md")
-```
-
-Convert HTML to Markdown:
-
-```python
-from pymdtools.markdownify_integration import markdownify
-
-markdown = markdownify("<h1>Title</h1>")
-```
-
-## Main Modules
-
-- `pymdtools.common`: shared path, filesystem, text, datetime, and validation helpers.
-- `pymdtools.filetools`: file-oriented wrappers such as `FileName` and `FileContent`.
-- `pymdtools.instruction`: Markdown comment directives, variables, refs, and includes.
-- `pymdtools.mdcommon`: Markdown link discovery and rewriting helpers.
-- `pymdtools.mdfile`: high-level `MarkdownContent` wrapper for editable Markdown files.
-- `pymdtools.mdtopdf`: Markdown, HTML, and PDF conversion pipeline.
-- `pymdtools.mistune_integration`: Mistune 3 compatibility layer.
-- `pymdtools.markdownify_integration`: wrapper around the external `markdownify` package.
-- `pymdtools.normalize`: Markdown normalization helpers.
-- `pymdtools.translate`: plain-text and Markdown translation helpers.
-
-## Documentation
-
-The documentation is available on Read the Docs:
-
-<https://pymdtools.readthedocs.io/>
-
-See the [practical workflows](https://pymdtools.readthedocs.io/en/latest/workflows.html)
-for document assembly, link editing, offline translation examples and PDF output.
-The executable example is `examples/workflows.py`:
+The [example catalogue](https://github.com/IIXIXII/pymdtools/blob/master/examples/README.md)
+contains **25 focused scripts and one complete workflow**, with local sample
+data and expected outputs. From a checkout, after installing the package:
 
 ```bash
-uv run --no-sync python examples/workflows.py --output examples/output
+python -m pip install -e .
+python examples/run_all.py --list
+python examples/run_all.py
+python examples/22_report_pipeline.py
 ```
 
-To build it locally:
+The default runner executes 23 scenarios with core dependencies. Results go to
+`examples/output/<example>/`. Install `.[pdf]` and Chromium before using
+`--only-pdf` for the three PDF scenarios, or `--pdf` for all 26.
+
+## Behavior to know
+
+- Link inspection and edits use CommonMark source positions. Duplicate link
+  occurrences are preserved, reference identifiers are case-insensitive, and
+  images and code are excluded from ordinary link discovery.
+- Normalization returns the input unchanged if the candidate changes CommonMark
+  rendering or fails its idempotence check. Extensions used by other Markdown
+  dialects need validation against representative documents.
+- `MarkdownContent.process_tags()` changes the in-memory buffer; call `write()`
+  to save it. `include-file` accepts a filename, with directories supplied through
+  `IncludeOptions(search_folders=...)`. Reference discovery scans each root only
+  by default; set `refs_depth=-1` explicitly for recursion.
+- HTML conversion uses an escaping Mistune renderer by default. The explicit
+  `converter="markdown"` alternative preserves raw HTML and needs trusted input.
+  File inclusions also need trusted documents and deliberate search roots.
+- PDF rendering disables JavaScript and remote resources by default. Local
+  assets are confined to the HTML directory and permitted source asset root.
+  `PdfOptions.timeout` limits the Chromium worker lifetime, including startup;
+  it does not cover separate Markdown conversion or PDF post-processing.
+- Translation uses the external MyMemory service unless a custom transport is
+  supplied. The repository's translation examples run entirely offline.
+
+See the [options reference](https://pymdtools.readthedocs.io/en/latest/options.html),
+[troubleshooting guide](https://pymdtools.readthedocs.io/en/latest/troubleshooting.html)
+and [changelog](https://github.com/IIXIXII/pymdtools/blob/master/CHANGELOG.md)
+for defaults, errors and migration details.
+
+## Development and documentation
+
+From the repository root, create the locked development environment:
 
 ```bash
-python -m pip install -r requirements-docs.txt
-uv run --no-sync python -m sphinx.cmd.build -b html docs docs/_build/html
-```
-
-## Development
-
-The package lives in `src/pymdtools`. Install it before running the scripts or
-tests. Public imports are unchanged; internal directives, rendering, translation
-and filesystem operations have separate implementation modules. See the
-[architecture guide](https://pymdtools.readthedocs.io/en/latest/architecture.html).
-
-Run the test suite:
-
-```bash
+python -m pip install uv==0.12.19
+uv sync --locked --extra dev --extra docs --extra pdf
 uv run --no-sync pytest
+uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
+uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
 ```
 
-Run static type checking:
+Open `docs/_build/html/index.html`. Chromium is only required for the optional
+PDF examples and integration test. See
+[CONTRIBUTING.md](https://github.com/IIXIXII/pymdtools/blob/master/CONTRIBUTING.md)
+for lint, types, VS Code, distributions and CI, and the
+[release guide](https://pymdtools.readthedocs.io/en/latest/release.html)
+for versioning and publication. The library lives in `src/pymdtools`.
 
-```bash
-uv run --no-sync pyright
-```
+## Project links and licenses
 
-Build the documentation in strict mode:
+- [Documentation](https://pymdtools.readthedocs.io/)
+- [PyPI package](https://pypi.org/project/pymdtools/)
+- [Source and issues](https://github.com/IIXIXII/pymdtools)
 
-```bash
-uv run --no-sync python -m sphinx.cmd.build -b html -W --keep-going docs docs/_build/html
-```
-
-Build and validate both distributions without publishing them:
-
-```bash
-uv run --no-sync python scripts/release.py build --allow-dirty
-```
-
-Run lint, formatting, and dependency checks:
-
-```bash
-uv run --no-sync ruff check .
-uv run --no-sync ruff format --check .
-uv run --no-sync pip-audit --skip-editable
-```
-
-See [CONTRIBUTING.md](https://github.com/IIXIXII/pymdtools/blob/master/CONTRIBUTING.md) for installed-wheel checks, real PDF tests,
-benchmarks and the dependency update workflow.
-
-### Markdown behavior
-
-Inspection and source edits use CommonMark via markdown-it-py. Reference
-names are case-insensitive; duplicate link occurrences are preserved. For
-compatibility, reference definitions immediately after a paragraph are accepted.
-Images are not returned as ordinary links. Code examples, including fences in
-lists and blockquotes, are protected from directive processing.
-
-Link rewrites preserve escaped destinations, including unbalanced parentheses.
-Batch replacements parse the document once and retain sequential renaming.
-`MarkdownContent` only discovers references when needed. Discovery defaults to
-the configured roots without descending into subdirectories; set
-`IncludeOptions(refs_depth=-1)` for recursive discovery. Generated directories
-such as `.venv`, `.git`, `build`, `dist` and `_build` are excluded by default.
-Use `include_options=IncludeOptions(...)` for typed inclusion settings and
-`features=PdfFeatures(...)` for PDF metadata and overlays; both types are in
-`pymdtools.options`. Existing supported keyword arguments remain accepted.
-
-Normalization uses Mistune, with CommonMark rendering and idempotence checks.
-If a candidate would change the rendered document, the input is returned
-unchanged. Unsupported dialect extensions should be tested with a representative
-corpus before applying transformations in bulk.
-
-Rebasing links preserves the case, spaces and Unicode in directory names.
-Pass `legacy_slug=True` to `move_base_path_in_md_text` for the historical spelling.
-`common.path_to_url` retains its slug behavior; `common.encode_path_url` encodes
-paths to existing files without renaming their components.
-
-### Security boundaries
-
-- HTML generation uses the escaping Mistune renderer by default. Selecting
-  `converter="markdown"` explicitly enables raw HTML and is only appropriate for
-  trusted Markdown.
-- Include directives can read local files from their configured search roots.
-  Do not process untrusted directives, and provide explicit search folders for
-  server-side workflows.
-- Translation sends document text to the external MyMemory service. Do not use
-  it for secrets or regulated content without an appropriate data policy.
-
-### Release workflow
-
-Versioning and publication are intentionally separated:
-
-```bash
-python scripts/release.py bump patch
-git add src/pymdtools/version.py src/pymdtools/version.bat
-git commit -m "Release 1.0.x"
-python scripts/release.py tag
-git push origin v1.0.x
-```
-
-The helpers refuse dirty trees, create only an annotated local tag, and never
-upload or push automatically. Creating a GitHub release from the verified tag
-triggers a build job without publishing credentials; a separate protected job
-then publishes those validated artifacts through PyPI trusted publishing.
-Historical tag mismatches can be reported, without changing them, with
-`python scripts/release.py audit-tags`.
-
-## Project Links
-
-- Documentation: <https://pymdtools.readthedocs.io/>
-- Package: <https://pypi.org/project/pymdtools/>
-- Source code: <https://github.com/IIXIXII/pymdtools>
-- Issue tracker: <https://github.com/IIXIXII/pymdtools/issues>
-
-## License
-
-The original Python code of `pymdtools` is distributed under the MIT license. See
-[LICENSE.md](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md) for
-details. Bundled layout resources and their license texts are inventoried in
-[LICENSES-3rd-party.md](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-3rd-party.md).
-That inventory also records unresolved permissions for some historical themes.
-Installed dependencies have separate terms, including GPL/LGPL components; see
-[LICENSES-dependencies.md](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-dependencies.md).
+Original Python code and sample data use the
+[MIT license](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md).
+Bundled layouts retain their own terms and attribution; the
+[resource inventory](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-3rd-party.md)
+also records unresolved permissions for historical themes. Installed
+dependencies have separate licenses, including GPL/LGPL components; see the
+[dependency inventory](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-dependencies.md).

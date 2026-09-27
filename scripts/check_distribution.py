@@ -86,12 +86,24 @@ def main() -> None:
             "scripts/release.py",
             "src/pymdtools/version.bat",
             "docs/index.rst",
+            "docs/getting_started.rst",
+            "docs/options.rst",
+            "docs/troubleshooting.rst",
+            "docs/examples.md",
+            "docs/LICENSES-3rd-party.md",
             "tests/fixtures/markdown/parentheses.md",
             "examples/workflows.py",
+            "examples/run_all.py",
+            "examples/_support.py",
+            "examples/data/report.json",
+            "examples/data/print.html",
+            "examples/data/diagram.svg",
+            "examples/data/template/messages/welcome.md",
             "scripts/common.bat",
             "make.bat",
         ):
             assert any(p.endswith("/" + suffix) for p in names), suffix
+        assert not any("/examples/output/" in name for name in names)
     with tempfile.TemporaryDirectory(prefix="pymdtools-wheel-") as directory:
         root = Path(directory)
         venv.EnvBuilder(with_pip=True).create(root / "env")

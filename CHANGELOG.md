@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 2.1.0 - 2026-09-27
+
+This release updates document assembly, Markdown preservation, optional PDF
+rendering, translation, examples and the development toolchain. Public module
+imports remain available. Review the migration notes below before upgrading.
+
+### Changes
+
+- Reorganize the documentation into installation, user guides and project
+  maintenance. Document typed options, persistence, discovery, rendering and
+  migration behavior; publish the example and license inventories as rendered
+  pages. Execute offline documentation snippets in CI and release validation.
+- Add 25 focused, executable usage examples, local sample data, a catalogue and
+  a batch runner with optional PDF scenarios. Exercise examples in CI and include
+  their source fixtures in source distributions while excluding generated output.
+  Correct the documented filename syntax for include-file directives.
 - Modernize GitHub Actions with verified action pins, uv caching, test reports
   and a required-check aggregate compatible with merge queues. Add CodeQL,
   reusable workflow lint/security checks and scheduled dependency compatibility
@@ -54,9 +70,22 @@
 - Add locked development environments, Ruff, dependency auditing, pinned actions,
   installed-wheel validation, benchmarks and real PDF integration tests.
 
+### Migration from 2.0.47
+
+- Install `pymdtools[pdf]` and run `python -m playwright install chromium` for
+  PDF conversion. The core package no longer installs PDF dependencies.
+- Reinstall editable checkouts after the move to `src/pymdtools`.
+- Set `IncludeOptions(refs_depth=-1)` when `MarkdownContent` should discover
+  references recursively; its default now scans each root only.
+- Use `legacy_slug=True` for the historical link-rebasing spelling. The default
+  preserves existing directory names and percent-encodes spaces and Unicode.
+- Replace unknown include or PDF feature keywords with the documented options;
+  unsupported names now raise an error.
+
 Rendering can differ from wkhtmltopdf, especially pagination and fonts. The
-default network policy is now offline, JavaScript is disabled, and a complete
-conversion is limited to 30 seconds unless configured otherwise. Review PDFs
+default network policy is now offline, JavaScript is disabled, and the Chromium
+worker is limited to 30 seconds unless configured otherwise. Markdown conversion
+and separate PDF post-processing are outside that timeout. Review PDFs
 from representative documents when migrating.
 
 The Python code remains MIT-licensed. Distribution metadata now describes the

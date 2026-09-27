@@ -9,6 +9,7 @@ include .readthedocs.yml
 include src/pymdtools/version.bat
 include make.bat
 recursive-include scripts *.bat
-recursive-include examples *.py *.md
+include examples/*.py examples/*.md
+recursive-include examples/data *.md *.txt *.json *.html *.svg
 recursive-include win-shortcuts *.bat
 prune docs/_build

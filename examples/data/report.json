@@ -1,0 +1,10 @@
+{
+  "title": "Weekly documentation report",
+  "author": "Example team",
+  "period": "Week 12",
+  "sections": [
+    {"name": "Getting started", "pages": 4, "status": "Reviewed"},
+    {"name": "API reference", "pages": 12, "status": "In progress"},
+    {"name": "Examples", "pages": 8, "status": "Reviewed"}
+  ]
+}

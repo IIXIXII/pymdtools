@@ -5,29 +5,32 @@ Common Utilities
 ``pymdtools``. It exposes one stable facade for path handling, filesystem
 operations, text helpers, UTC date/time helpers, and small validation utilities.
 
-Prefer importing public helpers from ``pymdtools.common`` instead of importing
-from implementation modules such as ``pymdtools.common.fs`` or
-``pymdtools.common.text``.
+Prefer importing public helpers from ``pymdtools.common``. Existing imports from
+``pymdtools.common.fs`` and ``pymdtools.common.text`` remain compatible; underscore
+modules such as ``common._filesystem`` are implementation details.
 
 Common Usage
 ------------
 
 Read and write text files with encoding detection:
 
-.. code-block:: python
+.. testcode::
 
    from pymdtools.common import get_file_content, set_file_content
 
-   content = get_file_content("README.md")
+   set_file_content("build/input.txt", "A text with accents: café.\n")
+   content = get_file_content("build/input.txt", encoding="utf-8")
    set_file_content("build/output.txt", content)
+   assert get_file_content("build/output.txt", encoding="utf-8") == content
 
 Create a backup next to an existing file:
 
-.. code-block:: python
+.. testcode::
 
    from pymdtools.common import create_backup
 
-   backup_path = create_backup("report.md")
+   backup_path = create_backup("build/output.txt")
+   assert get_file_content(backup_path, encoding="utf-8") == content
 
 Copy a directory tree incrementally:
 
@@ -37,15 +40,27 @@ Copy a directory tree incrementally:
 
    copytree("templates", "build/templates")
 
-Create safe text identifiers and paths:
+Create new identifiers, or encode the actual spelling of an existing path:
 
-.. code-block:: python
+.. testcode::
 
-   from pymdtools.common import get_valid_filename, path_to_url, slugify
+   from pymdtools.common import encode_path_url, get_valid_filename, path_to_url, slugify
 
    filename = get_valid_filename("CON: bad/name.md")
    slug = slugify("My Markdown Title")
-   url_path = path_to_url("Docs/My Page.md")
+   slug_path = path_to_url("Docs/My Page.md")
+   url_path = encode_path_url("Docs/My Page.md")
+   assert url_path == "Docs/My%20Page.md"
+
+``slugify`` and ``path_to_url`` create normalized names; they do not rename
+existing files. Use ``encode_path_url`` for links to paths whose case and Unicode
+spelling must remain intact.
+
+Reads detect encoding when none is supplied. Detection is heuristic, especially
+for short strings; specify the encoding when it is known, as in this example.
+``set_file_content`` writes UTF-8, creates parents and uses atomic replacement
+by default. It does not create a dated backup; call ``create_backup`` explicitly
+or use :class:`pymdtools.filetools.FileContent`.
 
 Enrich exceptions with contextual information:
 
@@ -87,6 +102,7 @@ Text helpers
 - ``get_valid_filename``
 - ``get_flat_filename``
 - ``path_to_url``
+- ``encode_path_url``
 - ``limit_str``
 
 Time helpers
@@ -100,6 +116,11 @@ Validation helpers
 ~~~~~~~~~~~~~~~~~~
 
 - ``check_len``
+
+For directory processing, ``apply_to_files`` can report individual failures
+through ``ApplyResult``. Example 16 in :doc:`workflows` demonstrates collection
+of a failed operation while processing other files, and example 17 compares
+encoding and path helpers.
 
 Public API
 ----------
