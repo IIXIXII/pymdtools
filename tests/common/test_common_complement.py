@@ -342,7 +342,7 @@ def test_detect_file_encoding_low_confidence_falls_back_to_default(
 
     class FakeChardet:
         @staticmethod
-        def detect(_: bytes) -> dict[str, object]:
+        def detect(_: bytes, *, max_bytes: int) -> dict[str, object]:
             return {"encoding": "latin-1", "confidence": 0.10}
 
     monkeypatch.setitem(sys.modules, "chardet", FakeChardet)  # type: ignore[name-defined]

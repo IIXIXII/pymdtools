@@ -22,7 +22,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "chardet>=5,<6",
+  "chardet>=7.6.0,<8",
   "markdown>=3.5,<4",
   "markdown-it-py>=3,<5",
   "markdownify>=1.1,<2",
