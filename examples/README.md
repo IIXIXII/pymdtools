@@ -101,7 +101,7 @@ python examples/run_all.py --only-pdf
 With the uv development environment:
 
 ```bash
-uv sync --locked --extra dev --extra docs --extra pdf
+uv sync --locked --group dev --group docs --extra pdf
 uv run --no-sync playwright install --with-deps --only-shell chromium
 uv run --no-sync python examples/run_all.py --pdf
 ```

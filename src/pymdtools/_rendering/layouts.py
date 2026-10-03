@@ -16,6 +16,13 @@ from ._shared import ASSET_RE, LAYOUT_ASSET_DIRECTORY, LAYOUT_NAME_RE, PLACEHOLD
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+LEGACY_LAYOUT_ALIASES = {
+    "jasonm23-dark": "thomasf-solarizedcssdark",
+    "jasonm23-foghorn": "github",
+    "jasonm23-markdown": "github",
+    "markedapp-byword": "github",
+}
+
 
 def get_this_filename() -> Path:
     """
@@ -46,6 +53,7 @@ def get_layout_page(layout: str) -> Path:
     if not LAYOUT_NAME_RE.fullmatch(layout) or layout in {".", ".."}:
         raise ValueError(f"invalid layout name: {layout!r}")
 
+    layout = LEGACY_LAYOUT_ALIASES.get(layout, layout)
     module_dir = get_this_filename().parent
     return common.find_file(
         "page.html",

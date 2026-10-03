@@ -307,7 +307,23 @@ def build_distributions(*, allow_dirty: bool = False) -> list[Path]:
         require_clean_worktree()
     _reset_dist_dir()
     env = _utf8_subprocess_env()
-    subprocess.run([sys.executable, "-m", "build"], cwd=ROOT, check=True, env=env)
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "uv",
+            "build",
+            "--no-sources",
+            "--no-create-gitignore",
+            "--build-constraints",
+            str(ROOT / "build-constraints.txt"),
+            "--python",
+            sys.executable,
+        ],
+        cwd=ROOT,
+        check=True,
+        env=env,
+    )
     artifacts = _validated_artifacts()
     subprocess.run(
         [sys.executable, "-m", "twine", "check", "--strict", *map(str, artifacts)],

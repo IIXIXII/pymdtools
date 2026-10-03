@@ -22,11 +22,11 @@ def test_get_refs_from_md_file_raises_on_wrong_extension(tmp_path: Path):
     p = tmp_path / "a.txt"
     p.write_text("<!-- begin-ref(x) -->X<!-- end-ref -->", encoding="utf-8")
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         get_refs_from_md_file(p, filename_ext=".md")
 
 
 def test_get_refs_from_md_file_raises_on_missing_file(tmp_path: Path):
     p = tmp_path / "missing.md"
-    with pytest.raises(Exception):
+    with pytest.raises(FileNotFoundError):
         get_refs_from_md_file(p)

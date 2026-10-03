@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Changed
+
+- Require Python 3.11 or newer. Python 3.10 users must stay on 2.1.1 until they
+  upgrade Python; this compatibility change belongs in the next minor release.
+- Move contributor and documentation tools to PEP 735 dependency groups.
+  Replace `pip install -r requirements-dev.txt` / `.[dev,pdf]` with
+  `uv sync --locked --group dev --extra pdf`; use `--group docs` for documentation.
+  The public `pdf` extra remains available. With pip 25.1+, use
+  `python -m pip install --group dev --group docs -e ".[pdf]"` from the repository.
+- Upgrade MyST to 5.1 and allow Markdown-it 4.2 in the locked documentation environment.
+- Require pypdf 6.19 or newer within the 6.x series.
+- Require Mistune 3.3.4 or newer: minimum-dependency tests exposed changes to
+  entities and balanced-parenthesis links when translating with Mistune 3.0.
+- Remove four historical themes lacking established redistribution permission.
+  `jasonm23-dark` now aliases `thomasf-solarizedcssdark`; `jasonm23-foghorn`,
+  `jasonm23-markdown` and `markedapp-byword` alias `github`. Their appearance and
+  exported asset directory names change. Original theme files are no longer bundled.
+
+### Fixed
+
+- Honor explicit `nb_up_path` include searches while preserving default containment
+  and rejecting symlink escapes. Add filesystem and generated Unicode contract tests.
+- Make the Windows `increase_version` shortcut prepare both version files and release notes.
+
+### Maintenance
+
+- Test minimum runtime/PDF dependencies and latest compatible dependencies in required CI.
+- Require successful CI and CodeQL push runs for the exact merged master commit before release.
+- Pin the isolated build backend with `build-constraints.txt` and use the pinned uv frontend.
+- Add repository ruleset definitions, security reporting instructions and release immutability guidance.
+- Enable Ruff bugbear and unused-suppression checks; remove obsolete files and references.
+
 ## 2.1.1 - 2026-09-27
 
 - Upgrade chardet to 7.6 and inspect the complete requested encoding sample,

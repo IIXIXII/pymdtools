@@ -14,7 +14,7 @@ class DummyPathLike:
     def __init__(self, value: str) -> None:
         self._value = value
 
-    def __fspath__(self) -> str:  # noqa: D401
+    def __fspath__(self) -> str:
         return self._value
 
 

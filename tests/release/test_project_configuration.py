@@ -1,14 +1,8 @@
 from __future__ import annotations
 
 import re
-import sys
+import tomllib
 from pathlib import Path
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
-
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,7 +17,9 @@ def test_metadata_is_centralized_and_pdf_is_optional() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     assert not any("pdfkit" in req or "pypdf" in req for req in project["dependencies"])
     assert any("playwright" in req for req in project["optional-dependencies"]["pdf"])
-    assert (ROOT / "requirements-dev.txt").read_text().strip() == "-e .[dev,pdf]"
+    assert set(project["optional-dependencies"]) == {"pdf"}
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert set(config["dependency-groups"]) == {"dev", "docs"}
     assert (ROOT / "src" / "pymdtools" / "py.typed").is_file()
     assert not (ROOT / "setup.py").exists()
 
@@ -49,7 +45,7 @@ def test_ci_uses_current_actions_and_an_isolated_wheel_smoke_test() -> None:
     _assert_action_pinned(workflow, "actions/checkout")
     _assert_action_pinned(workflow, "actions/setup-python")
     _assert_action_pinned(workflow, "actions/upload-artifact")
-    assert 'python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]' in workflow
+    assert 'python-version: ["3.11", "3.12", "3.13", "3.14"]' in workflow
     assert "scripts/check_distribution.py" in workflow
     assert "scripts/release.py build" in workflow
 
@@ -134,7 +130,7 @@ def test_ci_gate_rejects_failed_cancelled_or_skipped_validation_jobs() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     gate = workflow.split("\n  ci-success:\n", maxsplit=1)[1]
     assert "if: ${{ always() }}" in gate
-    assert "needs: [workflow-safety, tests, quality, pdf]" in gate
+    assert "needs: [workflow-safety, tests, quality, pdf, dependency-compatibility]" in gate
     assert 'all(.[]; .result == "success")' in gate
     assert "merge_group:" in workflow
     assert "--no-cov" not in workflow
@@ -145,4 +141,4 @@ def test_read_the_docs_uses_supported_python_and_strict_sphinx() -> None:
 
     assert 'python: "3.12"' in config
     assert "fail_on_warning: true" in config
-    assert "requirements: requirements-docs.txt" in config
+    assert "uv sync --locked --inexact --no-default-groups --group docs" in config

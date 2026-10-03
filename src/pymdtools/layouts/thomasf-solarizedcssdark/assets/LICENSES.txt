@@ -2,7 +2,6 @@ Licenses and attributions for the thomasf-solarizedcssdark layout
 
 Keep this notice with redistributed layout resources.
 These terms cover the identified components, not the document author's content.
-A review marker does not supply missing permission or certify redistribution rights.
 
 Collection/page/pilcrow contributions: Mikito Takada and contributors.
 https://github.com/mixu/markdown-styles/tree/eed20d2c71e7bf456e5bfbcd27135ac662002cd3

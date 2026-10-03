@@ -1,6 +1,6 @@
 # Bundled third-party licenses and provenance
 
-Reviewed on 2026-09-27. Paths below are relative to `src/pymdtools/layouts/`.
+Reviewed on 2026-10-03. Paths below are relative to `src/pymdtools/layouts/`.
 The original Python implementation is MIT-licensed; this does not relicense
 third-party templates, stylesheets, images or fonts.
 
@@ -38,11 +38,7 @@ All layouts also include the collection's page/pilcrow adaptations. All except
 | --- | --- |
 | `bootstrap3` | Bootstrap 3.1.1 CSS: MIT; embedded normalize.css: MIT; Glyphicons have a separate Bootstrap permission notice. |
 | `github` | Sindre Sorhus, github-markdown-css: MIT. |
-| `jasonm23-dark` | Jason Milkins' markdown-css-themes; original theme permission remains unresolved. The stylesheet also identifies a Twitter-owned section. |
-| `jasonm23-foghorn` | Jason Milkins' markdown-css-themes; original theme permission remains unresolved. |
-| `jasonm23-markdown` | Jason Milkins' markdown-css-themes; original theme permission remains unresolved. |
 | `jasonm23-swiss` | Florian Wolters, copyright 2012: LGPL-3.0-or-later, explicitly declared in `assets/style.css`. |
-| `markedapp-byword` | Copyright 2011 Brett Terpstra and 2011 Metaclassy, Lda.; retain their notices. Redistribution permission remains unresolved. |
 | `mixu-book` | Mikito Takada's collection contributions: BSD-3-Clause; Google Code Prettify styles: Apache-2.0. |
 | `mixu-bootstrap` | Collection contributions: BSD-3-Clause; Bootstrap 2.3.x CSS: Apache-2.0; Glyphicons have a separate Bootstrap permission notice. |
 | `mixu-bootstrap-2col` | Collection contributions: BSD-3-Clause; Bootstrap 2.3.x CSS: Apache-2.0; Glyphicons have a separate Bootstrap permission notice. |
@@ -91,29 +87,21 @@ declares CC-BY-SA-3.0. The full [legal code](THIRD_PARTY_LICENSES/CC-BY-SA-3.0.t
 is included. Keep the author, source and license attribution with redistributed
 images; adaptations of those images remain subject to their ShareAlike terms.
 
-## Permissions still requiring confirmation
+## Replaced historical themes
 
-The original inventory incorrectly treated every unspecified theme as covered
-by the collection's BSD license. No explicit original-author license grant was
-located for the three non-Swiss Jason Milkins themes or the Marked/Byword CSS.
-The Byword notice asks that credits be retained, but that alone is not a complete
-redistribution license. Public GitHub availability is not a substitute for a grant.
-
-These files are identified by
-[LicenseRef-Theme-Permission-Review](THIRD_PARTY_LICENSES/LicenseRef-Theme-Permission-Review.txt)
-in the distribution metadata. This is an unresolved-status marker, not a new
-license or permission supplied by pymdtools. Obtain and record the applicable
-permission, or replace/remove the affected resources before a release claiming
-fully verified redistribution rights. The Glyphicons notice records its own
-Bootstrap-specific permission rather than silently extending it to unrelated uses.
+The original resources for `jasonm23-dark`, `jasonm23-foghorn`,
+`jasonm23-markdown` and `markedapp-byword` are no longer distributed because
+an explicit original-author redistribution grant could not be established.
+Their names remain accepted as compatibility aliases: the dark theme uses
+`thomasf-solarizedcssdark`; the other three use `github`. Appearance changes,
+and exported assets and notices belong to the replacement theme.
 
 ## Distribution and maintenance
 
-The SPDX expression in `pyproject.toml` describes the identified terms and review
-markers of the distributed files, not a choice between licenses. It does not
-change the MIT license of the original code and does not certify the unresolved
-permissions above. Separately installed dependencies are not folded into this
-expression; review their terms when assembling or redistributing an application.
+The SPDX expression in `pyproject.toml` describes the identified terms of the
+distributed files, not a choice between licenses. It does not change the MIT
+license of the original project code. Separately installed dependencies are not
+folded into this expression; review their terms when assembling or redistributing an application.
 
 The CSS sources and their embedded notices are retained in the wheel and source
 archive. When sharing generated HTML/assets, keep `assets/LICENSES.txt` (exported

@@ -15,7 +15,7 @@
 Markdown documents. Assemble reusable sections, edit links, normalize formatting,
 generate HTML or PDF, and translate text through an injectable client.
 
-Python **3.10–3.14** is tested in CI on Linux and Windows, with additional macOS
+Python **3.11–3.14** is tested in CI on Linux and Windows, with additional macOS
 checks. Core Markdown and HTML features work without a browser or PDF dependencies.
 
 ## Installation
@@ -141,7 +141,7 @@ From the repository root, create the locked development environment:
 
 ```bash
 python -m pip install uv==0.12.19
-uv sync --locked --extra dev --extra docs --extra pdf
+uv sync --locked --group dev --group docs --extra pdf
 uv run --no-sync pytest
 uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
 uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
@@ -167,6 +167,6 @@ Original Python code and sample data use the
 [MIT license](https://github.com/IIXIXII/pymdtools/blob/master/LICENSE.md).
 Bundled layouts retain their own terms and attribution; the
 [resource inventory](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-3rd-party.md)
-also records unresolved permissions for historical themes. Installed
+records the terms of the bundled resources and the replacement of historical themes. Installed
 dependencies have separate licenses, including GPL/LGPL components; see the
 [dependency inventory](https://github.com/IIXIXII/pymdtools/blob/master/LICENSES-dependencies.md).

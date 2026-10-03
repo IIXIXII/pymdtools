@@ -65,5 +65,5 @@ def test_get_refs_from_md_directory_respects_filename_ext_in_subfolders(tmp_path
 
 def test_get_refs_from_md_directory_raises_on_missing_folder(tmp_path: Path):
     missing = tmp_path / "missing"
-    with pytest.raises(Exception):
+    with pytest.raises(FileNotFoundError):
         get_refs_from_md_directory(missing, filename_ext=".md", depth=0)

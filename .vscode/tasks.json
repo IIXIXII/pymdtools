@@ -14,9 +14,9 @@
             "args": [
                 "sync",
                 "--locked",
-                "--extra",
+                "--group",
                 "dev",
-                "--extra",
+                "--group",
                 "docs",
                 "--extra",
                 "pdf"

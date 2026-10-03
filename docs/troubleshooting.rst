@@ -7,7 +7,7 @@ Import fails after cloning or moving the package
 The importable code lives under ``src/pymdtools``. Install the checkout before
 running scripts, tests or Sphinx::
 
-   uv sync --locked --extra dev --extra docs --extra pdf
+   uv sync --locked --group dev --group docs --extra pdf
    uv run --no-sync python -c "import pymdtools; print(pymdtools.__file__)"
 
 Use ``python -m pip install -e .`` instead if you manage your own environment.

@@ -1,10 +1,10 @@
-include LICENSE.md LICENSES-3rd-party.md LICENSES-dependencies.md README.md CHANGELOG.md CONTRIBUTING.md
-include pyproject.toml requirements*.txt uv.lock
+include LICENSE.md LICENSES-3rd-party.md LICENSES-dependencies.md README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md
+include pyproject.toml requirements*.txt build-constraints.txt uv.lock
 recursive-include THIRD_PARTY_LICENSES *.txt
 recursive-include tests *.py *.md *.html *.svg
 recursive-include scripts *.py
 recursive-include docs *.py *.rst *.md
-recursive-include .github *.yml
+recursive-include .github *.yml *.json
 include .readthedocs.yml
 include src/pymdtools/version.bat
 include make.bat

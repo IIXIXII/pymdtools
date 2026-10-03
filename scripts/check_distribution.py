@@ -65,7 +65,19 @@ def main() -> None:
         ).decode()
         assert "License-Expression:" in metadata
         assert "pdfkit" not in metadata
+        assert "LicenseRef-Theme-Permission-Review" not in metadata
+        for legacy in (
+            "jasonm23-dark",
+            "jasonm23-foghorn",
+            "jasonm23-markdown",
+            "markedapp-byword",
+        ):
+            assert not any(
+                name.startswith(f"pymdtools/layouts/{legacy}/") for name in archive.namelist()
+            )
         headers = Parser().parsestr(metadata)
+        assert headers["Requires-Python"] == ">=3.11"
+        assert headers.get_all("Provides-Extra") == ["pdf"]
         license_files = headers.get_all("License-File", [])
         assert "LICENSES-3rd-party.md" in license_files
         assert "LICENSES-dependencies.md" in license_files
@@ -82,6 +94,11 @@ def main() -> None:
         for suffix in (
             "pyproject.toml",
             "uv.lock",
+            "build-constraints.txt",
+            "SECURITY.md",
+            ".github/rulesets/master.json",
+            ".github/rulesets/release-tags.json",
+            "scripts/check_release_checks.py",
             "tests/mdcommon/test_commonmark_regressions.py",
             "scripts/release.py",
             "src/pymdtools/version.bat",

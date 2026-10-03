@@ -45,11 +45,10 @@ sanitizer for arbitrary content or link schemes. Conversion does not execute
 Layouts and assets
 ------------------
 
-The 17 bundled layout names are:
+The 13 bundled layout names are:
 
 * ``github``, ``bootstrap3``;
-* ``jasonm23-dark``, ``jasonm23-foghorn``, ``jasonm23-markdown``, ``jasonm23-swiss``;
-* ``markedapp-byword``;
+* ``jasonm23-swiss``;
 * ``mixu-book``, ``mixu-bootstrap``, ``mixu-bootstrap-2col``, ``mixu-gray``,
   ``mixu-page``, ``mixu-radar``;
 * ``roryg-ghostwriter``;
@@ -57,10 +56,15 @@ The 17 bundled layout names are:
 
 ``jasonm23-swiss`` is the default. Assets are copied under
 ``_pymdtools_assets/<layout>/`` next to the generated page, including
-``LICENSES.txt``. Share that tree with the HTML. Some historical themes have
-unresolved permissions, recorded in :doc:`LICENSES-3rd-party`; review the
-selected theme's notices before redistributing its assets. Example 14 creates
+``LICENSES.txt``. Share that tree with the HTML and retain the notices described
+in :doc:`LICENSES-3rd-party`. Example 14 creates
 a gallery of three layouts without altering packaged resources.
+
+Four historical names remain available as compatibility aliases. ``jasonm23-dark``
+uses ``thomasf-solarizedcssdark``; ``jasonm23-foghorn``, ``jasonm23-markdown`` and
+``markedapp-byword`` use ``github``. Their original resources are no longer bundled
+because redistribution permission was unresolved. Appearance changes; exported
+asset paths and notices use the replacement layout's name.
 
 Generate PDF
 ------------

@@ -33,7 +33,7 @@ def release_tree(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.setattr(release, "CHANGELOG", tmp_path / "CHANGELOG.md")
     release.write_version((1, 2, 3))
     release.CHANGELOG.write_text(
-        "# Changelog\n\n## Unreleased\n\n- Preserve café links.\n\n"
+        "# Changelog\n\n## Unreleased\n\n- Preserve cafÃ© links.\n\n"
         "### Migration\n\nKeep these instructions.\n\n"
         "## 1.2.3 - 2026-01-01\n\n- Previous release.\n",
         encoding="utf-8",
@@ -55,7 +55,7 @@ def test_prepare_release_preserves_notes_and_history(
     assert changelog.endswith("## 1.2.3 - 2026-01-01\n\n- Previous release.\n")
     assert (
         release.release_notes()
-        == "- Preserve café links.\n\n### Migration\n\nKeep these instructions.\n"
+        == "- Preserve cafÃ© links.\n\n### Migration\n\nKeep these instructions.\n"
     )
     assert b"\r\nSET VERSION=" in (release_tree / "version.bat").read_bytes()
 
@@ -111,7 +111,7 @@ def test_notes_rejects_invalid_sections(release_tree: Path, section: str, messag
 def test_notes_preserves_fenced_headings_and_unicode(
     release_tree: Path, fence: str, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    notes = f"- Café 🚀\n\n{fence}markdown\n## 1.2.3 - 2026-01-01\n## Unreleased\n{fence}\n"
+    notes = f"- CafÃ© ðŸš€\n\n{fence}markdown\n## 1.2.3 - 2026-01-01\n## Unreleased\n{fence}\n"
     release.CHANGELOG.write_text(
         f"## Unreleased\n\n## 1.2.3 - 2026-01-01\n\n{notes}\n## 1.2.2 - 2025-01-01\n- Old\n",
         encoding="utf-8",
@@ -404,7 +404,7 @@ def test_build_distributions_uses_utf8_and_strict_twine(
         assert kwargs["check"] is True
         assert kwargs["env"]["PYTHONUTF8"] == "1"
         assert kwargs["env"]["PYTHONIOENCODING"] == "utf-8"
-        if command[2] == "build":
+        if command[2:4] == ["uv", "build"]:
             dist.mkdir()
             (dist / "example-1.0-py3-none-any.whl").touch()
             (dist / "example-1.0.tar.gz").touch()
@@ -416,7 +416,13 @@ def test_build_distributions_uses_utf8_and_strict_twine(
 
     assert clean_checks == [True]
     assert len(artifacts) == 2
-    assert commands[0][1:3] == ["-m", "build"]
+    assert commands[0][1:4] == ["-m", "uv", "build"]
+    assert commands[0][4:8] == [
+        "--no-sources",
+        "--no-create-gitignore",
+        "--build-constraints",
+        str(tmp_path / "build-constraints.txt"),
+    ]
     assert commands[1][1:5] == ["-m", "twine", "check", "--strict"]
 
 

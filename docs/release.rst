@@ -96,8 +96,13 @@ Workflow guarantees
 The workflow only listens for version tag pushes, so creating the GitHub
 release cannot trigger a second PyPI publication. It checks that the tag is
 annotated, points at the event commit and matches both version files. It also
-requires nonempty dated notes for that version in ``CHANGELOG.md``. The helper
-currently supports stable ``major.minor.patch`` versions only.
+requires nonempty dated notes for that version in ``CHANGELOG.md``.
+Before building, it refuses commits outside ``origin/master`` and requires the
+latest CI and CodeQL **push** runs on ``master`` for that exact commit to have
+completed successfully. Pull-request, scheduled and older successful runs do
+not substitute for a missing, failed or still-running push run. Wait for both
+workflows before pushing the tag; an early tag can be retried after they finish.
+The helper currently supports stable ``major.minor.patch`` versions only.
 
 A job without publishing credentials tests and builds the distributions; a
 separate protected job receives only those artifacts and publishes them through
@@ -121,6 +126,34 @@ For branch protection, require ``CI success``, ``CodeQL (python)`` and
 validator and fails on unsuccessful or skipped required jobs. CodeQL uses
 advanced setup; an existing default setup must first be disabled to avoid
 conflicting analysis configurations.
+
+Repository protections
+----------------------
+
+The versioned definitions in ``.github/rulesets/master.json`` and
+``.github/rulesets/release-tags.json`` are the reference for repository settings.
+The master rules require a pull request, resolved conversations, an up-to-date
+branch and ``CI success``, ``CodeQL (python)`` and ``CodeQL (actions)`` from GitHub
+Actions. No approval count is imposed on this single-maintainer project, so the
+maintainer can merge their own PR after the checks pass. Force pushes and
+branch deletion are blocked. Existing ``v*`` tags cannot be updated or deleted.
+There is no ruleset bypass actor.
+
+These rulesets, release immutability and private vulnerability reporting were
+activated on 2026-10-03. Review the live settings when administering the repository.
+
+Enable **Settings > General > Releases > Enable release immutability** for
+future GitHub releases. Existing published releases are not retroactively
+changed. The GitHub CLI creates a draft, attaches the archives, then publishes
+it; immutable releases prevent later replacement of assets or movement of the
+release tag. See `GitHub's release protection documentation
+<https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes>`_.
+
+A repository administrator can import these JSON definitions through
+**Settings > Rules > Rulesets > Import a ruleset**. Check for existing rulesets
+first to avoid duplicating them. Local JSON files describe the policy; GitHub
+settings enforce it. Enable private vulnerability reporting under
+**Settings > Code security** and follow the repository's ``SECURITY.md`` policy.
 
 If publication fails
 --------------------
@@ -157,6 +190,9 @@ release commit, see :doc:`contributing`. To inspect release notes or archives::
 
 ``build`` rebuilds ``dist/`` and checks both archives with Twine. It requires a
 clean tree unless ``--allow-dirty`` is explicitly used for local validation.
+The isolated build uses uv from the locked development group and pins setuptools
+with ``build-constraints.txt``. Update this constraint deliberately alongside
+packaging changes and validate both archives. The wheel is built from the sdist.
 The installed-wheel checker needs network access for dependencies. Neither
 command publishes anything.
 

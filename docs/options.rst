@@ -39,7 +39,9 @@ Pass ``include_options=IncludeOptions(...)`` to
      - Add the process working directory to include-file lookup.
    * - ``nb_up_path``
      - ``0``
-     - Additional parent levels to probe for include files.
+     - Additional parent levels to probe and permit for include files. The default
+       ``0`` confines lookup to the configured roots; increase it only for trusted
+       directory trees.
    * - ``encoding``
      - ``None``
      - Included-file encoding; None enables detection. This is separate from

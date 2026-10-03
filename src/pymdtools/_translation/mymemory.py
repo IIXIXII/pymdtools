@@ -185,7 +185,7 @@ def request_mymemory_translation(
         Translated text segment.
     """
     url = build_mymemory_url(text, src, dest, email=email, api_key=api_key)
-    with urlopen(url, timeout=timeout) as response:  # noqa: S310 - URL is fixed to MyMemory.
+    with urlopen(url, timeout=timeout) as response:
         payload: object = json.loads(response.read().decode("utf-8"))
     if not isinstance(payload, Mapping):
         raise RuntimeError("Invalid MyMemory response: expected a JSON object")
