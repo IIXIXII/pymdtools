@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.0.0 - 2026-10-03
+
 ### Changed
 
 - Require Python 3.11 or newer. Python 3.10 users must stay on 2.1.1 until they
