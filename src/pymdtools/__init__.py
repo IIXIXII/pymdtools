@@ -32,7 +32,7 @@ The following functions are exposed at package level:
 Notes
 -----
 Lazy loading relies on :pep:`562` (module-level ``__getattr__`` / ``__dir__``),
-the package supports Python >= 3.10.
+the package supports Python >= 3.11.
 
 After the first access, lazily-loaded symbols are cached into the module
 namespace (``globals()``) for subsequent direct access.

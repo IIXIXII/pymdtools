@@ -11,7 +11,6 @@ LICENSE_ROOT = ROOT / "THIRD_PARTY_LICENSES"
 COLLECTION = "https://github.com/mixu/markdown-styles/tree/eed20d2c71e7bf456e5bfbcd27135ac662002cd3"
 
 GLYPHICONS = "LicenseRef-Glyphicons-Bootstrap.txt"
-UNRESOLVED = "LicenseRef-Theme-Permission-Review.txt"
 BOOTSTRAP_2 = ("Apache-2.0.txt", GLYPHICONS)
 SOURCES = {
     "BSD-3-Clause.txt": f"{COLLECTION}/package.json",
@@ -31,7 +30,6 @@ SOURCES = {
     "GPL-3.0.txt": "https://www.gnu.org/licenses/gpl-3.0.html",
     "Unlicense.txt": "https://unlicense.org/",
     GLYPHICONS: "https://github.com/twbs/bootstrap/blob/v3.1.1/docs/components.html",
-    UNRESOLVED: "https://github.com/jasonm23/markdown-css-themes",
 }
 GROOVEPAPER = (
     "Groovepaper by Isaac, Subtle Patterns, CC-BY-SA-3.0.\n"
@@ -49,29 +47,10 @@ LAYOUTS: dict[str, tuple[str, tuple[str, ...]]] = {
         ("bootstrap-3.1.1-MIT.txt", "normalize.css-MIT.txt", GLYPHICONS),
     ),
     "github": ("github-markdown-css: Sindre Sorhus.", ("github-markdown-css-MIT.txt",)),
-    "jasonm23-dark": (
-        "Theme credited to Jason Milkins; a section also credits Twitter, Inc.\n"
-        "Original theme permission unresolved: the collection license is insufficient evidence.",
-        (UNRESOLVED,),
-    ),
-    "jasonm23-foghorn": (
-        "Theme credited to Jason Milkins. Original theme permission unresolved.",
-        (UNRESOLVED,),
-    ),
-    "jasonm23-markdown": (
-        "Theme credited to Jason Milkins. Original theme permission unresolved.",
-        (UNRESOLVED,),
-    ),
     "jasonm23-swiss": (
         "Theme: Copyright 2012 Florian Wolters. LGPL-3.0-or-later; see style.css.\n"
         "The distributed style.css is the editable source of this stylesheet.",
         ("LGPL-3.0.txt", "GPL-3.0.txt"),
-    ),
-    "markedapp-byword": (
-        "Copyright 2011 Brett Terpstra; Copyright 2011 Metaclassy, Lda.\n"
-        "Authors: @brunodecarvalho, @jpedroso, @rcabaco. Keep these credits.\n"
-        "Original theme permission unresolved.",
-        (UNRESOLVED,),
     ),
     "mixu-book": (PRETTIFY_CREDIT, ("code-prettify-Apache-2.0.txt",)),
     "mixu-bootstrap": (BOOTSTRAP_CREDIT, BOOTSTRAP_2),
@@ -114,8 +93,7 @@ def notice_for(layout: str) -> str:
     sections = [
         f"Licenses and attributions for the {layout} layout\n",
         "Keep this notice with redistributed layout resources.\n"
-        "These terms cover the identified components, not the document author's content.\n"
-        "A review marker does not supply missing permission or certify redistribution rights.\n",
+        "These terms cover the identified components, not the document author's content.\n",
         f"Collection/page/pilcrow contributions: Mikito Takada and contributors.\n{COLLECTION}\n"
         "BSD-3-Clause is declared by the upstream package metadata.\n"
         "Third-party theme and component rights are listed separately below.\n"

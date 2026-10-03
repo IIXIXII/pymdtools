@@ -33,6 +33,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      actions: read
     outputs:
       artifact-id: ${{ steps.distributions.outputs.artifact-id }}
       notes-artifact-id: ${{ steps.notes.outputs.artifact-id }}
@@ -49,6 +50,10 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: python scripts/release.py verify-tag "$RELEASE_TAG"
+      - name: Require merged commit and successful master CI and CodeQL
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/check_release_checks.py
       - name: Extract release notes from the dated changelog section
         run: python scripts/release.py notes --output "$RUNNER_TEMP/release-notes.md"
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -57,7 +62,7 @@ jobs:
           # Release builds never consume a cache populated by another workflow.
           enable-cache: false
       - name: Install locked release environment
-        run: uv sync --locked --extra dev --extra docs --extra pdf --python 3.12
+        run: uv sync --locked --group dev --group docs --extra pdf --python 3.12
       - name: Check dependency consistency
         run: uv pip check
       - name: Check release quality and license notices

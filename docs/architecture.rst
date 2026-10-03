@@ -2,7 +2,7 @@ Project architecture
 ====================
 
 The importable package lives in ``src/pymdtools``. Install it with
-``uv sync --locked --extra dev --extra docs --extra pdf`` before running scripts
+``uv sync --locked --group dev --group docs --extra pdf`` before running scripts
 or tests. The source layout makes local scripts use the installed package.
 
 Public imports remain stable: ``instruction``, ``mdcommon``, ``mdfile``,

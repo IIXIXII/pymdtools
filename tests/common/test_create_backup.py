@@ -49,17 +49,15 @@ def test_create_backup_raises_if_path_is_directory(tmp_path):
         create_backup(str(tmp_path))
 
 
-def test_create_backup_raises_when_no_slot_available(tmp_path, monkeypatch):
+def test_create_backup_raises_when_no_slot_available(tmp_path):
     src = tmp_path / "file.txt"
     src.write_text("x", encoding="utf-8")
 
-    monkeypatch.setattr(common, "today_utc", lambda: "2026-02-01")
-
-    for i in range(0, 100):
+    for i in range(1, 101):
         (tmp_path / f"file.txt.2026-02-01-{i:03d}.bak").write_text("bak", encoding="utf-8")
 
-    with pytest.raises(Exception):
-        common.create_backup(src, backup_ext=".bak")
+    with pytest.raises(FileExistsError, match="after 100 tries"):
+        common.create_backup(src, ext=".bak", date_prefix="2026-02-01")
 
 
 # ---------------------------------------------------------------------------

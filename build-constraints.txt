@@ -1,0 +1,3 @@
+# Isolated release backend, independent of the contributor environment.
+# Update deliberately and validate both the wheel and the source distribution.
+setuptools==84.0.0

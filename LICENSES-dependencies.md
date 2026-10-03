@@ -3,7 +3,8 @@
 Reviewed on 2026-09-27 against `uv.lock` and the installed distributions'
 `METADATA` and license files. These packages are installed separately: their
 implementations are not copied into the pymdtools wheel. The runtime table
-records the versions inspected, not additional version constraints.
+records the versions inspected, not additional version constraints. The
+Markdown-it entry was updated to 4.2.0 on 2026-10-03 after the dependency refresh.
 
 The project's MIT license does not replace these licenses. In particular,
 redistributing an application using GPL/LGPL components needs a review of that
@@ -16,7 +17,7 @@ or redistribution is permitted under MIT alone.
 | --- | --- | --- |
 | `chardet` | 7.6.0 | 0BSD, as declared in the distribution metadata and its [shipped license](https://github.com/chardet/chardet/blob/7.6.0/LICENSE). |
 | `Markdown` | 3.11 | BSD-3-Clause; [Python-Markdown](https://github.com/Python-Markdown/markdown). |
-| `markdown-it-py` | 3.0.0 | MIT; preserves both Python port and original markdown-it notices in `LICENSE` and `LICENSE.markdown-it`; [project](https://github.com/executablebooks/markdown-it-py). |
+| `markdown-it-py` | 4.2.0 | MIT; preserves both Python port and original markdown-it notices in `LICENSE` and `LICENSE.markdown-it`; [project](https://github.com/executablebooks/markdown-it-py). |
 | `markdownify` | 1.2.3 | MIT; [python-markdownify](https://github.com/matthewwithanm/python-markdownify). |
 | `mistune` | 3.3.4 | BSD-3-Clause; [Mistune](https://github.com/lepture/mistune). |
 | `python-dateutil` | 2.9.0.post0 | Apache-2.0 and BSD-3-Clause notices, with dual licensing for designated contributions; consult its [LICENSE](https://github.com/dateutil/dateutil/blob/2.9.0.post0/LICENSE) rather than assigning one license to every historical file. |
@@ -58,7 +59,7 @@ by this project declare the following licenses:
 
 | Tools | Declared terms |
 | --- | --- |
-| `build`, `pyright`, `pytest`, `pytest-cov`, `ruff`, `tomli` | MIT |
+| `pyright`, `pytest`, `pytest-cov`, `ruff` | MIT |
 | `hypothesis` | MPL-2.0 |
 | `pip-audit`, `twine` | Apache-2.0 |
 | `myst-parser`, `sphinx-rtd-theme` | MIT |

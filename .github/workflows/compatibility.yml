@@ -1,6 +1,7 @@
 name: Dependency compatibility
 
 on:
+  workflow_call:
   schedule:
     - cron: "37 6 * * 1"
   workflow_dispatch:
@@ -9,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: compatibility-${{ github.ref }}
+  group: compatibility-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -21,14 +22,20 @@ env:
   UV_NO_PROGRESS: "1"
 
 jobs:
-  latest:
-    name: Latest dependencies (Python ${{ matrix.python-version }})
+  dependencies:
+    name: ${{ matrix.resolution }} dependencies (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.14"]
+        include:
+          - python-version: "3.11"
+            resolution: lowest-direct
+          - python-version: "3.11"
+            resolution: highest
+          - python-version: "3.14"
+            resolution: highest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,18 +47,21 @@ jobs:
         with:
           version: "0.12.19"
           enable-cache: false
-      - name: Install latest compatible dependencies without changing uv.lock
+      - name: Resolve runtime and PDF boundaries without changing uv.lock
+        env:
+          RESOLUTION: ${{ matrix.resolution }}
         run: |
           uv venv --python "${{ matrix.python-version }}"
-          uv pip install --upgrade -e ".[dev,pdf]"
+          uv pip compile pyproject.toml --extra pdf --resolution "$RESOLUTION" --output-file "$RUNNER_TEMP/runtime.txt"
+          uv pip install --upgrade --group dev -e ".[pdf]" --constraint "$RUNNER_TEMP/runtime.txt"
           uv pip check
-      - name: Test latest dependency versions
+      - name: Test dependency boundaries
         run: uv run --no-sync pytest --junitxml="$RUNNER_TEMP/reports/junit.xml"
       - name: Preserve compatibility reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: latest-py${{ matrix.python-version }}-${{ github.run_attempt }}
+          name: compatibility-${{ matrix.resolution }}-py${{ matrix.python-version }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/reports/
           if-no-files-found: ignore
           retention-days: 7

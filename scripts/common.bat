@@ -68,20 +68,21 @@ IF "%REQUIRE_FILE%"=="" (
   ECHO ERROR: Missing requirements file.
   EXIT /B 2
 )
-IF NOT EXIST "%REQUIRE_FILE%" (
-  ECHO ERROR: Requirements file not found: "%REQUIRE_FILE%".
+SET "SYNC_OPTIONS="
+IF /I "%REQUIRE_FILE%"=="requirements.txt" SET "SYNC_OPTIONS=--no-default-groups"
+IF /I "%REQUIRE_FILE%"=="requirements-dev.txt" SET "SYNC_OPTIONS=--group dev --extra pdf"
+IF /I "%REQUIRE_FILE%"=="requirements-docs.txt" SET "SYNC_OPTIONS=--no-default-groups --group docs"
+IF NOT DEFINED SYNC_OPTIONS (
+  ECHO ERROR: Unknown dependency selection: "%REQUIRE_FILE%".
   EXIT /B 2
 )
-SET "SYNC_EXTRAS="
-IF /I "%REQUIRE_FILE%"=="requirements-dev.txt" SET "SYNC_EXTRAS=--extra dev --extra pdf"
-IF /I "%REQUIRE_FILE%"=="requirements-docs.txt" SET "SYNC_EXTRAS=--extra docs"
-"%UV%" sync --locked --inexact %SYNC_EXTRAS%
+"%UV%" sync --locked --inexact %SYNC_OPTIONS%
 EXIT /B %ERRORLEVEL%
 
 :INSTALL_EDITABLE
 CALL :INIT_UV
 IF ERRORLEVEL 1 EXIT /B 1
-"%UV%" sync --locked --inexact --extra dev --extra docs --extra pdf
+"%UV%" sync --locked --inexact --group dev --group docs --extra pdf
 EXIT /B %ERRORLEVEL%
 
 :INIT_UV
@@ -151,9 +152,9 @@ EXIT /B %ERRORLEVEL%
 CALL :INIT_PYTHON
 IF ERRORLEVEL 1 EXIT /B 1
 IF "%~1"=="" (
-  "%PYTHON%" scripts\release.py bump patch
+  "%PYTHON%" scripts\release.py prepare patch
 ) ELSE (
-  "%PYTHON%" scripts\release.py bump "%~1"
+  "%PYTHON%" scripts\release.py prepare "%~1"
 )
 EXIT /B %ERRORLEVEL%
 

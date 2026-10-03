@@ -103,8 +103,13 @@ def get_file_content_to_include(
     )
 
     resolved_found = Path(found).resolve()
+    # Explicit parent traversal grants access to those search anchors too.
+    # Keep the post-search containment check for symlinks and custom finders.
+    allowed_roots = {
+        anchor for root in unique_start_paths for anchor in (root, *root.parents[:nb_up_path])
+    }
     if not any(
-        resolved_found == root or resolved_found.is_relative_to(root) for root in unique_start_paths
+        resolved_found == root or resolved_found.is_relative_to(root) for root in allowed_roots
     ):
         raise ValueError(f"included file resolves outside the allowed roots: {requested!r}")
 

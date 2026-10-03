@@ -50,7 +50,7 @@ def test_worker_errors_and_timeout_are_actionable(monkeypatch, tmp_path):
         monkeypatch.setattr(
             backend.subprocess,
             "run",
-            lambda *a, **kw: SimpleNamespace(returncode=1, stderr=message),
+            lambda *a, message=message, **kw: SimpleNamespace(returncode=1, stderr=message),
         )
         with pytest.raises(backend.PdfRenderError):
             backend.render_pdf(source, target, backend.PdfOptions())

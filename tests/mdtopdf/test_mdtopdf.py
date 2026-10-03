@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from pypdf.errors import PdfReadError
 
 import pymdtools._rendering._files as _rendering__files_impl
 import pymdtools._rendering.layouts as _rendering_layouts_impl
@@ -665,7 +666,7 @@ def test_read_pdf_closes_handle_when_reader_rejects_file(tmp_path: Path) -> None
     invalid = tmp_path / "invalid.pdf"
     invalid.write_bytes(b"invalid")
 
-    with pytest.raises(Exception):
+    with pytest.raises(PdfReadError):
         _rendering_pdf_operations_impl.read_pdf(invalid)
 
     invalid.unlink()

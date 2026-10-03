@@ -101,8 +101,8 @@ def test_static_attaches_attributes_to_function():
         f.counter += 1
         return f.counter
 
-    assert getattr(f, "counter") == 0
-    assert getattr(f, "label") == "ok"
+    assert f.counter == 0
+    assert f.label == "ok"
 
     assert f() == 1
     assert f() == 2

@@ -2,13 +2,13 @@
 
 ## Environment and checks
 
-Use Python 3.10 or newer. The lock includes platform and Python-version markers.
+Use Python 3.11 or newer. The lock includes platform and Python-version markers.
 The importable package is under `src/pymdtools`; an editable installation is
 required for local scripts and tests.
 
 ```bash
 python -m pip install uv==0.12.19
-uv sync --locked --extra dev --extra docs --extra pdf
+uv sync --locked --group dev --group docs --extra pdf
 uv run --no-sync pytest
 uv run --no-sync pyright
 uv run --no-sync ruff check .
@@ -16,6 +16,14 @@ uv run --no-sync ruff format --check .
 uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
 uv run --no-sync python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
 ```
+
+Development and documentation tools live in `[dependency-groups]`, so they are
+not advertised as installed-package features. The public `pdf` extra remains.
+The old `requirements-dev.txt` and `requirements-docs.txt` wrappers are removed.
+For pip 25.1 or newer, the unlocked equivalent from the repository is
+`python -m pip install --group dev --group docs -e ".[pdf]"`; prefer the locked
+uv command above for repeatable contributor environments. Windows commands
+`make requirements-dev` and `make requirements-docs` still work through the groups.
 
 Run `uv run --no-sync ruff format .` before submitting a change. Keep new behavior
 covered by contract tests: preservation of literal Markdown, idempotence,
@@ -118,7 +126,7 @@ VS Code tasks use the selected interpreter and the current Ruff/debugpy tools.
 ## Documentation
 
 Sphinx imports the installed package; it does not add `src/` to `sys.path`.
-Sync the editable installation first, or install `requirements-docs.txt` and
+Sync the editable installation with `uv sync --locked --group docs` and
 use `python -m sphinx.cmd.build` in that same environment. Open
 `docs/_build/html/index.html` after the strict HTML build.
 
@@ -136,8 +144,7 @@ their prerequisites stated. Real PDF scenarios run separately through the exampl
 runner. When including Markdown from outside `docs/`, resolve its relative links
 with MyST's `relative-docs` option and check the generated links/downloads.
 
-The inventories are dated license reviews, and `AUDIT.md` is a historical
-technical report. Keep historical measurements clearly dated rather than
+Keep license inventories and historical measurements clearly dated rather than
 presenting them as current validation results.
 
 ## License notices
@@ -146,8 +153,8 @@ When changing bundled layouts, review `LICENSES-3rd-party.md` and the original
 authors' notices. Update `THIRD_PARTY_LICENSES/` and the component mapping in
 `scripts/update_license_notices.py`, then run that script with `--write`.
 Running it without arguments checks that every layout's exported `LICENSES.txt`
-is up to date; CI runs this check. Keep unresolved permissions visible until
-they are backed by the authors' terms. Review `LICENSES-dependencies.md` when
+is up to date; CI runs this check. Do not bundle resources without documented
+redistribution terms. Review `LICENSES-dependencies.md` when
 updating dependencies. The MIT-header helper always excludes third-party
 resources, license documents and generated environments, even with
 `--include-hidden`.
@@ -158,10 +165,10 @@ The workflows have distinct responsibilities:
 
 | Workflow | Purpose |
 | --- | --- |
-| `ci.yml` | Locked tests on Python 3.10–3.14, Linux/Windows and a macOS job; real PDF rendering on all three systems; lint, types, dependency audit, notices, docs and distributions. |
+| `ci.yml` | Locked tests on Python 3.11–3.14, Linux/Windows and a macOS job; real PDF rendering on all three systems; lint, types, dependency audit, notices, docs and distributions. |
 | `workflow-lint.yml` | Reusable actionlint and zizmor checks, called by CI and release validation; also runnable manually. |
 | `codeql.yml` | Python and GitHub Actions security analysis on pushes, pull requests, merge groups and weekly runs. |
-| `compatibility.yml` | Weekly/manual tests with the latest allowed dependencies on Python 3.10 and 3.14, without changing `uv.lock`. |
+| `compatibility.yml` | Tests minimum runtime/PDF dependencies on Python 3.11 and latest dependencies on 3.11/3.14; called by CI and run weekly/manually without changing `uv.lock`. |
 | `publish.yml` | On a version tag push, validate and build without a shared cache, publish through an isolated PyPI job, then create the GitHub release with changelog notes and the same archives. |
 
 Tests retain JUnit and coverage reports as Actions artifacts, including after

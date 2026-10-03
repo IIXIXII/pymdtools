@@ -1,7 +1,7 @@
 Installation and first steps
 ============================
 
-Use Python 3.10 or newer. CI tests Python 3.10–3.14 on Linux and Windows, with
+Use Python 3.11 or newer. CI tests Python 3.11–3.14 on Linux and Windows, with
 additional macOS coverage. Commands below run from a terminal; Python examples
 can be saved as scripts. ``pymdtools`` is a library, with no general-purpose
 ``pymdtools`` command-line program.
@@ -48,7 +48,7 @@ Use a checkout to run the examples, contribute changes or build this manual::
    git clone https://github.com/IIXIXII/pymdtools.git
    cd pymdtools
    python -m pip install uv==0.12.19
-   uv sync --locked --extra dev --extra docs --extra pdf
+   uv sync --locked --group dev --group docs --extra pdf
 
 This installs the package in editable mode under ``.venv``. Use
 ``uv run --no-sync`` for commands in that environment, for example::
@@ -127,9 +127,9 @@ Open ``docs/_build/html/index.html``. The doctest builder executes the marked
 offline Python examples in temporary directories, without translation requests
 or Chromium. The :doc:`contributing` guide lists the remaining checks.
 
-For a documentation-only installation without uv, use one Python environment
-consistently::
+For a documentation-only installation without uv, use pip 25.1 or newer from
+the repository root, in one Python environment::
 
-   python -m pip install -r requirements-docs.txt
+   python -m pip install --group docs .
    python -m sphinx.cmd.build -W --keep-going -b html docs docs/_build/html
    python -m sphinx.cmd.build -W --keep-going -b doctest docs docs/_build/doctest
