@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+## 3.0.0 - 2026-10-03
+
 ### Changed
 
 - Require Python 3.11 or newer. Python 3.10 users must stay on 2.1.1 until they
-  upgrade Python; this compatibility change belongs in the next minor release.
+  upgrade Python. This major release drops Python 3.10 support.
 - Move contributor and documentation tools to PEP 735 dependency groups.
   Replace `pip install -r requirements-dev.txt` / `.[dev,pdf]` with
   `uv sync --locked --group dev --extra pdf`; use `--group docs` for documentation.
