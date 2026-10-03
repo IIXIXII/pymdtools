@@ -48,7 +48,8 @@ def test_parent_permission_does_not_allow_symlink_escape(tmp_path: Path) -> None
         (allowed / "escape-contract.md").symlink_to(outside)
     except OSError:
         pytest.skip("symlink creation is unavailable")
-    with pytest.raises(ValueError, match="outside"):
+    # The filesystem search rejects the escape before the include-level check.
+    with pytest.raises(ValueError, match="escapes its anchor"):
         get_file_content_to_include("escape-contract.md", search_folders=[nested], nb_up_path=1)
 
 
