@@ -14,6 +14,21 @@ Use ``python -m pip install -e .`` instead if you manage your own environment.
 In VS Code, select that environment with **Python: Select Interpreter**. A
 previously selected interpreter can override the workspace's default setting.
 
+Ruff cannot start in VS Code
+----------------------------
+
+An error such as ``spawn .../.venv ENOENT`` means the extension tried to execute
+the virtual environment's directory instead of a Python executable while
+locating Ruff. The workspace's ``ruff.path`` setting points directly to
+``.venv/Scripts/ruff.exe`` on Windows
+and ``.venv/bin/ruff`` on Linux and macOS; Ruff uses the first existing executable.
+
+Run the locked sync command above to install the project's Ruff version, then
+run **Ruff: Restart Server** from the VS Code command palette. If the error
+persists, run **Developer: Reload Window**. For Python tasks and debugging, use
+**Python: Select Interpreter** to select ``.venv/Scripts/python.exe`` on Windows
+or ``.venv/bin/python`` on Linux and macOS.
+
 Sphinx or an optional module is missing
 ---------------------------------------
 

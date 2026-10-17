@@ -8,6 +8,10 @@
         "--cov-fail-under=0"
     ],
     "ruff.importStrategy": "fromEnvironment",
+    "ruff.path": [
+        "${workspaceFolder}/.venv/Scripts/ruff.exe",
+        "${workspaceFolder}/.venv/bin/ruff"
+    ],
     "ruff.configurationPreference": "filesystemFirst",
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
