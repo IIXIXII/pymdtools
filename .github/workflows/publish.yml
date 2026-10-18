@@ -56,7 +56,7 @@ jobs:
         run: python scripts/check_release_checks.py
       - name: Extract release notes from the dated changelog section
         run: python scripts/release.py notes --output "$RUNNER_TEMP/release-notes.md"
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           version: "0.12.19"
           # Release builds never consume a cache populated by another workflow.
@@ -84,7 +84,7 @@ jobs:
         run: uv run --no-sync python scripts/check_distribution.py dist
       - name: Store distributions for the isolated publishing job
         id: distributions
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: python-package-distributions-${{ github.run_id }}-${{ github.run_attempt }}
           path: dist/
@@ -92,7 +92,7 @@ jobs:
           retention-days: 30
       - name: Store the validated release notes
         id: notes
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-notes-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/release-notes.md
@@ -112,7 +112,7 @@ jobs:
 
     steps:
       - name: Retrieve validated distributions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
           path: dist/
@@ -132,14 +132,14 @@ jobs:
       contents: write
     steps:
       - name: Retrieve the distributions published to PyPI
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
           path: dist/
           merge-multiple: true
           digest-mismatch: error
       - name: Retrieve validated release notes
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ needs.build.outputs.notes-artifact-id }}
           path: notes/
